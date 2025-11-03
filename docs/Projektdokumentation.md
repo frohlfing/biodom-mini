@@ -165,8 +165,10 @@ ESP32-DevKitC V2
 [Amazon](https://www.amazon.de/dp/B074RGW2VQ)
 10,99 €
 
-[AZ-Delivery e-Book](https://cdn.shopify.com/s/files/1/1509/1638/files/AZ281_A_18-10_DE_B08BTWJGFX_e699c448-ffc6-4744-8b93-5c9f102d22b0.pdf),
+[AZ-Delivery e-Book](https://cdn.shopify.com/s/files/1/1509/1638/files/AZ281_A_18-10_DE_B08BTWJGFX_e699c448-ffc6-4744-8b93-5c9f102d22b0.pdf),  
+[Espressif Doku](https://docs.platformio.org/en/latest/boards/espressif32/esp32-c3-devkitc-02.html?utm_source=platformio&utm_medium=piohome),  
 [Datasheet](https://cdn.shopify.com/s/files/1/1509/1638/files/ESP_-_32_NodeMCU_Developmentboard_Datenblatt_AZ-Delivery_Vertriebs_GmbH_10f68f6c-a9bb-49c6-a825-07979441739f.pdf)
+
 
 * Micro-USB-Anschluss
 * 38-Pin
@@ -202,7 +204,7 @@ Das Modell mit UCD-C macht nur Probleme. Keins meiner UCB-C-Kabel hat funktionie
                                        └────────────────┘
 </pre>
 
-#### Sketch für Funktionstest
+**Sketch für Funktionstest:**
 
 TODO
 
@@ -262,7 +264,7 @@ GPIO32 ──┤ IN7       Com5 ├── +12V        GND ─O──(schwarz)─
          └────────────────┘
 </pre>
 
-#### Sketch für Funktionstest
+**Sketch für Funktionstest:**
 
 TODO
 
@@ -337,7 +339,7 @@ die ca. 16 GPIO-Pins belegt (also fast alle verfügbaren). Die ArduCAM belegt da
 └────────────────┘        
  </pre>
 
-#### Sketch für Funktionstest
+**Sketch für Funktionstest:**
 
 **Benötigte Bibliothek:**
 
@@ -381,9 +383,9 @@ Dies ist ein Temperatur- und Luftfeuchtigkeitssensor wie der DHT22, aber präzis
 └────────────────┘               
 </pre>
 
-#### Sketch für Funktionstest
+**Benötigte Bibliothek:**
 
-TODO
+* SimpleDHT 1.0.15 by Winlin
 
 ### S3: Bodentemperatur
 
@@ -424,13 +426,10 @@ Wird zwischen dem roten Kabel (VCC) und dem gelben Kabel (DATA) an die Buchsenle
 └────────────────┘               └───────────┴─── +3.3V
 </pre>
 
-#### Sketch für Funktionstest
-
 **Benötigte Bibliothek:**
 
-Library "OneWire by Jim Studt" ist erforderlich (muss in der Arduino-IDE per Libaray-Manager installiert werden).
-
-TODO
+* OneWire 2.3.9 by Paul Stoffregen
+* DallasTemperature 4.0.5 by Miles Burton
 
 ### S4: Bodenfeuchte
 
@@ -486,7 +485,7 @@ Darüber steht nichts im Datenblatt. Die Werte habe ich experimental ermittelt.
 * Komplett trocken (in der Luft): 2080 mV
 * Komplett feucht (im Wasser): 800 mV 
 
-#### Sketch für Funktionstest
+**Sketch für Funktionstest:**
 
 **Benötigte Bibliothek:**
 
@@ -605,7 +604,7 @@ So wird der Pegel auf HIGH (+3.3V) gezogen, wenn Trockenheit erkannt wird.
 └────────────────┘    
 </pre>
 
-#### Sketch für Funktionstest
+**Sketch für Funktionstest:**
 
 TODO
 
@@ -650,7 +649,7 @@ Dieser Sensor ist sehr genau und misst das Licht direkt in LUX.
 
 Da kein anderes I2C-Gerät die Adresse 0x23 verwenden, wird ADDR nicht benötigt.
 
-#### Sketch für Funktionstest
+**Sketch für Funktionstest:**
 
 TODO
 
@@ -685,7 +684,7 @@ GND ───[ R3 ]──┬──[ LDR ]──── +3.3V
                └───────────►─ GPIO36
 </pre>
 
-#### Sketch für Funktionstest
+**Sketch für Funktionstest:**
 
 ## 4. Aktoren
 
@@ -744,7 +743,7 @@ Aber dann kann ich nicht mehr zwei Helligkeitsstufen schalten.
 └────────────────┘
 </pre>
 
-#### Passt die Lampe zum Gehäuse?
+**Passt die Lampe zum Gehäuse?**
 
 **Ideale Lichtmenge (PPFD):**
 
@@ -850,7 +849,7 @@ Es liefert ein "Tachosignal" (typischerweise 2 Pulse pro Umdrehung). Man könnte
 └────────────────┘
 </pre>
 
-#### Montage des Lüfters 
+**Montage des Lüfters:**
 
 [Montageanleitung des PC-Lüfters](https://m.media-amazon.com/images/I/91Py5fJkHrL.pdf)
 
@@ -859,7 +858,7 @@ Die Luft muss also von unten nach oben zirkulieren.
 
 Der Lüfter wird die Luft nach außen pusten und muss daher oben angebracht werden.
 
-#### Reicht die Leistung des Lüfters aus?
+**Reicht die Leistung des Lüfters aus?**
 
 Wie schnell der gewählte Lüfter die gesamte Luft im Gewächshaus austauschen kann. 
 Ein guter Wert für ein kleines Gewächshaus liegt bei einer Luftaustauschrate von mindestens 1-mal pro Minute.
@@ -969,7 +968,7 @@ Kabeladern:
 └────────────────┘
 </pre>
 
-#### Sketch für Funktionstest
+**Sketch für Funktionstest:**
 
 TODO
 
@@ -989,7 +988,7 @@ GPIO5 ─▶───[ R2 ]─────▶├───── GND
             330 Ω    LED1
 </pre>
 
-#### Sketch für Funktionstest
+**Sketch für Funktionstest:**
 
 TODO
 
@@ -1038,11 +1037,11 @@ Auf der Amazon-Webseite ist die Versorgungsspannung falsch angegeben. Richtig is
 └────────────────┘
  </pre>
 
-#### Sketch für Funktionstest
+**Sketch für Funktionstest:**
 
 TODO
 
-#### Speicherkarte
+**Speicherkarte:**
 
 SanDisk Ultra 32 GB microSDHC, Class 10, U1
 
@@ -1079,7 +1078,7 @@ Der gesamte Vorgang (Auslesen von der Kamera + Schreiben auf die Karte) wird ver
 
 Ich werde das mal nachmessen.
  
-#### Sketch für Funktionstest   
+**Sketch für Funktionstest:**   
 
 ## 6. Stromversorgung
 
@@ -1139,9 +1138,9 @@ Die Ausgangsspannung muss auf **5 Volt** eingestellt werden!
 
 5.5x2.1 mm DC-Holstecker
 
-#### Benötigte Leistung / max. Stromaufnahme
+**Benötigte Leistung / max. Stromaufnahme:**
 
-**5V-Komponenten (über Spannungswandler):**
+5V-Komponenten (über Spannungswandler):
 
 * ESP32-DevKitC C: 0,2 – 0,3A (je nach WLAN-Last)
 * ArduCAM (SPI): ca. 0,1A (bei Kameraaufnahme)
@@ -1153,11 +1152,11 @@ Die Ausgangsspannung muss auf **5 Volt** eingestellt werden!
 * XKC-Y25-NPN: ca. 0,1 A (bei Aktivierung)
 * Ultraschall-Vernebler: ca. 1,0 A (Hauptlast auf 5V)
 
-**Summe worst case: ca. 1,6 A für 5V-Komponenten**
+=> Summe worst case: ca. 1,6 A für 5V-Komponenten
 
 Der Spannungswandler liefert bis zu 5A, also reichlich Reserve.
 
-**12V-Komponenten:**
+12V-Komponenten:
 
 * LED Grow Light (5m, 60W): ca. 60W → 5,0A (Hauptlast, Dauerbetrieb)
 * Heizmatte (12W):	12W → 1,0A (Dauerlast)
@@ -1165,9 +1164,9 @@ Der Spannungswandler liefert bis zu 5A, also reichlich Reserve.
 * Wasserpumpe Mini: max. 0,3A (Kurzzeitbetrieb)
 * Relais-Modul (8-Kanal, 6 im Gebrauch): ca. 0,3A (50mA pro Relais)	(nur wenn alle Relais gleichzeitig anziehen)
 
-**Summe worst case: ca. 6,7 A für 12V-Komponenten** 
+=> Summe worst case: ca. 6,7 A für 12V-Komponenten
 
-**Max. Gesamtlast am Netzteil: ca. 8,3 A**
+Max. Gesamtlast am Netzteil: **ca. 8,3 A**
 
 Das 12V-Netzteil liefert 10 A, also sind ca. 1,7 A Reserve. Das ist knapp, aber im grünen Bereich.
  
@@ -1733,7 +1732,8 @@ weil das OpenOCD nicht direkt mit dem FTDI-Treiber kommunizieren kann.
 
   1) [VCP-Treiber](https://ftdichip.com/drivers/vcp-drivers/) herunterladen und installieren
   ![VCP-Treiber](https://blog.berrybase.de/wp-content/uploads/2024/10/JTag-Debugger_VCP-Driver-1024x736.png.webp)
-  2) Mit dem [Zadig-Tool](https://zadig.akeo.ie/) für "Dual RS232-HS (Interface 0)" den Treiber "FIDIBUS (v2.12.36.20)" mit "WinUSB (v6.1.7600.16385)" ersetzen.
+  2) Mit dem [Zadig-Tool](https://zadig.akeo.ie/) für "Dual RS232-HS (Interface 0)" den Treiber "FIDIBUS (v2.12.36.20)" mit "WinUSB (v6.1.7600.16385)" ersetzen. 
+  Nachtrag: Der Upload läuft damit nicht zuverlässig. Hab nun "libusbK (v3.1.0.0)" installiert.
   ![Zadig](https://blog.berrybase.de/wp-content/uploads/2024/10/JTag-Debugger_Update-driver.png.webp)
   3 ) USB-Kabel aus und wieder einstecken.
 
@@ -1794,12 +1794,13 @@ platform = espressif32
 board = esp32dev
 framework = arduino
 
-; --- Debug & Upload Konfiguration ---
+; Debug- & Upload- Konfiguration
 debug_tool = esp-prog
-upload_protocol = esp-prog
+upload_protocol = esp-prog ; Upload über Inerface 0 (JTAG)
+; upload_protocol = esptool ; Upload über Inerface 1 (UART)
 
-; --- Serielle Monitor Konfiguration ---
-monitor_port = COM6 ; siehe Gerätemanager unter "Anschlüsse (COM & LPT)"
+; Serielle Monitor Konfiguration
+monitor_port = COM6 ; siehe Gerätemanager unter "Anschlüsse (COM & LPT)" oder PlatformIO unter PIO Home -> Devices
 monitor_speed = 115200
 
 ; Level 0=None, 1=Error, 2=Warn, 3=Info, 4=Debug, 5=Verbose
@@ -1819,6 +1820,56 @@ Quellen:
 [PlatformIO](https://docs.platformio.org/en/stable/plus/debug-tools/esp-prog.html),
 [BerryBase](https://blog.berrybase.de/esp32-debuggen-mit-espressif-esp-prog-platformio/),
 [Harald Kreuzer](https://www.haraldkreuzer.net/aktuelles/esp32-jtag-debugging-mit-platformio-und-nur-einer-usb-verbindung)
+
+**Troubleshooting:**
+
+OpenOCD testen:
+
+```bash
+& "C:\Users\frank\.platformio\packages\tool-openocd-esp32\bin\openocd.exe" -d2 -s "C:\Users\frank\.platformio\packages\tool-openocd-esp32\share\openocd\scripts" -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "adapter speed 1000"
+```
+
+Reset‑Check mit OpenOCD:
+
+```bash
+& "C:\Users\frank\.platformio\packages\tool-openocd-esp32\bin\openocd.exe" `
+  -d2 -s "C:\Users\frank\.platformio\packages\tool-openocd-esp32\share\openocd\scripts" `
+  -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg `
+  -c "adapter speed 1000" -c "init" -c "reset halt" -c "exit"
+```
+
+Flash-Kommando:
+
+```bash
+& "C:\Users\frank\.platformio\packages\tool-openocd-esp32\bin\openocd.exe" `
+  -d2 -s "C:\Users\frank\.platformio\packages\tool-openocd-esp32\share\openocd\scripts" `
+  -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg `
+  -c "adapter speed 1000" `
+  -c "init" `
+  -c "reset halt" `
+  -c "program_esp C:/Users/frank/Source/PlatformIO/biodom-mini/.pio/build/debug/firmware.bin 0x10000 verify" `
+  -c "reset run" `
+  -c "shutdown"
+```  
+
+Upload via PlatformIO-Befehl:  
+
+```bash
+pio run -e debug -t upload
+```
+
+ESP32 Chip-ID auslesen:
+
+```bash
+python -m esptool chip-id
+```
+
+Versionen einer Bibliothek auflisten:
+
+
+```bash
+pio lib show OneWire
+```
 
 ### Kabelgedöns
 

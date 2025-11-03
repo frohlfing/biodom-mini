@@ -1,0 +1,70 @@
+#pragma once 
+
+/**
+ * Zentrale Konfigurationsdatei für das Biodom Mini Projekt.
+ */
+
+// ------------------------------------------------------------
+// GPIO-Pins für Sensoren, Aktoren und Peripheriegeräte
+// ------------------------------------------------------------
+
+// Sensoren
+constexpr int PIN_AIR_SENSOR = 13;              // GPIO-Pin für den Luftsensor AM2302
+constexpr int PIN_SOIL_TEMPERATUR_SENSOR = 4;   // GPIO-Pin für den Bodentemperatursensor DS18B20
+constexpr int PIN_SOIL_MOISTURE_SENSOR = 34;    // GPIO-Pin für den kapazitiven Bodenfeuchtesensor
+constexpr int PIN_WATER_LEVEL_SENSOR = 35;      // GPIO-Pin für den Wasserstandsensor XKC-Y25-NPN
+
+// I2C-Geräte (Kamera, Display und Lichtsensor BH1750
+constexpr int PIN_I2C_SDA = 21;         // GPIO-Pin für I2C SDA (Data) Leitung
+constexpr int PIN_I2C_SCL = 22;         // GPIO-Pin für I2C SCL (Clock) Leitung
+
+// SPI-Geräte (Kamera und SD-Karte)
+constexpr int PIN_SPI_MOSI = 23;        // GPIO-Pin für SPI MOSI Leitung
+constexpr int PIN_SPI_MISO = 19;        // GPIO-Pin für SPI MISO Leitung
+constexpr int PIN_SPI_SCK = 18;         // GPIO-Pin für SPI Clock Leitung
+constexpr int PIN_SPI_SD_CS = 5;        // GPIO-Pin für SPI Chip Select der SD-Karte
+constexpr int PIN_SPI_CAMERA_CS = 15;   // GPIO-Pin für SPI Chip Select der Kamera
+
+// Aktoren
+constexpr int PIN_LAMP1_RELAY = 14;     // GPIO-Pin für das Relais der Pflanzenlampe 1
+constexpr int PIN_LAMP2_RELAY = 27;     // GPIO-Pin für das Relais der Pflanzenlampe 2
+constexpr int PIN_HEATER_RELAY = 26;    // GPIO-Pin für das Relais der Heizmatte
+constexpr int PIN_FAN_RELAY = 25;       // GPIO-Pin für das Relais des Lüfters
+constexpr int PIN_PUMP_RELAY = 33;      // GPIO-Pin für das Relais der Wasserpumpe
+constexpr int PIN_MISTER_RELAY = 32;    // GPIO-Pin für das Relais des Luftbefeuchters (Dunst)
+
+// Sonstige Peripheriegeräte
+constexpr int PIN_DEBUG_LED = 5;        // GPIO-Pin für die Debug-LED
+
+// ------------------------------------------------------------
+// Schwellwerte und Kalibrierung
+// ------------------------------------------------------------
+
+// Bodentemperatur
+constexpr float SOIL_TEMPERATUR_TARGET = 24.0;  // Zielwert für Bodentemperatur
+
+// Bodenfeuchte
+constexpr int SOIL_MOISTURE_ADC_DRY = 2500; // ADC-Wert, wenn der Sensor in der Luft hängt (komplett trocken)
+constexpr int SOIL_MOISTURE_ADC_WET = 1100; // ADC-Wert, wenn der Sensor in Wasser getaucht ist (komplett nass)
+constexpr int SOIL_MOISTURE_TARGET = 50;    // Zielwert für Bodenfeuchte in Prozent
+
+// Raumtemperatur
+constexpr float AIR_TEMPERATUR_THRESHOLD_HIGH = 28.0; // Oberhalb dieser Temperatur (°C) wird der Lüfter eingeschaltet
+
+// Luftfeuchtigkeit
+constexpr float HUMIDITY_TARGET = 70.0; // Zielwert für Luftfeuchtigkeit (%), steuert Befeuchter
+
+// Wasserstand
+constexpr bool WATER_LEVEL_TRIGGERED = false;    // LOW/false = Wasser erkannt
+
+// ------------------------------------------------------------
+// Steuerungsparameter (Zeitangaben und weitere Regelungsparameter)
+// ------------------------------------------------------------
+
+// Lampen
+constexpr int LIGHT_ON_HOUR = 6;    // Uhrzeit (Stunde, 0-23): Ab wann soll die Lampe angehen?
+constexpr int LIGHT_OFF_HOUR = 20;  // Uhrzeit (Stunde, 0-23): Ab wann soll die Lampe ausgehen?
+
+// Bewässerung
+constexpr unsigned long WATERING_DURATION_MS = 5000;        // Dauer der Bewässerung in Millisekunden (Empfehlung: 5 Sekunden)
+constexpr unsigned long FAN_COOLDOWN_DURATION_MS = 300000;  // Laufzeit des Lüfters in Millisekunden (Empfehlung: 5 Minuten)
