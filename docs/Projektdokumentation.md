@@ -196,7 +196,7 @@ Das Modell mit UCD-C macht nur Probleme. Keins meiner UCB-C-Kabel hat funktionie
        Lampe-1 Relais IN2 ◄── GPIO14 ──┤ G14        G16 ├── GPIO16 SPI_CS   ──► SD-Karte
                         (frei, Boot) ──┤ G12         G4 ├── GPIO4           ◄─► Bodentemperatur (One-Wire)
                                  GND ──┤ GND         G0 ├── (frei, Boot)
-          Luft (One-Wire) ◄─► GPIO13 ──┤ G13         G2 ├── (frei, Boot)
+  Luft (One-Wire-ähnlich) ◄─► GPIO13 ──┤ G13         G2 ├── (frei, Boot)
                                      ──┤ SD2        G15 ├── (frei, Boot)
                                      ──┤ SD3        SD1 ├──
                                      ──┤ CMD        SD0 ├──
@@ -204,9 +204,6 @@ Das Modell mit UCD-C macht nur Probleme. Keins meiner UCB-C-Kabel hat funktionie
                                        └────────────────┘
 </pre>
 
-**Sketch für Funktionstest:**
-
-TODO
 
 ### Relais-Modul
 
@@ -263,10 +260,6 @@ GPIO32 ──┤ IN7       Com5 ├── +12V        GND ─O──(schwarz)─
          │            NO8 ├──
          └────────────────┘
 </pre>
-
-**Sketch für Funktionstest:**
-
-TODO
 
 ## 3. Sensoren
 
@@ -339,13 +332,12 @@ die ca. 16 GPIO-Pins belegt (also fast alle verfügbaren). Die ArduCAM belegt da
 └────────────────┘        
  </pre>
 
-**Sketch für Funktionstest:**
-
 **Benötigte Bibliothek:**
 
-Header-Datei C:\Users\frank\OneDrive\Dokumente\Arduino\libraries\Arducam_mini\src\memorysaver.h modifiziert.
+[Arducam_mini 1.0.1 by Arducam](https://github.com/ArduCAM/Arducam_mini)
 
-TODO
+Leider ist die Bibliothek so konzipiert, dass die Datei .\Arduino\libraries\Arducam_mini\src\memorysaver.h für die jeweilige Hardware angepasst werden muss. Für meine Kamera muss diese Definition einkommentiert werden:
+	#define OV2640_MINI_2MP_PLUS
 
 ### S2: Luft (Raumtemperatur und Luftfeuchtigkeit)
 
@@ -681,7 +673,9 @@ GND ───[ R3 ]──┬──[ LDR ]──── +3.3V
                └───────────►─ GPIO36
 </pre>
 
-**Sketch für Funktionstest:**
+**Benötigte Bibliothek:**
+
+(keine Abhängigkeit)
 
 ## 4. Aktoren
 
@@ -965,9 +959,9 @@ Kabeladern:
 └────────────────┘
 </pre>
 
-**Sketch für Funktionstest:**
+**Benötigte Bibliothek:**
 
-TODO
+U8g2 2.35.30 by oliver
 
 ### Z2: Leuchtdiode
 
@@ -984,10 +978,6 @@ Das längere Beinchen ist der Pluspol.
 GPIO5 ─▶───[ R2 ]─────▶├───── GND
             330 Ω    LED1
 </pre>
-
-**Sketch für Funktionstest:**
-
-TODO
 
 ### M1: SD-Kartenleser
 
@@ -1034,10 +1024,6 @@ Auf der Amazon-Webseite ist die Versorgungsspannung falsch angegeben. Richtig is
 └────────────────┘
  </pre>
 
-**Sketch für Funktionstest:**
-
-TODO
-
 **Speicherkarte:**
 
 SanDisk Ultra 32 GB microSDHC, Class 10, U1
@@ -1072,10 +1058,6 @@ Theoretische Schreibgeschwindigkeit pro Bild:
 
 In der Realität ist der Prozess durch den ESP32 und die SPI-Kommunikation limitiert. 
 Der gesamte Vorgang (Auslesen von der Kamera + Schreiben auf die Karte) wird vermutlich eher bei 1 bis 1,5 Sekunden liegen.
-
-Ich werde das mal nachmessen.
- 
-**Sketch für Funktionstest:**   
 
 ## 6. Stromversorgung
 
