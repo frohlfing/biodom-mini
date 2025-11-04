@@ -1,8 +1,13 @@
 /**
  * @file MicroSDCard.cpp
- * Implementierung der MicroSDCard-Klasse (SdFat-only).
+ * @brief Implementierung der MicroSDCard-Klasse (SdFat-only)
  *
- * Double-buffered streamWrite: Puffergröße konfigurierbar in 512B-Sektoren.
+ * Hinweise:
+ * - Diese Implementierung verwendet SdFat (SdFs auf ESP32) und erwartet, dass
+ *   die Bibliothek korrekt im Projekt verfügbar ist (greiman/SdFat).
+ * - FsFile wird als Dateityp genutzt (SdFs auf ESP32 liefert FsFile).
+ * - streamWriteStart/Chunk/End implementieren ein double-buffered Schreiben
+ *   mit Puffergröße = bufferSectors * 512 bytes.
  */
 
 #include "MicroSDCard.h"
@@ -17,7 +22,7 @@ MicroSDCard::MicroSDCard(uint8_t csPin, size_t bufferSectors)
 bool MicroSDCard::begin(uint32_t spiClockHz) {
   _spiClockHz = spiClockHz;
   SPI.begin();
-  // SdFat: initialisieren mit CS und SCK-MHz. SD_SCK_MHZ erwartet MHz-Wert.
+  // SdFat expects SCK in MHz macro
   if (!_sd.begin(_cs, SD_SCK_MHZ(_spiClockHz / 1000000U))) {
     return false;
   }
@@ -63,6 +68,12 @@ String MicroSDCard::tmpPath(const char* path) const {
   return p + ".tmp";
 }
 
+/* atomicRename(tmp, final)
+ * - Versucht zuerst _sd.rename(tmp, final) (atomar)
+ * - Falls nicht möglich: Fallback-Kopie via FsFile (open/read/write)
+ * - Entfernt tmp nach erfolgreichem Kopieren
+ * - Entfernt tmp (und ggf. partial final) bei Fehler
+ */
 bool MicroSDCard::atomicRename(const char* tmpPath, const char* finalPath) {
   if (_sd.exists(finalPath)) {
     if (!_sd.remove(finalPath)) {
@@ -72,16 +83,24 @@ bool MicroSDCard::atomicRename(const char* tmpPath, const char* finalPath) {
   }
   if (_sd.rename(tmpPath, finalPath)) return true;
 
-  // Fallback: manuelles Kopieren
-  File32 t = _sd.open(tmpPath, O_READ);
+  // Fallback: manuelles Kopieren mit FsFile
+  FsFile t = _sd.open(tmpPath, O_READ);
   if (!t) return false;
-  File32 f = _sd.open(finalPath, O_WRITE | O_TRUNC | O_CREAT);
+  FsFile f = _sd.open(finalPath, O_WRITE | O_TRUNC | O_CREAT);
   if (!f) { t.close(); return false; }
+
   const size_t bufSize = 512;
   uint8_t buf[bufSize];
   while (t.available()) {
-    size_t r = t.read(buf, bufSize);
-    f.write(buf, r);
+    int r = t.read(buf, bufSize);
+    if (r <= 0) break;
+    int w = f.write(buf, r);
+    if (w != r) {
+      t.close(); f.close();
+      _sd.remove(tmpPath);
+      _sd.remove(finalPath);
+      return false;
+    }
   }
   t.close();
   f.close();
@@ -89,62 +108,84 @@ bool MicroSDCard::atomicRename(const char* tmpPath, const char* finalPath) {
   return true;
 }
 
+/* readText(path, outText)
+ * - Liest eine Textdatei in Blöcken und hängt sie an outText an.
+ * - Benutzt FsFile (SdFs).
+
+ * Achtung: String kann Heap-Fragmentierung verursachen bei großen Dateien.
+ */
 bool MicroSDCard::readText(const char* path, String &outText) {
   outText = String();
   if (!_sd.exists(path)) return false;
-  File32 f = _sd.open(path, O_READ);
+  FsFile f = _sd.open(path, O_READ);
   if (!f) return false;
   const size_t bufSize = 256;
   char buf[bufSize];
   while (f.available()) {
-    size_t r = f.read(buf, bufSize);
+    int r = f.read(buf, bufSize);
+    if (r <= 0) break;
     outText += String(buf).substring(0, r);
   }
   f.close();
   return true;
 }
 
+/* saveText(path,text,append)
+ * - Atomare Speicherung: schreibt in tmp, benennt tmp->final um
+ * - Wenn append: kopiere zuerst existierende Datei in tmp, dann füge text an
+ */
 bool MicroSDCard::saveText(const char* path, const char* text, bool append) {
   String tmp = tmpPath(path);
   if (append && _sd.exists(path)) {
-    File32 orig = _sd.open(path, O_READ);
+    FsFile orig = _sd.open(path, O_READ);
     if (!orig) return false;
-    File32 t = _sd.open(tmp.c_str(), O_WRITE | O_TRUNC | O_CREAT);
+    FsFile t = _sd.open(tmp.c_str(), O_WRITE | O_TRUNC | O_CREAT);
     if (!t) { orig.close(); return false; }
     const size_t bufSize = 512;
     uint8_t buf[bufSize];
     while (orig.available()) {
-      size_t r = orig.read(buf, bufSize);
-      t.write(buf, r);
+      int r = orig.read(buf, bufSize);
+      if (r <= 0) break;
+      int w = t.write(buf, r);
+      if (w != r) { orig.close(); t.close(); _sd.remove(tmp.c_str()); return false; }
     }
     orig.close();
     t.close();
   }
-  File32 f = _sd.open(tmp.c_str(), O_WRITE | O_APPEND | O_CREAT);
+  FsFile f = _sd.open(tmp.c_str(), O_WRITE | O_APPEND | O_CREAT);
   if (!f) return false;
-  size_t written = f.write((const uint8_t*)text, strlen(text));
+  size_t textLen = strlen(text);
+  size_t written = f.write((const uint8_t*)text, textLen);
   f.close();
-  if (written != strlen(text)) { _sd.remove(tmp.c_str()); return false; }
+  if (written != textLen) { _sd.remove(tmp.c_str()); return false; }
   return atomicRename(tmp.c_str(), path);
 }
 
+/* saveBinary(path,data,len)
+ * - Atomare Speicherung wie saveText
+ */
 bool MicroSDCard::saveBinary(const char* path, const uint8_t* data, size_t len, bool /*append*/) {
   if (!data || len == 0) return false;
   String tmp = tmpPath(path);
-  File32 f = _sd.open(tmp.c_str(), O_WRITE | O_TRUNC | O_CREAT);
+  FsFile f = _sd.open(tmp.c_str(), O_WRITE | O_TRUNC | O_CREAT);
   if (!f) return false;
   const size_t chunk = 512;
   size_t written = 0;
   while (written < len) {
     size_t w = (len - written) > chunk ? chunk : (len - written);
-    size_t w2 = f.write(data + written, w);
-    if (w2 != w) { f.close(); _sd.remove(tmp.c_str()); return false; }
+    int w2 = f.write(data + written, w);
+    if (w2 != (int)w) { f.close(); _sd.remove(tmp.c_str()); return false; }
     written += w2;
   }
   f.close();
   return atomicRename(tmp.c_str(), path);
 }
 
+/* streamWriteStart/Chunk/End
+ * - Double-buffered streaming: füllt _fillBuf; wenn voll, tauscht und schreibt _writeBuf
+ * - Puffergröße = _bufferSectors * 512
+ * - Bei Fehler: entfernt tmp
+ */
 bool MicroSDCard::streamWriteStart(const char* path, bool /*append*/) {
   if (_streamActive) streamWriteEnd();
   _tmpPathForWrite = tmpPath(path);
@@ -169,13 +210,13 @@ bool MicroSDCard::streamWriteChunk(const uint8_t* data, size_t len) {
     bytesLeft -= toCopy;
 
     if (_fillPos == bufBytes) {
-      // Swap buffers
+      // buffer voll -> swap und schreiben
       uint8_t* toWrite = _fillBuf;
       _fillBuf = (_fillBuf == _bufA) ? _bufB : _bufA;
       _writeBuf = toWrite;
       _fillPos = 0;
-      size_t wrote = _streamFile.write(_writeBuf, bufBytes);
-      if (wrote != bufBytes) {
+      int wrote = _streamFile.write(_writeBuf, bufBytes);
+      if (wrote != (int)bufBytes) {
         _streamFile.close();
         _sd.remove(_tmpPathForWrite.c_str());
         _streamActive = false;
@@ -190,8 +231,8 @@ bool MicroSDCard::streamWriteEnd() {
   if (!_streamActive) return false;
   // Restdaten schreiben
   if (_fillPos > 0) {
-    size_t wrote = _streamFile.write(_fillBuf, _fillPos);
-    if (wrote != _fillPos) {
+    int wrote = _streamFile.write(_fillBuf, _fillPos);
+    if (wrote != (int)_fillPos) {
       _streamFile.close();
       _sd.remove(_tmpPathForWrite.c_str());
       _streamActive = false;
@@ -208,14 +249,18 @@ bool MicroSDCard::streamWriteEnd() {
   return false;
 }
 
+/* readBinary(path,cb)
+ * - Liest eine Datei in 512-Bytes Blöcken und ruft Callback auf.
+ */
 bool MicroSDCard::readBinary(const char* path, bool (*cb)(const uint8_t* buf, size_t len, void* user), void* user) {
   if (!_sd.exists(path)) return false;
-  File32 f = _sd.open(path, O_READ);
+  FsFile f = _sd.open(path, O_READ);
   if (!f) return false;
   const size_t bufSize = 512;
   static uint8_t buf[bufSize];
   while (f.available()) {
-    size_t r = f.read(buf, bufSize);
+    int r = f.read(buf, bufSize);
+    if (r <= 0) break;
     if (cb) {
       bool cont = cb(buf, r, user);
       if (!cont) { f.close(); return true; }
@@ -225,10 +270,13 @@ bool MicroSDCard::readBinary(const char* path, bool (*cb)(const uint8_t* buf, si
   return true;
 }
 
+/* listDir(path,cb)
+ * - iteriert Verzeichnis-Einträge und ruft cb auf
+ */
 void MicroSDCard::listDir(const char* path, void(*cb)(const char* name, bool isDir)) {
-  File32 dir = _sd.open(path, O_READ);
+  FsFile dir = _sd.open(path, O_READ);
   if (!dir) return;
-  File32 entry;
+  FsFile entry;
   while ((entry = dir.openNextFile())) {
     if (cb) cb(entry.name(), entry.isDirectory());
     entry.close();
@@ -236,7 +284,10 @@ void MicroSDCard::listDir(const char* path, void(*cb)(const char* name, bool isD
   dir.close();
 }
 
+/* isCardPresent()
+ * - Leichter Präsenztest: versuche sd.begin mit CS
+ * - Beachte: das kann nebenbei initialisieren; call begin() bevorzugt
+ */
 bool MicroSDCard::isCardPresent() {
-  // Leichtgewichtiger Präsenzcheck: versuche Root zu öffnen
   return _sd.begin(_cs);
 }

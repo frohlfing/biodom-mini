@@ -1,9 +1,9 @@
-#include "MicroSDCard.h"
+#include "MicroSDCardV1.h"
 
-MicroSDCard::MicroSDCard(uint8_t csPin)
+MicroSDCardV1::MicroSDCardV1(uint8_t csPin)
   : _cs(csPin), _streamFile(), _tmpPathForWrite(), _spiClockHz(4000000UL) {}
 
-bool MicroSDCard::begin(uint32_t spiClockHz) {
+bool MicroSDCardV1::begin(uint32_t spiClockHz) {
   _spiClockHz = spiClockHz;
   SPI.begin();
   // SD.begin nimmt CS-Pin und optional SPI-Objekt
@@ -13,16 +13,16 @@ bool MicroSDCard::begin(uint32_t spiClockHz) {
   return true;
 }
 
-bool MicroSDCard::exists(const char* path) {
+bool MicroSDCardV1::exists(const char* path) {
   return SD.exists(path);
 }
 
-bool MicroSDCard::remove(const char* path) {
+bool MicroSDCardV1::remove(const char* path) {
   if (!SD.exists(path)) return false;
   return SD.remove(path);
 }
 
-bool MicroSDCard::readText(const char* path, String &outText) {
+bool MicroSDCardV1::readText(const char* path, String &outText) {
   outText = String();
   if (!SD.exists(path)) return false;
   File f = SD.open(path, FILE_READ);
@@ -38,7 +38,7 @@ bool MicroSDCard::readText(const char* path, String &outText) {
   return true;
 }
 
-bool MicroSDCard::saveText(const char* path, const char* text, bool append) {
+bool MicroSDCardV1::saveText(const char* path, const char* text, bool append) {
   // Atomic write: schreibe tmp und rename
   String tmp = tmpPath(path);
   File f;
@@ -80,7 +80,7 @@ bool MicroSDCard::saveText(const char* path, const char* text, bool append) {
   return atomicRename(tmp.c_str(), path);
 }
 
-bool MicroSDCard::saveBinary(const char* path, const uint8_t* data, size_t len, bool append) {
+bool MicroSDCardV1::saveBinary(const char* path, const uint8_t* data, size_t len, bool append) {
   if (!data || len == 0) return false;
   String tmp = tmpPath(path);
   File f = SD.open(tmp.c_str(), FILE_WRITE);
@@ -97,7 +97,7 @@ bool MicroSDCard::saveBinary(const char* path, const uint8_t* data, size_t len, 
   return atomicRename(tmp.c_str(), path);
 }
 
-bool MicroSDCard::streamWriteStart(const char* path, bool append) {
+bool MicroSDCardV1::streamWriteStart(const char* path, bool append) {
   if (_streamFile) {
     _streamFile.close();
   }
@@ -107,13 +107,13 @@ bool MicroSDCard::streamWriteStart(const char* path, bool append) {
   return bool(_streamFile);
 }
 
-bool MicroSDCard::streamWriteChunk(const uint8_t* data, size_t len) {
+bool MicroSDCardV1::streamWriteChunk(const uint8_t* data, size_t len) {
   if (!_streamFile) return false;
   size_t w = _streamFile.write(data, len);
   return (w == len);
 }
 
-bool MicroSDCard::streamWriteEnd() {
+bool MicroSDCardV1::streamWriteEnd() {
   if (!_streamFile) return false;
   _streamFile.close();
   String finalPath = _tmpPathForWrite;
@@ -125,7 +125,7 @@ bool MicroSDCard::streamWriteEnd() {
   return false;
 }
 
-bool MicroSDCard::readBinary(const char* path, bool (*cb)(const uint8_t* buf, size_t len, void* user), void* user) {
+bool MicroSDCardV1::readBinary(const char* path, bool (*cb)(const uint8_t* buf, size_t len, void* user), void* user) {
   if (!SD.exists(path)) return false;
   File f = SD.open(path, FILE_READ);
   if (!f) return false;
@@ -145,7 +145,7 @@ bool MicroSDCard::readBinary(const char* path, bool (*cb)(const uint8_t* buf, si
   return true;
 }
 
-void MicroSDCard::listDir(const char* path, void(*cb)(const char* name, bool isDir)) {
+void MicroSDCardV1::listDir(const char* path, void(*cb)(const char* name, bool isDir)) {
   File dir = SD.open(path);
   if (!dir) return;
   File entry;
@@ -156,19 +156,19 @@ void MicroSDCard::listDir(const char* path, void(*cb)(const char* name, bool isD
   dir.close();
 }
 
-bool MicroSDCard::isCardPresent() {
+bool MicroSDCardV1::isCardPresent() {
   // Einfacher Test: versuche Root zu öffnen.
   return SD.begin();
 }
 
 /** Hilfsfunktionen */
 
-String MicroSDCard::tmpPath(const char* path) const {
+String MicroSDCardV1::tmpPath(const char* path) const {
   String p(path);
   return p + ".tmp";
 }
 
-bool MicroSDCard::atomicRename(const char* tmpPath, const char* finalPath) {
+bool MicroSDCardV1::atomicRename(const char* tmpPath, const char* finalPath) {
   // Entferne bestehende Ziel-Datei, falls vorhanden
   if (SD.exists(finalPath)) {
     if (!SD.remove(finalPath)) {

@@ -1,6 +1,14 @@
 /**
  * @file MicroSDCard.h
- * @brief Lokale Kapselung für den MicroSD-Kartenleser.
+ * @brief SdFat-basierter MicroSD-Wrapper (kompatibel mit SdFs auf ESP32)
+ *
+ * Diese Klasse kapselt:
+ *  - atomare Dateioperationen (tmp -> rename mit Fallback-Kopie)
+ *  - double-buffered streaming writer (konfigurierbar in 512B-Sektoren)
+ *  - simple utilities (exists, remove, listDir, readBinary)
+ *
+ * Hinweis: Implementierung verwendet SdFat (greiman/SdFat). Auf ESP32 repräsentiert
+ *       SdFs-Dateioperationen den Typ FsFile.
  */
 
 #pragma once
@@ -8,124 +16,144 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <SdFat.h>
+#include <FS.h>    // FsFile für SdFs auf ESP32
 
 /**
- * @brief Klasse für den MicroSD-Kartenleser.
+ * @class MicroSDCard
+ * @brief Lokale Kapselung für den MicroSD-Kartenleser mit SdFat
+ *
+ * Designentscheidungen:
+ *  - atomare Speicherung über tmp-Datei + rename; falls rename nicht verfügbar: Fallback
+ *    auf manuelle Kopie (öffnen/lesen/schreiben).
+ *  - streamWriteStart/Chunk/End für große Datenströme (Double-Buffer).
  */
 class MicroSDCard {
 public:
   /**
-   * Konstruktor.
-   * @param csPin SPI Chip Select Pin für das SD-Modul.
-   * @param bufferSectors Anzahl Sektoren (512 B) pro internen Puffer (default: 1 => 512 B).
+   * @brief Konstruktor
+   * @param csPin SPI-CS Pin für das SD-Modul
+   * @param bufferSectors Anzahl 512-Byte Sektoren pro internem Puffer (Default 1 => 512 B)
+   *
+   * Konstruktor initialisiert interne Zeiger, allokiert aber keine Buffers.
+   * Ruf begin() auf, um SPI/SdFat zu initialisieren und Buffers zu erstellen.
    */
   explicit MicroSDCard(uint8_t csPin, size_t bufferSectors = 1);
 
   /**
-   * Initialisiert SPI und SdFat.
-   * @param spiClockHz SPI SCLK in Hz (z. B. 4000000UL). Bei langen Kabeln langsamer wählen.
-   * @return true bei erfolgreicher Initialisierung, false ansonsten.
+   * @brief Initialisiert SPI und SdFat.
+   * @param spiClockHz SPI-Takt in Hz (z.B. 4000000UL). SdFat erwartet SCK in MHz via SD_SCK_MHZ.
+   * @return true bei Erfolg, false bei Initialisierungsfehler (z. B. keine Karte)
+   *
+   * On success this function also allocates the internal double buffers via allocateBuffers().
    */
   bool begin(uint32_t spiClockHz = 4000000UL);
 
   /**
-   * Prüft, ob eine Datei existiert.
-   * @param path Pfad, z. B. "/log.txt"
-   * @return true wenn vorhanden, false sonst.
+   * @brief Setzt SPI-Takt (nur Konfigurationswert; begin muss erneut aufgerufen werden, damit SdFat ihn nutzt).
+   * @param hz SCLK in Hz
+   */
+  void setSpiClock(uint32_t hz);
+
+  /**
+   * @brief Prüft, ob eine Datei oder ein Pfad auf der Karte existiert.
+   * @param path Pfad zur Datei
+   * @return true wenn vorhanden, false sonst
    */
   bool exists(const char* path);
 
   /**
-   * Löscht eine Datei.
-   * @param path Pfad der zu löschenden Datei.
-   * @return true bei Erfolg, false bei Fehler oder nicht vorhanden.
+   * @brief Löscht eine Datei, falls vorhanden.
+   * @param path Pfad zur Datei
+   * @return true bei Erfolg, false bei Fehler oder wenn Datei nicht existiert
    */
   bool remove(const char* path);
 
   /**
-   * Liest eine Textdatei vollständig und schreibt den Inhalt in outText.
-   * @param path Pfad der Datei.
-   * @param outText Referenz, in die der Text geschrieben wird.
-   * @return true bei Erfolg, false bei Fehler oder nicht vorhanden.
+   * @brief Liest eine Textdatei vollständig in einen Arduino String.
+   * @param path Pfad zur Datei
+   * @param outText Referenz auf String, der mit Inhalt gefüllt wird
+   * @return true bei Erfolg, false bei Fehler (z. B. Datei nicht vorhanden)
+   *
+   * Achtung: große Dateien können Heap-fragmentierung verursachen; für große Binaries
+   *         besser readBinary + Callback verwenden.
    */
   bool readText(const char* path, String &outText);
 
   /**
-   * Speichert Text atomar (tmp -> rename). Bei append==true wird der Text angehängt.
-   * @param path Zielpfad.
-   * @param text Null-terminierter C-String mit Inhalt.
-   * @param append true: anhängen, false: überschreiben.
-   * @return true bei Erfolg, false bei Fehler.
+   * @brief Speichert Text atomar auf der Karte (tmp -> rename).
+   * @param path Zielpfad
+   * @param text Null-terminierter C-String mit Inhalt
+   * @param append wenn true, wird existierende Datei zuerst in tmp kopiert und text angehängt
+   * @return true bei Erfolg, false bei Fehlern (I/O, Memory)
    */
   bool saveText(const char* path, const char* text, bool append = true);
 
   /**
-   * Schreibt ein Binary-Blob atomar (tmp -> rename).
-   * @param path Zielpfad.
-   * @param data Pointer auf die Daten.
-   * @param len Länge in Bytes.
-   * @param append Nicht verwendet in dieser Implementierung (für zukünftige Erweiterung reserviert).
-   * @return true bei Erfolg, false bei Fehler.
+   * @brief Speichert ein Binary-Blob atomar (tmp -> rename).
+   * @param path Zielpfad
+   * @param data Pointer auf Daten
+   * @param len Länge in Bytes
+   * @param append reserviert (derzeit ignoriert)
+   * @return true bei Erfolg, false bei Fehlern
    */
   bool saveBinary(const char* path, const uint8_t* data, size_t len, bool append = false);
 
   /**
-   * Startet einen Stream-Write in eine temporäre Datei. Reihenfolge:
-   * streamWriteStart(path) -> streamWriteChunk(...) -> streamWriteEnd()
-   * Intern: double-buffered auf Sektor-Ebene.
-   * @param path Zielpfad (wird intern als path.tmp angelegt).
-   * @param append reserved (derzeit nicht unterstützt).
-   * @return true bei Erfolg (Stream geöffnet), false sonst.
+   * @brief Startet einen stream-basierten Schreibvorgang in eine temporäre Datei.
+   * @param path Zielpfad (intern path + ".tmp")
+   * @param append reserviert (derzeit nicht unterstützt)
+   * @return true wenn tmp-Datei geöffnet wurde, false sonst
+   *
+   * Ablauf: streamWriteStart -> streamWriteChunk* -> streamWriteEnd
    */
   bool streamWriteStart(const char* path, bool append = false);
 
   /**
-   * Schreibt ein Chunk in den Stream. Kann mehrfach aufgerufen werden.
-   * @param data Puffer mit Daten.
-   * @param len Länge der Daten in Bytes.
-   * @return true bei Erfolg, false bei Schreibfehler oder wenn Stream nicht aktiv ist.
+   * @brief Schreibt ein Chunk in den laufenden Stream. Puffer werden intern accumuliert.
+   * @param data Buffer mit Daten
+   * @param len Länge in Bytes
+   * @return true bei Erfolg, false falls Stream nicht aktiv oder Schreibfehler
+   *
+   * Intern wird ein fill-buffer gefüllt; wenn dieser voll ist, wird er asynchron ersetzt
+   * und das volle Buffer synchron auf Kartendatei geschrieben.
    */
   bool streamWriteChunk(const uint8_t* data, size_t len);
 
   /**
-   * Schließt den Stream, schreibt Reste und benennt tmp -> final (atomar).
-   * @return true bei Erfolg, false bei Fehler.
+   * @brief Schließt den Stream, schreibt Restdaten und benennt tmp -> final (atomar).
+   * @return true bei Erfolg, false bei Fehler (z. B. Schreibfehler oder Rename-Fehler)
    */
   bool streamWriteEnd();
 
   /**
-   * Liest eine Binärdatei in Chunks und ruft cb(buf,len,user) auf.
-   * Wenn cb false zurückgibt, wird das Lesen vorzeitig beendet.
-   * @param path Pfad der Datei.
-   * @param cb Callback, der Daten verarbeitet.
-   * @param user Optionaler User-Pointer, wird an cb übergeben.
-   * @return true bei Erfolg, false bei Fehler.
+   * @brief Liest eine Binärdatei chunked und ruft cb(buf,len,user) auf.
+   * @param path Pfad zur Datei
+   * @param cb Callback, das den Buffer verarbeitet; Rückgabe false bricht das Lesen ab.
+   * @param user Optionaler user pointer, wird an cb weitergereicht
+   * @return true bei Erfolg (oder bei vorzeitigem Abbruch durch cb), false bei Fehler
    */
   bool readBinary(const char* path, bool (*cb)(const uint8_t* buf, size_t len, void* user), void* user = nullptr);
 
   /**
-   * Listet ein Verzeichnis und ruft cb(name,isDir) pro Eintrag auf.
-   * @param path Verzeichnis-Pfad, z. B. "/".
-   * @param cb Callback pro Eintrag.
+   * @brief Listet Einträge eines Verzeichnisses und ruft cb(name,isDir) für jeden Eintrag auf.
+   * @param path Verzeichnis (z. B. "/")
+   * @param cb Callback pro Eintrag (Name, isDirectory)
    */
   void listDir(const char* path, void(*cb)(const char* name, bool isDir));
 
   /**
-   * Führt einen einfachen Präsenztest für die Karte aus.
-   * @return true wenn Karte erreichbar scheint, false sonst.
+   * @brief Leichter Präsenztest der Karte (ruft intern _sd.begin mit CS).
+   * @return true wenn Karte erreichbar scheint, false sonst
+   *
+   * Hinweis: begin() ist vollständiger und allokiert Buffers; isCardPresent ist ein
+   * schneller health-check.
    */
   bool isCardPresent();
 
-  /**
-   * Setzt SPI-Takt (falls du nach begin runtime anpassen willst).
-   * @param hz SCLK-Hz
-   */
-  void setSpiClock(uint32_t hz);
-
 private:
-  SdFat _sd;
-  File32 _streamFile;
-  uint8_t _cs;
+  SdFat _sd;           ///< SdFat-Instanz
+  FsFile _streamFile;  ///< offenes Stream-File (SdFs -> FsFile auf ESP32)
+  uint8_t _cs;         ///< CS-Pin
   uint32_t _spiClockHz;
 
   // Double-buffer intern
@@ -138,15 +166,35 @@ private:
   bool _streamActive;
   String _tmpPathForWrite;
 
-  /** Helfer: erstellt tmp-Pfad (append ".tmp"). */
+  /**
+   * @brief Erzeugt temporären Pfad: original + ".tmp"
+   * @param path Originalpfad
+   * @return String mit tmp-Pfad
+   */
   String tmpPath(const char* path) const;
 
-  /** Helfer: atomische Umbenennung tmp -> final (mit Fallback auf Kopie). */
+  /**
+   * @brief Atomisches Umbenennen tmp -> final, mit Fallback auf manuelles Kopieren.
+   * @param tmpPath Pfad der temporären Datei
+   * @param finalPath gewünschter Zielpfad
+   * @return true bei Erfolg, false bei Fehlern
+   *
+   * Ablauf:
+   *  - wenn final existiert: entferne final
+   *  - versuche _sd.rename(tmp, final)
+   *  - falls rename fehlschlägt: Öffne tmp/final und kopiere Blockweise
+   *  - entferne tmp nach Erfolg; bei Fehlern versuche aufräumen
+   */
   bool atomicRename(const char* tmpPath, const char* finalPath);
 
-  /** Allokiert Double-Buffers (bufferSectors * 512 B). */
+  /**
+   * @brief Allokiert die beiden internen Buffers (_bufA/_bufB) in Größe bufferSectors * 512.
+   * @return true bei Erfolg, false bei OOM oder bufferSectors==0
+   */
   bool allocateBuffers();
 
-  /** Gibt interne Buffers frei. */
+  /**
+   * @brief Gibt alle internen Buffers frei und setzt State zurück.
+   */
   void freeBuffers();
 };

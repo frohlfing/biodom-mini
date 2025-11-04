@@ -1,6 +1,6 @@
 # <img src="https://www.arduino.cc/wiki/static/arduino-app-76bd27c4ce7246825aceb8efe2871f7a.svg" alt="Beschreibung" width="28" height="28"> Arduino Sketches 
 
-In diesem Verzeichnis liegen Sketches für die [Arduino IDE](https://www.arduino.cc/en/software/), die ich für den ersten Funktionstest der verwendeten Bauteile verwendet habe.
+In diesem Verzeichnis liegen Sketches für die [Arduino IDE](https://www.arduino.cc/en/software/), die ich für den ersten Funktionstest der Bauteile verwendet habe.
 
 ## 📦 Installation
 

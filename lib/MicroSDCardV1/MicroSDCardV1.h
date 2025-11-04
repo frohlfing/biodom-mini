@@ -1,5 +1,5 @@
 /**
- * @file MicroSDCard.h
+ * @file MicroSDCardV1.h
  * @brief Lokale Kapselung für den MicroSD-Kartenleser.
  */
 
@@ -11,13 +11,13 @@
 /**
  * @brief Klasse für den MicroSD-Kartenleser.
  */
-class MicroSDCard {
+class MicroSDCardV1 {
 public:
   /**
    * Konstruktor
    * @param csPin SPI Chip Select Pin für das SD-Modul
    */
-  explicit MicroSDCard(uint8_t csPin);
+  explicit MicroSDCardV1(uint8_t csPin);
 
   /**
    * Initialisiert SPI und SdFat.

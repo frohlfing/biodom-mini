@@ -10,6 +10,6 @@ Die Unit-Tests können über das Labor-Icon der Aktivitätsleiste oder über die
 pio test -e debug
 ```
 
-## 📖 Siehe auch...
+## 📖 Siehe auch ...
 
 [PlatformIO Unit-Testing](https://docs.platformio.org/en/latest/advanced/unit-testing/index.html)
