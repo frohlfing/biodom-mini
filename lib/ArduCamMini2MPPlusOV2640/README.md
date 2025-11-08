@@ -1,8 +1,8 @@
-# ArduCamMini2MPPlusOV2640
+# 📌 ArduCamMini2MPPlusOV2640
 
 Diese Bibliothek kapselt die Nutzung der ArduCAM Mini 2MP Plus (mit OV2640-Chip).
 
-## Funktionsumfang
+**Funktionsumfang:**
 
 *   Einfache Initialisierung der Kamera mit `begin()`.
 *   Aufnahme von JPEG-Bildern in verschiedenen Auflösungen (von 160x120 bis 1600x1200).
@@ -22,8 +22,7 @@ lib_deps =
 
 Die ArduCAM-Bibliothek wurde so konzipiert, dass sie eigentlich an das vorhandene Kameramodul angepasst werden muss. Dies wird durch einen "Hack" vermieden: Ich definiere die notwendigen Makros (`_MEMORYSAVER_` und `OV2640_MINI_2MP_PLUS`) direkt in der Header-Datei, *bevor* die `ArduCAM.h` eingebunden wird. Dies stellt sicher, dass die Bibliothek sich korrekt für die Hardware konfiguriert.
 
-
-## 📌 Wichtige Hinweise
+## ❕ Wichtige Hinweise
 
 ### Pin-Belegung
 
@@ -45,7 +44,7 @@ Die ArduCAM-Kamera kann, besonders während der Aufnahme eines hochauflösenden 
 
 Ein Mikrocontroller wie der ESP32 hat nur sehr wenig RAM (Arbeitsspeicher), typischerweise um die 512 KB. Ein Bild von der 2MP-Kamera (OV2640) kann aber leicht mehrere hundert Kilobyte groß sein (z.B. 1600x1200 JPEG ca. 150-300 KB). Es ist also unmöglich, das gesamte Bild auf einmal in den RAM des ESP32 zu laden.
 
-Hier kommt das **ArduCAM-Modul** ins Spiel. Es besitzt einen eigenen **FIFO-Puffer (First-In, First-Out)**. Das ist ein kleiner, schneller Speicherchip direkt auf der Kamer Platine (in diesem Fall 8 MByte).
+Hier kommt das **ArduCAM-Modul** ins Spiel. Es besitzt einen eigenen **FIFO-Puffer (First-In, First-Out)**. Das ist ein kleiner, schneller Speicherchip direkt auf der Kamera-Platine (in diesem Fall 8 MByte).
 
 Der Prozess läuft wie folgt ab:
 

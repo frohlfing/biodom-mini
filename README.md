@@ -8,7 +8,7 @@ Das Ziel ist ein Mini-Gewächshaus für anspruchsvolle Pflanzen, das automatisch
 - Konstante Temperatur
 - Konstante Luftfeuchtigkeit
 - Automatische Bewässerung
-- Kamera (schießt ein Bild pro Tag für Zeitraffer-Video)
+- Kamera (schießt regelm#ßig Bilder für Zeitraffer-Video)
 - Display (zeigt aktuelle Werte an)
 - Webinterface (über WLAN erreichbar)
 

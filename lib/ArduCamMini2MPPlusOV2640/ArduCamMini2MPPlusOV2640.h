@@ -5,7 +5,7 @@
 
 // Im Original-Sketch sollte man die ArduCAM-Bibliothek für die Hardware anpassen, indem man in memorysaver.h das Kameramodell einkommentiert. 
 // Das ist uncool, ich definiere hier direkt die Hardware und lasse die Hersteller-Bibliothek unangetastet.
-//#include "memorysaver.h" // nicht aufrufen, hat ja nicht die richtige Kamera definiert
+#include "memorysaver.h" // nicht aufrufen, hat ja nicht die richtige Kamera definiert
 #define _MEMORYSAVER_ // Verhindert, dass memorysaver.h die Kamera-Konfiguration ändert.
 #define OV2640_MINI_2MP_PLUS // Definiert das Kameramodell als OV2640 Mini 2MP Plus
 #include <ArduCAM.h>  // Die Hauptbibliothek für die Steuerung der ArduCAM-Hardware.

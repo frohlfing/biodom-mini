@@ -1,4 +1,4 @@
-# SensorAM2302-Bibliothek
+# 📌 SensorAM2302-Bibliothek
 
 Diese Bibliothek kapselt die Nutzung des Raumtemperatur- und Luftfeuchtigkeitssensor AM2302, auch bekannt als DHT22. 
 In der Projektdokumentation wird er von mir auch "Luftsensor" genannt. 

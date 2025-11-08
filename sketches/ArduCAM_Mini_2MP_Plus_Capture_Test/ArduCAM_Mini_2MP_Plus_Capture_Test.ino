@@ -194,18 +194,14 @@ uint8_t read_fifo_burst(ArduCAM myCAM) {
   uint32_t length = 0;
 
   // `static` Variablen behalten ihren Wert zwischen Funktionsaufrufen.
-  // `k` zählt die Bilder hoch, um eindeutige Dateinamen zu erzeugen.
-  static int i = 0;
-  static int k = 0;
+    static int i = 0;  // `i` ist der Index für den Puffer.
+  static int k = 0;  // `k` zählt die Bilder hoch, um eindeutige Dateinamen zu erzeugen.
   char str[16];
   File outFile;
 
   // Ein Puffer von 256 Bytes im RAM, um Daten zwischenzuspeichern.
   byte buf[256];
 
-  // `i` ist der Index für den Puffer.
-  static int i = 0;
-  
   length = myCAM.read_fifo_length();
   Serial.print(F("FIFO length is: "));
   Serial.println(length, DEC);

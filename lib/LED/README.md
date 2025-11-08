@@ -1,4 +1,4 @@
-# LED
+# 📌 LED
 
 Ein kompakter Treiber für eine einzelne LED mit unterstützter Logik:
 
@@ -8,7 +8,7 @@ Ein kompakter Treiber für eine einzelne LED mit unterstützter Logik:
 
 * Unterstützung für aktive High/Low Verdrahtung
 
-## Hinweise
+## ❕ Wichtige Hinweise
 
 * `update()` muss regelmäßig (z. B. in loop()) aufgerufen werden, damit Blinken funktioniert.
 
@@ -16,6 +16,6 @@ Ein kompakter Treiber für eine einzelne LED mit unterstützter Logik:
 
 * Unit-Tests führen Delays aus; auf Host-Umgebungen ohne GPIO sind Mocks nötig.
 
-## Lizenz
+## 📜 Lizenz
 
 MIT

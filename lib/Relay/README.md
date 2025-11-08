@@ -1,18 +1,8 @@
-# Relay
+# 📌 Relay
 
 Diese Bibliothek kapselt die Nutzung eines einzelnen Relais (mit Optokoppler).
 
-## Eigenschaften
-
-* Einfacher Konstruktor: `Relay(pin, activeHigh = false, safeState = false)`
-
-* Nicht-blockierendes Pulsieren: `pulse(durationMs)` + `update()`
-
-* Ein / Aus / Toggle API
-
-* Safety: `safeState` legt fest, in welchen Zustand Relais nach Reset oder Pulse zurückkehrt (Standard: Aus)
-
-## Hinweise zur Hardware und Sicherheit
+## ❕ Hinweise zur Hardware und Sicherheit
 
 Relais schalten häufig Netzspannung oder hohe Ströme. Triff geeignete Schutzmaßnahmen:
 
@@ -26,12 +16,12 @@ Prüfe, ob dein Relaismodul invertierte Logik benutzt (häufig: LOW = Relais zie
 
 Beim Einsatz von Relais-Boards mit separater Spulenversorgung (JD-VCC) achte auf Jumper-Einstellungen.
 
-## Testen
+## 🧪 Testen
 
 Die Unit-Tests sind hardware-abhängig. Auf einem echten Board (z. B. ESP32) kannst du `pio test -e <env>` verwenden.
 
 Für Host- oder CI-Umgebungen ohne GPIOs müssen digitalWrite/pinMode/millis gemockt werden.
 
-## Lizenz
+## 📜 Lizenz
 
 MIT

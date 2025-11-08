@@ -1,4 +1,4 @@
-# SensorBH1750
+# 📌 SensorBH1750
 
 Diese Bibliothek kapselt die Nutzung des Lichtsensors GY-302 (BH1750) 
 
@@ -13,7 +13,7 @@ lib_deps =
   claws/BH1750 @ ^1.3.0
 ```
 
-## Hinweis für Entwickler
+## ❕ Wichtige Hinweise
 
 Die Klasse verwendet standardmäßig den kontinuierlichen High-Resolution-Modus des BH1750 (Messdauer ~120 ms). Für sehr energiesparende Anwendungen müsste die Klasse erweitert werden, um Single-Measurement-Modi oder Power-Down/Up-Zyklen zu unterstützen.
 

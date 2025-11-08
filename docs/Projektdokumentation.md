@@ -25,9 +25,10 @@ Das Ziel ist ein Mini-Gewächshaus für anspruchsvolle Pflanzen, das automatisch
   * [4. Aktoren](#4-aktoren)
   * [5. Sonstige Peripheriegeräte](#5-sonstige-peripheriegeräte)
   * [6. Stromversorgung](#6-stromversorgung)
-  * [7. Sketche](#7-sketche-)
-  * [8. Webinterface](#8-webinterface)
-  * [9. Inbetriebnahme und Kalibrierung](#9-inbetriebnahme-und-kalibrierung)
+  * [7. Schaltplan](#7-schaltplan)
+  * [8. Sketche](#8-sketche-)
+  * [9. Webinterface](#9-webinterface)
+  * [10. Inbetriebnahme und Kalibrierung](#10-inbetriebnahme-und-kalibrierung)
   * [Anhang](#anhang-)
 
 ## 1. Gehäuse
@@ -228,7 +229,7 @@ Das Modell mit UCD-C macht nur Probleme. Keins meiner UCB-C-Kabel hat funktionie
 
 **Pinbelegung:**
 
-**Achtung:** Die Pinbelegung sowohl im e-Book und als auch im Datasheet ist nicht korrekt abgebildet: 
+**Achtung:** Die Pinbelegung sowohl im E-Book und als auch im Datasheet ist nicht korrekt abgebildet: 
 NC und NO sind vertauscht. Die Symbole auf dem Modul sind korrekt, sowie hier:
 
 
@@ -298,7 +299,7 @@ Tipps für eine stabile SPI-Verbindung:
 * MISO mit GND twisten → schützt das empfindlichste Signal
 * Jede zweite Leitung auf GND bei Flachbandkabel
 * Pull-Up-Widerstände an CS und MISO können helfen
-* Serienwiderstand (100 Ω) direkt am Mikrocontroller-Ausgang → reduziert Reflektionen
+* Serienwiderstand (100 Ω) direkt am Mikrocontroller-Ausgang → reduziert Reflexionen
 
 **Warum die relative teure SPI-ArduCAM-Kamera?**
 
@@ -479,7 +480,7 @@ Darüber steht nichts im Datenblatt. Die Werte habe ich experimental ermittelt.
 
 **Benötigte Bibliothek:**
 
-(keine Abhängigkeit)
+(keine Abhängigkeiten)
 
 **Kalibrierung:**
 
@@ -594,7 +595,7 @@ So wird der Pegel auf HIGH (+3.3V) gezogen, wenn Trockenheit erkannt wird.
 
 **Benötigte Bibliothek:**
 
-(keine Abhängigkeit)
+(keine Abhängigkeiten)
 
 ### S6: Lichtstärke
 
@@ -635,7 +636,7 @@ Dieses Sensormodul ist sehr genau und misst das Licht direkt in LUX.
 
 **Anmerkung:**
 
-Da kein anderes I2C-Gerät die Adresse 0x23 verwenden, wird ADDR nicht benötigt.
+Da kein anderes I2C-Gerät die Adresse 0x23 verwendet, wird ADDR nicht benötigt.
 
 **Benötigte Bibliothek:**
 
@@ -674,7 +675,7 @@ GND ───[ R3 ]──┬──[ LDR ]──── +3.3V
 
 **Benötigte Bibliothek:**
 
-(keine Abhängigkeit)
+(keine Abhängigkeiten)
 
 ## 4. Aktoren
 
@@ -694,7 +695,7 @@ LED Grow Light 12V/60W, Vollspektrum, 4:1, IP65
 * 5m-Streifen (1cm breit) mit 300 LEDs (SMD 5050)
 * Hersteller: Tesfish
 
-12V/60W = 5A (lt. Hersteller) -> Damit ist das Limit für ein Relais des Relais-Modul erreicht. Daher teile ich den 
+12V/60W = 5A (lt. Hersteller) -> Damit ist das Limit für ein Relais des Relais-Moduls erreicht. Daher teile ich den 
 5m-Streifen in zwei Hälften, um die Last auf zwei Relais verteilen zu können. 
 Außerdem könnte ich das Licht so in zwei Helligkeitsstufen schalten.  
 
@@ -1062,7 +1063,7 @@ Der gesamte Vorgang (Auslesen von der Kamera + Schreiben auf die Karte) wird ver
 
 ### P1: Spannungswandler 12V zu 5V
 
-Step-Down-Module XL4015, 5A
+Step-Down-Module XL4015, 5 A
 
 ![Step-Down-Modul](https://m.media-amazon.com/images/I/61Miv6WUVJL._SX385_.jpg)
 
@@ -1072,7 +1073,7 @@ Step-Down-Module XL4015, 5A
 [AZ-Delivery e-Book](https://cdn.shopify.com/s/files/1/1509/1638/files/AZ233_C_9-4_DE_B07SRXR1VT_7e75912c-950c-49d9-aeb2-2b6e195245f1.pdf?v=1721042154),
 [Datasheet](https://www.xlsemi.com/datasheet/XL4015-EN.pdf)
 
-**Übersetzungsfehler im eBook:** "Einstellbare Eingangsspannung" muss heißen "Einstellbare Ausgangsspannung" (orig.: "Output Voltage is Adjustable")
+**Übersetzungsfehler im E-Book:** "Einstellbare Eingangsspannung" muss heißen "Einstellbare Ausgangsspannung" (orig.: "Output Voltage is Adjustable")
  
 * von 8V-36V zu 1,25V-32V einstellbar, max. 5A
 * Arbeitstemperatur: -40 ℃ bis +85 ℃
@@ -1101,7 +1102,7 @@ Das längere Beinchen und der Pin ohne Markierung auf dem Gehäuse ist PLUS (+).
  
 **Anmerkung:**
 
-In- und Out- ist dasselbe Potenzial. 
+In- und Out-Pin ist dasselbe Potenzial. 
 
 Die Ausgangsspannung muss auf **5 Volt** eingestellt werden!
 
@@ -1158,62 +1159,59 @@ Den Sachaltplan habe ich mit KiCad 9.0 erstellt.
 
 ![Leiterplatte.png](assets/Leiterplatte.png)
 
-## 8. Sketche 
+## 8. Programmierung 
 
-Arduino-Programmskript, .ino-Datei
+### Technologie-Stack
+
+* PlatformUI mit VS Code
+* ArduinoIDE (nur für den erster schneller Funktionstest und Proof Of Concepts, die Sketches liegen im Verzeichnis `sketches`)
+* ESP-Prog für das Debuggen (sofern nötig)
+* Webinterface via Websocket
+* OTA-Upload (Over the Air) für das Produktivsystem
+
+### Lokale Bibliothek
+
+Für jedes Bauteil wird eine lokale Bibliothek bereitgestellt und ausführlich dokumentiert.
+
+Es wird auch jeweils eine Bibliothek für das Webinterface, für OTA und für den Zugriff auf die  Sollwerte (als persistentes Dictionary o.ä.) bereitgestellt (um `main.cpp` möglichst schlank halten zu können). 
+
+### Bootvorgang
+
+Nach dem Start wird eine Funktions-Prüfung durchgeführt. Die Ergebnisse scrollen durch das Display. Wenn alles funktioniert, wird ein Splash-Screen (mein Portrait) für en paar Sekunden angezeigt. Danach werden die aktuellen Messwerte im Dashboard angezeigt. 
+
+### Dashboard
+
+Das Dashboard teilt den Bildschirm in vier gleichmäßige Bereiche auf. Jeder Messwert wird mit einem passenden Icon versehen.
 
 ### Steuerungslogik
 
-*   **Lampe 1 (IN1):** Rein zeitgesteuert (z.B. 16 Std. an, 8 Std. aus).
-*   **Lampe 2 (IN2):** Rein zeitgesteuert (z.B. 16 Std. an, 8 Std. aus).
-*   **Heizer (IN3):** Gesteuert von **Bodentemperatur**. Hält die Erde auf Solltemperatur.
-*   **Pumpe (IN4):** Gesteuert von **Bodenfeuchte** und **Wasserstand**. Bewässert nur, wenn Boden zu trocken UND genug Wasser im Teich ist.
-*   **Dunst (IN5):** Gesteuert von **Luftfeuchtigkeit** und **Wasserstand**. Befeuchtet nur, wenn Luft zu trocken UND genug Wasser im Teich ist.
-*   **Lüfter (IN6):** Läuft an, wenn **Lufttemperatur** oder **Luftfeuchtigkeit** die Maximalwerte überschreiten.
+Die Steuerung soll dafür sorgen, dass ein gleichmäßiges Klima für die Pflanzen im Gewächshaus herrscht. Die dafür verfügbaren Sensoren und die zu steuernden Aktoren sind hier nochmal kurz zusammengefasst: 
 
-### Konfiguration (Globale Variablen)
+Es wird folgende Steuerungslogik programmiert:
 
-*Sollwerte: TODO
-*Pins: TODO
-*WLAN-Daten: TODO
+TODO
 
-### Programmierung der Sketch
+### Sollwerte 
 
-#### Serielle Kommunikation
+Aus folgenden Quellen habe ich günstige Sollwerte für die Steuerung extrahiert:
 
-Kommunikation starten (Serial.begin(115200)).
+TODO
 
-#### WLAN
+Die Sollwerte sind: 
 
-Mit dem WLAN verbinden.
+TODO
 
-#### Relais
+### Warnung für niedrigen Wasserstand
 
-* Pin-Modi für die Relais auf OUTPUT setzen.
-* Testlauf: Lade einen einfachen Test-Code hoch, der nacheinander jedes Relais für 5 Sekunden schaltet. Überprüfe, ob Licht, Pumpe, Heizer etc. korrekt reagieren.
+Bevor der Wasserreservoir (Teich) trockenläuft, soll nicht das Dashboard, sondern eine blinkende Warnung auf dem Display angezeigt werden (gern mit Icon). Über das Handy soll der Benutzer auch gewarnt werden (per E-Mail?).
 
-#### Display 
+### Bild aufnehmen
 
-Display initialisieren und einen Startbildschirm anzeigen.
+Nach einem festegelegten Intervall (alle x Stunden) wird ein Bild geschossen und auf der  SD-Karte gespeichert. Direkt danach wird ein weiteres Bild mit niedrigster Auflösung erzeugt und auf dem Display für ein paar Sekunden angezeigt, um zu zeigen, dass ein Bild gespeichert wurde. 
 
-#### SD-Karte 
+### Webinterface
 
-SD-Karte initialisieren.
-
-#### Kamera 
-
-* ArduCAM initialisieren.
-* Überprüfe, ob es Zeit ist, ein Foto zu machen (z.B. alle 30 Minuten). Wenn ja, rufe eine Funktion auf, die ein Bild aufnimmt und mit einem Zeitstempel als Dateinamen auf der SD-Karte speichert.
-
-#### Luft
-
-AM2302-Sensor initialisieren.
-
-
-#### Webserver
-
-Webserver starten (server.begin()).
-Eingehende Client-Anfragen handeln (server.handleClient()).
+Über das Handy kann das Dashboard angezeigt werden. Hier können auch die Sollwerte verändert werden. Außerdem gibt es eine Gallery mit den aufgenommenen Bilder und die Möglichkeit, diese als Zeitraffer-Video abzuspielen. Eine weitere Funktion zeigt Liniendiagramme mit den Messwerten.
 
 ## 9. Webinterface
 
@@ -1410,7 +1408,7 @@ Mit diesen beiden Werten kannst du den Messwert im Code auf eine Skala von 0-100
 
 ### Regelparameter einstellen
 	
-Beginne mit moderaten Werten. Für tropische Pflanzen könnten das sein:
+Beginne mit moderaten Werten. Für tropische Pflanzen könnte das sein:
 
 * Raumtemperatur: 24-28°C
 * Bodentemperatur: 22°C
@@ -1448,7 +1446,7 @@ Arduino IDE einrichten:
 	
 3. Board auswählen
 	* Gehe zu Werkzeuge > Board 
-	* Wähle unter das Board "AI Thinker ESP32-CAM" aus.
+	* Wähle unter dem Board "AI Thinker ESP32-CAM" aus.
 	
 4. Bibliotheken installieren
 	* Gehe zu Sketch > Bibliothek einbinden > Bibliotheken verwalten 
@@ -1456,7 +1454,7 @@ Arduino IDE einrichten:
 		* Adafruit DHT sensor library bzw. Adafruit BME280 Library
 		* Adafruit GFX Library
 		* Adafruit SSD1306
-		* Eventuell auch diese; bin mir nicht sicher ob es notwendig ist:
+		* Eventuell auch diese; ich bin mir nicht sicher, ob es notwendig ist:
 			* WebServer (ist Teil des ESP32-Kerns)
 			* WiFi (ist Teil des ESP32-Kerns)
 			* FS.h (für Dateisystem auf der SD-Karte) 
@@ -1546,7 +1544,7 @@ Lampe
 * Q: Transistor
 * D: Diode
 * H: Lampe
-* J: Anschluss (Stiftleiste, Buchsenleiste, DC-Holhbuchse,...) 
+* J: Anschluss (Stiftleiste, Buchsenleiste, DC-Hohlbuchse,...) 
 
 
 ### ESP32-GPIOs
@@ -1591,7 +1589,7 @@ Touch-8 ADC1-5 I/O GPIO33 ──┤ G33        G19 ├── GPIO19 I/O SPI_MISO
 * **(UART0), UART2:** Serielle Kommunikation. UART0 besser nicht verwenden. Die Pins sind intern mit dem USB-Wandler-Chip verdrahtet. UART2 ist unbenutzt. UART1 hat standardmäßig keine Pins zugewiesen (kann frei auf irgendwelche GPIOs gemappt werden).
 * **(RESET):** Immer frei lassen!
 * **(Flash):** GPIO 6 bis 11 sind intern mit dem Flash-Speicher verbunden. Diese Pins niemals verwenden!
-* **(Boot):** GPIO 0, 2, 5, 12, 15 sind "Strapping-Pins". Besser nicht verwenden, denn der Bootvorgang wird hiermit beeinflusst. Könnten aber zur Not als digitale Ein- und Ausgänge verwenden werden (Bedingungen siehe nachfolgende Tabelle). 
+* **(Boot):** GPIO 0, 2, 5, 12, 15 sind "Strapping-Pins". Besser nicht verwenden, denn der Bootvorgang wird hiermit beeinflusst. Könnten aber zur Not als digitale Ein- und Ausgänge verwenden werden (zu den Bedingungen siehe nachfolgende Tabelle). 
 * **(JTAG):** GPIO 12, 13, 14, 15 können als digitale Ein- und Ausgänge verwendet werden, sofern kein Debugger (ESP-Prog) angeschlossen wird.
 
 **Anmerkungen:**
@@ -1704,7 +1702,7 @@ Aber diese Möglichkeit ziehe ich nicht weiter in Betracht.
 **Erforderliche Treiber unter Windows:**
 
 * Für **Interface 0** muss der FTDI-Treiber durch einen WinUSB-Treiber ersetzt werden, 
-weil das OpenOCD nicht direkt mit dem FTDI-Treiber kommunizieren kann.
+weil OpenOCD nicht direkt mit dem FTDI-Treiber kommunizieren kann.
 
   Das geschieht so:
 

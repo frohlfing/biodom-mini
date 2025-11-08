@@ -1,8 +1,8 @@
-# MicroSDCard
+# 📌 MicroSDCard
 
 Diese Bibliothek kapselt die Nutzung des SD-Kartenlesers (MicroSD SPI Modules) für den ESP32
 
-## Funktionsumfang
+**Funktionsumfang:**
 
 *   Einfache Initialisierung der SD-Karte mit `begin()`.
 *   Methoden zum Erstellen, Löschen und Auflisten von Verzeichnissen.
@@ -15,7 +15,7 @@ Diese Bibliothek kapselt die Nutzung des SD-Kartenlesers (MicroSD SPI Modules) f
 
 Diese Bibliothek hat **keine externen Abhängigkeiten**. Sie verwendet die `SD`- und `FS`-Bibliotheken, die bereits im ESP32 Arduino Core Framework enthalten sind.
 
-## 🔧 Wichtige Hinweise
+## ❕ Wichtige Hinweise
 
 ### Pin-Belegung
 
@@ -29,7 +29,7 @@ Das SD-Kartenmodul wird über SPI angebunden. Die Standard-Hardware-SPI-Pins des
 
 Verwende kurze SPI-Leitungen; bei langen Leitungen SPI-Clock reduzieren.
 
-### Dateisystem
+### 💽 Dateisystem
 
 Die Bibliothek ist für SD-Karten ausgelegt, die mit einem **FAT16**- oder **FAT32**-Dateisystem formatiert sind. Dies ist der Standard für die meisten SD-Karten.
 

@@ -1,7 +1,7 @@
-# SensorXKCY25NPN-Bibliothek
+# 📌 SensorXKCY25NPN-Bibliothek
 
-Diese Bibliothek kapselt die Nutzung des berührungslosen Füllstandssensors XKC-Y25-NPN (NPN, digital).
+Diese Bibliothek kapselt die Nutzung des berührungslosen Füllstandsensors XKC-Y25-NPN (NPN, digital).
 
-## Lizenz
+## 📜 Lizenz
 
 MIT. Anpassungen und Verbesserungen sind willkommen.

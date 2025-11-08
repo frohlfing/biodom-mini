@@ -1,45 +1,7 @@
 /**
- * PoC Schritt 1: Anzeige eines extern konvertierten JPGs auf dem OLED.
- * 
- * -- Das Ziel --
- * Validieren, dass der Konvertierungsprozess mit einem XBM-Tool funktioniert und das Ergebnis korrekt auf dem 
- * Display angezeigt werden kann.
- * 
- * -- Der Code --
- * Ich habe den Demo-Sketch für das OLED-Display genommen und alles bis auf das absolut Notwendigste entfernt. 
- *
- * -- Das Test-Bitmap --
- * Ich habe mein Portrait auf 128x64 Pixel skaliert (siehe `docs/assets/frank_128x64.jpg`), mit dem Tool 
- * "Online Image Converter to XBM" (https://www.online-utility.org/image/convert/to/XBM) in ein monochromes 
- * XBM-Bitmap umgewandelt und als C-Array exportiert. Danach habe ich drei kleine Verbesserungen vorgenommen:
- * 1. Ich habe die automatisch generierten Namen (`1762397827716_...`) in `portrait_...` umbenannt. 
- *    Das ist lesbarer und vermeidet potenzielle Compiler-Fehler, da Bezeichner in C++ nicht 
- *    mit einer Ziffer beginnen sollten.
- * 2. Ich habe `static char` in `static const unsigned char` geändert. Das ist der korrekte Datentyp  
- *    für rohe Bytedaten und `const`, weil sich die Daten nicht ändern.
- * 3. Ich habe das `U8X8_PROGMEM`-Makro hinzugefügt. Das ist eine gute Praxis, die der U8g2-Bibliothek 
- *    signalisiert, dass diese großen Daten im Flash-Speicher bleiben sollen und nicht den RAM des 
- *    Mikrocontrollers belegen.
- */
+ * Mein Portrait aus docs\assets\frank_128x64.jpg im XBM-Format
+ */ 
 
-#include <Arduino.h>
-#include <U8g2lib.h>
-
-#ifdef U8X8_HAVE_HW_SPI
-#include <SPI.h>
-#endif
-#ifdef U8X8_HAVE_HW_I2C
-#include <Wire.h>
-#endif
-
-// --- Display-Initialisierung ---
-// Ich verwende die bekannte Konfiguration für das SH1106 I2C Display.
-U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
-
-// --- Das Test-Bitmap  im XBM-Format (konvertiert aus dem auf 128x64 skalierten JPG) ---
-// XBM (X BitMap) ist ein Standard-C-Format, um monochrome Bilder zu speichern.
-// Jedes Byte repräsentiert 8 horizontale Pixel. Die Bits werden "rückwärts" gelesen,
-// d.h. das niedrigstwertige Bit (LSB) ist das linkeste Pixel.
 #define portrait_width 128
 #define portrait_height 64
 static const unsigned char portrait_bits[] U8X8_PROGMEM = {
@@ -130,35 +92,3 @@ static const unsigned char portrait_bits[] U8X8_PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0xB8, 0xE1, 0x96, 0x14, 0x88, 0x04, 0x00, 
   0x00, 0x00, 0x00, 0x00, 
 };
-
-void setup() {
-    Serial.begin(115200);
-    Serial.println("JpgToBmp - PoC Schritt 1: Konvertiertes JPG anzeigen");
-
-    // Display initialisieren
-    u8g2.begin();
-    
-    // Puffer löschen, bevor wir zeichnen
-    u8g2.clearBuffer();
-
-    // Das XBM-Format verwendet '1' für schwarze Pixel. U8g2 zeichnet '1' standardmäßig als weiße Pixel.
-    // Um das zu korrigieren, erstellen wir zuerst eine weiße Leinwand und "stanzen" dann die schwarzen Pixel aus.
-    u8g2.setDrawColor(1);        // 1. Zeichenfarbe auf weiß (Pixel AN) setzen.
-    u8g2.drawBox(0, 0, 128, 64); // 2. Eine gefüllte Box über den gesamten Bildschirm zeichnen, um den Hintergrund weiß zu machen.
-    u8g2.setDrawColor(0);        // 3. Zeichenfarbe auf schwarz (Pixel AUS) setzen. Jede '1' in den Daten "löscht" nun einen Pixel und macht ihn schwarz.
-
-    // --- Der Kern dieses Tests ---
-    // Zeichne das konvertierte Portrait in den Puffer.
-    // Da das Bild bereits 128x64 Pixel groß ist, zeichnen ich es an der Ecke (0,0).
-    u8g2.drawXBMP(0, 0, portrait_width, portrait_height, portrait_bits);
-    
-    // Den Puffer-Inhalt an das Display senden, um ihn sichtbar zu machen
-    u8g2.sendBuffer();
-
-    Serial.println("Konvertiertes Portrait sollte jetzt auf dem Display sichtbar sein.");
-}
-
-void loop() {
-    // Nichts zu tun hier, das Bild wird einmalig im setup() angezeigt.
-    delay(1000);
-}

@@ -1,4 +1,4 @@
-# 🧪 Unit-Test
+# 🪲 Unit-Test
 
 Dieses Verzeichnis ist für den PlatformIO Test Runner und Projekttests vorgesehen.
 

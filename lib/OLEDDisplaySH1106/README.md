@@ -1,13 +1,15 @@
-# OLEDDisplaySH1106
+# 📌 OLEDDisplaySH1106
 
 Diese Bibliothek kapselt die Nutzung des 1.3 Zoll OLED Displays SSH1106.
 
 Das Display hat 128x64 Pixel (monochrom, 1 Bit pro Pixel) und wird über die I2C-Schnittstelle gesteuert.
 
-## Funktionsumfang
+**Funktionsumfang:**
 
 *   **Scrolling Log:** Einfaches Hinzufügen von Textzeilen, die automatisch nach oben scrollen, wenn der Bildschirm voll ist. Ideal für Statusmeldungen beim Booten oder während des Betriebs.
+
 *   **Dashboard-Ansicht:** Aufteilung des Bildschirms in vier Quadranten, in denen jeweils ein Textwert und optional ein Icon angezeigt werden können. Perfekt für die Anzeige von mehreren Sensorwerten.
+
 *   **Vollbild-Warnung:** Anzeige einer zentrierten, bildschirmfüllenden Nachricht, die optional blinken kann, um die Aufmerksamkeit des Nutzers zu erregen.
 
 ## 📦 Installation & Abhängigkeiten
@@ -19,7 +21,7 @@ lib_deps =
   olikraus/U8g2 @ ^2.36.15
 ```
 
-## 📌 Wichtige Hinweise
+## 🔧 Wichtige Hinweise
 
 ### Pin-Belegung
 
