@@ -36,6 +36,14 @@ bool MicroSDCard::removeDir(const char* path) {
     return SD.rmdir(path);
 }
 
+File MicroSDCard::openFileForReading(const char* path) {
+    return SD.open(path, FILE_READ);
+}
+
+File MicroSDCard::openFileForWriting(const char* path) {
+    return SD.open(path, FILE_WRITE);
+}
+
 bool MicroSDCard::readFile(const char* path, Stream &output) {
     File file = SD.open(path);
     if (!file) {

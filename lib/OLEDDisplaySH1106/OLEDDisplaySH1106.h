@@ -123,6 +123,7 @@ private:
     
     /**
      * @brief Interne Funktion zum Zeichnen der Warnmeldung in den Display-Puffer.
+     * Die Warnmeldung kann mit einem Zeilenumbruch ('\n') auf zwei Zeilen aufgeteilt werden.
      */
     void _drawFullscreenAlert();
 

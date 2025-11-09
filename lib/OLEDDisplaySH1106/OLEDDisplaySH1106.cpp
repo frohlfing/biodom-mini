@@ -126,15 +126,22 @@ void OLEDDisplaySH1106::showFullscreenAlert(const String &message, bool blink) {
 
 void OLEDDisplaySH1106::_drawFullscreenAlert() {
     _u8g2.clearBuffer();
-    
     if (_alertVisible) {
-        _u8g2.setFont(u8g2_font_ncenB12_tr);
+        _u8g2.setFont(u8g2_font_ncenB10_tr); // eine mittelgroße Schriftart
         _u8g2.setFontPosCenter(); // Text horizontal und vertikal zentrieren
-        
-        // Text in der Mitte des Bildschirms ausrichten
-        int textWidth = _u8g2.getStrWidth(_alertMessage.c_str());
-        _u8g2.drawStr((128 - textWidth) / 2, 32, _alertMessage.c_str());
+        int newlineIndex = _alertMessage.indexOf('\n');
+        if (newlineIndex == -1) { // eine Zeile
+            // Text in der Mitte des Bildschirms ausrichten und anzeigen
+            int textWidth = _u8g2.getStrWidth(_alertMessage.c_str());
+            _u8g2.drawStr((128 - textWidth) / 2, 32, _alertMessage.c_str());
+        } else { // zwei Zeilen
+            String line1 = _alertMessage.substring(0, newlineIndex);
+            int textWidth1 = _u8g2.getStrWidth(line1.c_str());
+            _u8g2.drawStr((128 - textWidth1) / 2, 22, line1.c_str());
+            String line2 = _alertMessage.substring(newlineIndex + 1);
+            int textWidth2 = _u8g2.getStrWidth(line2.c_str());
+            _u8g2.drawStr((128 - textWidth2) / 2, 42, line2.c_str());
+        }
     }
-
-    _u8g2.sendBuffer();
+   _u8g2.sendBuffer();
 }

@@ -1,8 +1,8 @@
 # Projekt "Biodom Mini" – Ein Hightech-Gewächshaus
 
-* **Datum:** 17.10.2024
-* **Version:** 1.0.0
-* **Autor:** [Frank Rohlfing]
+* **Version:** 1.0.1
+* **Datum:** 19.11.2025
+* **Autor:** Frank Rohlfing
 
 Das Ziel ist ein Mini-Gewächshaus für anspruchsvolle Pflanzen, das automatisch für ein tropisches Klima sorgt.
 
@@ -26,9 +26,8 @@ Das Ziel ist ein Mini-Gewächshaus für anspruchsvolle Pflanzen, das automatisch
   * [5. Sonstige Peripheriegeräte](#5-sonstige-peripheriegeräte)
   * [6. Stromversorgung](#6-stromversorgung)
   * [7. Schaltplan](#7-schaltplan)
-  * [8. Sketche](#8-sketche-)
-  * [9. Webinterface](#9-webinterface)
-  * [10. Inbetriebnahme und Kalibrierung](#10-inbetriebnahme-und-kalibrierung)
+  * [8. Programmierung](#8-programmierung)
+
   * [Anhang](#anhang-)
 
 ## 1. Gehäuse
@@ -298,87 +297,11 @@ GPIO32 ──┤ IN7       Com5 ├── +12V        GND ─O──(schwarz)─
 
 ## 3. Sensoren
 
-### S1: Kamera
-
-ArduCAM Mini 2MP Plus (mit OV2640-Chip)
-
-![ArduCAM](https://cdn1.botland.de/81994-pdt_540/arducam-mini-ov2640-2mpx-1600x1200px-60fps-spi-kameramodul-fur-arduino-.jpg)
-![ArduCAM Anschlüsse](https://cdn1.botland.de/81992-pdt_540/arducam-mini-ov2640-2mpx-1600x1200px-60fps-spi-kameramodul-fur-arduino-.jpg)
-
-[BotLand](https://botland.de/kameras-fur-arduino-und-raspberry-pi/6556-arducam-mini-ov2640-2mpx-1600x1200px-60fps-spi-kameramodul-fur-arduino--5904422358242.html)
-28,86 €
-
-[User Guide](https://cdn.arducam.com/downloads/shields/ArduCAM_Mini_2MP_Camera_Shield_DS.pdf), 
-[Hardware Application Note](https://www.uctronics.com/download/Amazon/ArduCAM_Mini_2MP_Camera_Shield_Hardware_Application_Note.pdf),
-[Software Application Note](https://blog.arducam.com/downloads/shields/ArduCAM_Camera_Shield_Software_Application_Note.pdf)
-
-* Sensor: OV2640
-* SPI-Interface für Befehle und Kameradaten
-* I2C-Interface für die Konfiguration (Adresse 0x60 für Write und 0x61 für Read)
-* 3.3 - 5 V
-* 20 - 70 mA 
-* Größe: 34.1 x 24,4 mm
-* Auflösung: 2 Megapixel, 1600 x 1200 px 
-* 60 fpsm max. 8 MHz
-* Output-Format: JPEG RGB
-
-**Anmerkung:**
-
-Ein SPI-Kabel muss kurz gehalten werden. Die mit Jumper-Kabel (Dupont) empfohlene max. Kabellänge beträgt 20 cm.
-Mit geschirmtem Kabel und reduziertem Takt (1–2 MHz) sind 50 cm möglich. 
-
-Tipps für eine stabile SPI-Verbindung:
-
-* SCLK mit GND twisten → reduziert EM-Störungen
-* MISO mit GND twisten → schützt das empfindlichste Signal
-* Jede zweite Leitung auf GND bei Flachbandkabel
-* Pull-Up-Widerstände an CS und MISO können helfen
-* Serienwiderstand (100 Ω) direkt am Mikrocontroller-Ausgang → reduziert Reflexionen
-
-**Warum die relative teure SPI-ArduCAM-Kamera?**
-
-* Die meisten günstigen Kameramodule (auch die auf dem ESP32-CAM) verwenden eine DVP-Schnittstelle (Digital Video Port).
-die ca. 16 GPIO-Pins belegt (also fast alle verfügbaren). Die ArduCAM belegt dagegen nur 6 Pins (4 für die SPI und 2 für I2C). 
- 
-**Pinout:**
-
-| Pin | Bezeichnung | Farbe   | Beschreibung                                                                                    |
-|-----|-------------|---------|-------------------------------------------------------------------------------------------------|
-| 1   | CS          | schwarz | SPI Chip Select (input). Auswahl eines Geräts auf dem SPI-Bus, aktiviert durch den Low-Zustand. |  
-| 2   | MOSI        | weiß    | SPI Master Output Slave Input (input). Die Ausgangsdatenleitung des SPI-Busses.                 |  
-| 3   | MISO        | grau    | SPI Master Input Slave Output (output). Eingangsdatenleitung des SPI-Busses.                    | 
-| 4   | SCK         | lila    | SPI Serial Clock (input). Taktleitung des SPI-Busses.                                           | 
-| 5   | GND         | blau    | GND                                                                                             | 
-| 6   | VCC         | grün    | 3.3V - 5V                                                                                       |  
-| 7   | SDA         | gelb    | Two-Wire Serial Interface Data I/O (bidirectional). Die Ausgangsdatenleitung des I2C-Busses.    |  
-| 8   | SCL         | orange  | Two-Wire Serial Interface Clock (input). Die Taktleitung des I2C-Busses.                        | 
-
-**Pinbelegung:**
-<pre>
-┌────────────────┐
-│ ArduCAM    SCL ├─◄───(orange)─O─── GPIO22
-│ Mini 2MP   SDA ├◄─►────(gelb)─O─── GPIO21
-│ Plus,      VCC ├───────(grün)─O─── +3.3V
-│ OV2640     GND ├───────(blau)─O─── GND
-│            SCK ├─◄─────(lila)─O─── GPIO18
-│           MISO ├─►─────(grau)─O─── GPIO19
-│           MOSI ├─◄─────(weiß)─O─►─ GPIO23
-│             CS ├─◄──(schwarz)─O─── GPIO17 
-└────────────────┘        
- </pre>
-
-**Benötigte Bibliothek:**
-
-[Arducam_mini 1.0.1 by Arducam](https://github.com/ArduCAM/Arducam_mini)
-
-Leider ist die Bibliothek so konzipiert, dass die Datei .\Arduino\libraries\Arducam_mini\src\memorysaver.h für die jeweilige Hardware angepasst werden muss. Für meine Kamera muss diese Definition einkommentiert werden:
-	#define OV2640_MINI_2MP_PLUS
-
-### S2: Luft (Raumtemperatur und Luftfeuchtigkeit)
+### S1: Luft (Raumtemperatur und Luftfeuchtigkeit)
 
 Raumtemperatur- und Luftfeuchtigkeitssensormodul AM2302, auch bekannt als DHT22.
 
-Tatsächlich ist AM2302 ein Nachfolgemodell von DHT22 und präziser. 
+Tatsächlich ist AM2302 ein Nachfolgemodel von DHT22 und präziser. 
 
 Der Sensor ist auch "pur" ohne Modul erhältlich. Dann muss zusätzlich ein Pullup-Widerstand (typischerweise 4.7 kΩ bis 10 kΩ) zwischen der Datenleitung und VCC angeschlossen werden. Ich verwende hier das Modul, das den Pullup-Widerstand bereits beinhaltet.
 
@@ -416,7 +339,7 @@ Der Sensor ist auch "pur" ohne Modul erhältlich. Dann muss zusätzlich ein Pull
 
 * SimpleDHT 1.0.15 by Winlin
 
-### S3: Bodentemperatur
+### S2: Bodentemperatur
 
 Bodentemperatursensor DS18B20
 
@@ -459,7 +382,7 @@ Wird zwischen dem roten Kabel (VCC) und dem gelben Kabel (DATA) an die Buchsenle
 
 * DallasTemperature 4.0.5 by Miles Burton
 
-### S4: Bodenfeuchte
+### S3: Bodenfeuchte
 
 Kapazitiver Bodenfeuchtigkeitssensor v1.2
 
@@ -570,7 +493,7 @@ void loop() {
 }
 ```
 
-### S5: Wasserstand
+### S4: Wasserstand
 
 Berührungsloser Füllstandsensor XKC-Y25-NPN 
 
@@ -602,8 +525,6 @@ Berührungsloser Füllstandsensor XKC-Y25-NPN
 
 * Eventuell sind Schwarz und Gelb vertauscht (OUT = Schwarz, MODE = Gelb)
 
-TODO sicherstellen, dass die Farben richtig dokumentiert sind.
-
 Pegel am Ausgang:
 
 * Der Sensor wird mit 5 V versorgt, aber das ist in diesem Fall kein Problem für den ESP32. 
@@ -631,9 +552,9 @@ So wird der Pegel auf HIGH (+3.3V) gezogen, wenn Trockenheit erkannt wird.
 
 (keine Abhängigkeiten)
 
-### S6: Lichtstärke
+### S5: Lichtstärke
 
-Lichtsensor GY-302 (BH1750)
+Lichtsensor GY-302 BH1750
 
 Dieses Sensormodul ist sehr genau und misst das Licht direkt in LUX.
 
@@ -676,7 +597,7 @@ Da kein anderes I2C-Gerät die Adresse 0x23 verwendet, wird ADDR nicht benötigt
 
 * BH1750 1.3.0 by Christofer Laws
 
-### S7: Reserve
+### S6: Reserve
 
 Der Analog-/Digitaleingang GPIO36 wird über eine Stiftleiste zugänglich gemacht. Er ist noch nicht verplant.
 
@@ -997,23 +918,7 @@ Kabeladern:
 
 U8g2 2.35.30 by oliver
 
-### Z2: Leuchtdiode
-
-Nützlich zum Debuggen
-
-Diode, 3mm, rot
-
-Das längere Beinchen ist der Pluspol.
-
-**Pinbelegung mit Vorwiderstand:**
-
-<pre>
-                      ↗↗     
-GPIO5 ─▶───[ R2 ]─────▶├───── GND
-            330 Ω    LED1
-</pre>
-
-### M1: SD-Kartenleser
+### Z2: SD-Kartenleser
 
 MicroSD SPI Kartenleser, 3.3V 
 
@@ -1092,6 +997,98 @@ Theoretische Schreibgeschwindigkeit pro Bild:
 
 In der Realität ist der Prozess durch den ESP32 und die SPI-Kommunikation limitiert. 
 Der gesamte Vorgang (Auslesen von der Kamera + Schreiben auf die Karte) wird vermutlich eher bei 1 bis 1,5 Sekunden liegen.
+
+### Z3: Kamera
+
+ArduCAM Mini 2MP Plus (mit OV2640-Chip)
+
+![ArduCAM](https://cdn1.botland.de/81994-pdt_540/arducam-mini-ov2640-2mpx-1600x1200px-60fps-spi-kameramodul-fur-arduino-.jpg)
+![ArduCAM Anschlüsse](https://cdn1.botland.de/81992-pdt_540/arducam-mini-ov2640-2mpx-1600x1200px-60fps-spi-kameramodul-fur-arduino-.jpg)
+
+[BotLand](https://botland.de/kameras-fur-arduino-und-raspberry-pi/6556-arducam-mini-ov2640-2mpx-1600x1200px-60fps-spi-kameramodul-fur-arduino--5904422358242.html)
+28,86 €
+
+[User Guide](https://cdn.arducam.com/downloads/shields/ArduCAM_Mini_2MP_Camera_Shield_DS.pdf), 
+[Hardware Application Note](https://www.uctronics.com/download/Amazon/ArduCAM_Mini_2MP_Camera_Shield_Hardware_Application_Note.pdf),
+[Software Application Note](https://blog.arducam.com/downloads/shields/ArduCAM_Camera_Shield_Software_Application_Note.pdf)
+
+* Sensor: OV2640
+* SPI-Interface für Befehle und Kameradaten
+* I2C-Interface für die Konfiguration (Adresse 0x60 für Write und 0x61 für Read)
+* 3.3 - 5 V
+* 20 - 70 mA 
+* Größe: 34.1 x 24,4 mm
+* Auflösung: 2 Megapixel, 1600 x 1200 px 
+* 60 fpsm max. 8 MHz
+* Output-Format: JPEG RGB
+
+**Anmerkung:**
+
+Ein SPI-Kabel muss kurz gehalten werden. Die mit Jumper-Kabel (Dupont) empfohlene max. Kabellänge beträgt 20 cm.
+Mit geschirmtem Kabel und reduziertem Takt (1–2 MHz) sind 50 cm möglich. 
+
+Tipps für eine stabile SPI-Verbindung:
+
+* SCLK mit GND twisten → reduziert EM-Störungen
+* MISO mit GND twisten → schützt das empfindlichste Signal
+* Jede zweite Leitung auf GND bei Flachbandkabel
+* Pull-Up-Widerstände an CS und MISO können helfen
+* Serienwiderstand (100 Ω) direkt am Mikrocontroller-Ausgang → reduziert Reflexionen
+
+**Warum die relative teure SPI-ArduCAM-Kamera?**
+
+* Die meisten günstigen Kameramodule (auch die auf dem ESP32-CAM) verwenden eine DVP-Schnittstelle (Digital Video Port).
+die ca. 16 GPIO-Pins belegt (also fast alle verfügbaren). Die ArduCAM belegt dagegen nur 6 Pins (4 für die SPI und 2 für I2C). 
+ 
+**Pinout:**
+
+| Pin | Bezeichnung | Farbe   | Beschreibung                                                                                    |
+|-----|-------------|---------|-------------------------------------------------------------------------------------------------|
+| 1   | CS          | schwarz | SPI Chip Select (input). Auswahl eines Geräts auf dem SPI-Bus, aktiviert durch den Low-Zustand. |  
+| 2   | MOSI        | weiß    | SPI Master Output Slave Input (input). Die Ausgangsdatenleitung des SPI-Busses.                 |  
+| 3   | MISO        | grau    | SPI Master Input Slave Output (output). Eingangsdatenleitung des SPI-Busses.                    | 
+| 4   | SCK         | lila    | SPI Serial Clock (input). Taktleitung des SPI-Busses.                                           | 
+| 5   | GND         | blau    | GND                                                                                             | 
+| 6   | VCC         | grün    | 3.3V - 5V                                                                                       |  
+| 7   | SDA         | gelb    | Two-Wire Serial Interface Data I/O (bidirectional). Die Ausgangsdatenleitung des I2C-Busses.    |  
+| 8   | SCL         | orange  | Two-Wire Serial Interface Clock (input). Die Taktleitung des I2C-Busses.                        | 
+
+**Pinbelegung:**
+<pre>
+┌────────────────┐
+│ ArduCAM    SCL ├─◄───(orange)─O─── GPIO22
+│ Mini 2MP   SDA ├◄─►────(gelb)─O─── GPIO21
+│ Plus,      VCC ├───────(grün)─O─── +3.3V
+│ OV2640     GND ├───────(blau)─O─── GND
+│            SCK ├─◄─────(lila)─O─── GPIO18
+│           MISO ├─►─────(grau)─O─── GPIO19
+│           MOSI ├─◄─────(weiß)─O─►─ GPIO23
+│             CS ├─◄──(schwarz)─O─── GPIO17 
+└────────────────┘        
+ </pre>
+
+**Benötigte Bibliothek:**
+
+[Arducam_mini 1.0.1 by Arducam](https://github.com/ArduCAM/Arducam_mini)
+
+Leider ist die Bibliothek so konzipiert, dass die Datei .\Arduino\libraries\Arducam_mini\src\memorysaver.h für die jeweilige Hardware angepasst werden muss. Für meine Kamera muss diese Definition einkommentiert werden:
+	#define OV2640_MINI_2MP_PLUS
+
+### Z4: LED
+
+Leuchtdiode 3mm, rot 
+
+Nützlich zum Debuggen
+
+Das längere Beinchen ist der Pluspol.
+
+**Pinbelegung mit Vorwiderstand:**
+
+<pre>
+                      ↗↗     
+GPIO5 ─▶───[ R2 ]─────▶├───── GND
+            330 Ω    LED1
+</pre>
 
 ## 6. Stromversorgung
 
@@ -1209,21 +1206,92 @@ Es wird auch jeweils eine Bibliothek für das Webinterface, für OTA und für de
 
 ### Steuerungslogik
 
-Die Steuerung soll dafür sorgen, dass ein gleichmäßiges Klima für die Pflanzen im Gewächshaus herrscht. Die dafür verfügbaren Sensoren und die zu steuernden Aktoren sind hier nochmal kurz zusammengefasst: 
+Die Steuerung soll dafür sorgen, dass ein gleichmäßiges Klima für die Pflanzen im Gewächshaus herrscht. 
+
+Die dafür verfügbaren Sensoren und die zu steuernden Aktoren sind hier nochmal kurz zusammengefasst: 
+
+**Sensoren:**
+
+| Präfix | Name                                        | Spezifikation               | GPIO   |
+|--------|---------------------------------------------|-----------------------------|--------|
+| S1     | Raumtemperatur- und Luftfeuchtigkeitssensor | AM2302 Module               | GPIO13 | 
+| S2     | Bodentemperatursensor                       | DS18B20                     | GPIO4  |
+| S3     | Bodenfeuchtigkeitssensor                    | Capacitive Soil Sensor v1.2 | GPIO34 |
+| S4     | Füllstandsensor                             | XKC-Y25-NPN                 | GPIO35 |
+| S5     | Lichtsensor                                 | GY-302 BH1750               | (I2C)  |
+
+**Aktoren:**
+
+| Präfix | Name      | GPIO   |
+|--------|-----------|--------|
+| A1     | Lampe 1   | GPIO14 | 
+| A2     | Lampe 2   | GPIO27 |
+| A3     | Heizer    | GPIO26 |
+| A4     | Lüfter    | GPIO25 |
+| A5     | Pumpe     | GPIO33 |
+| A6     | Vernebler | GPIO32 |
+
+**Sonstige Peripheriegeräte:**
+
+| Präfix | Name           | Spezifikation                  | GPIO       |
+|--------|----------------|--------------------------------|------------|
+| Z1     | Display        | 1.3 Zoll OLED Display, SSH1106 | (I2C)      |
+| Z2     | SD-Kartenleser | MicroSD SPI Kartenleser        | CS: GPIO16 |
+| Z3     | Kamera         | ArduCAM Mini 2MP Plus, OV2640  | CS: GPIO17 |
+| Z4     | LED            | LED 3mm, rot                   | GPIO5      |
 
 Es wird folgende Steuerungslogik programmiert (in `main.cpp`):
 
-TODO
+*   **Lichtsteuerung (A1 und A2):**  
+Die beiden LED-Lampen werden **rein zeitgesteuert**. Sie schalten sich zur `LIGHT_ON_HOUR` ein und zur `LIGHT_OFF_HOUR` aus. Beide Lampen werden immer gemeinsam geschaltet, um die maximale Lichtleistung zu erzielen.
+
+*   **Heizungssteuerung (A3):**  
+Die Heizmatte wird aktiviert, wenn die **Bodentemperatur (S2)** unter den Zielwert `SOIL_TEMPERATUR_TARGET` fällt. Um ein ständiges An- und Ausschalten (Flattern) zu verhindern, wird eine Hysterese implementiert: Die Heizung schaltet sich erst wieder aus, wenn die Temperatur den Zielwert um 0.5°C überschreitet.
+
+*   **Lüftersteuerung (A4):**   
+Der Lüfter wird aktiviert, wenn die **Raumtemperatur (S1)** den Schwellwert `AIR_TEMPERATUR_THRESHOLD_HIGH` überschreitet. Er läuft dann für eine feste Dauer von `FAN_COOLDOWN_DURATION_MS`, um die warme und feuchte Luft effektiv abzuführen, und schaltet sich danach automatisch ab. Dies verhindert eine zu schnelle Austrocknung durch Dauerbetrieb.
+
+*   **Bewässerungssteuerung (A5):**   
+Die Wasserpumpe wird aktiviert, wenn die **Bodenfeuchte (S3)** unter den Zielwert `SOIL_MOISTURE_TARGET` fällt. Die Pumpe läuft dann für eine feste Dauer von `WATERING_DURATION_MS`, um eine definierte Menge Wasser abzugeben.  
+**Ausnahme:** Die Pumpe wird niemals aktiviert, wenn der **Wasserstandsensor (S4)** meldet, dass der Wasserbehälter leer ist, um ein Trockenlaufen zu verhindern.
+
+*   **Luftfeuchtesteuerung (A6):** Der Ultraschall-Vernebler (Dunst) wird eingeschaltet, wenn die **relative Luftfeuchtigkeit (S1)** unter den Zielwert `HUMIDITY_TARGET` sinkt. Auch hier sorgt eine Hysterese dafür, dass er sich erst wieder abschaltet, wenn die Luftfeuchtigkeit 5% über dem Zielwert liegt.   
+**Ausnahme:**  Der Vernebler wird nur aktiviert, wenn der **Wasserstandsensor (S4)** ausreichend Wasser meldet.
+
+*   **Wasserstandsüberwachung (S4):** Der Füllstandsensor wird kontinuierlich überwacht. Wenn er einen niedrigen Wasserstand (`!WATER_LEVEL_TRIGGERED`) meldet, wird auf dem Display eine bildschirmfüllende, blinkende Warnung angezeigt. Zusätzlich werden Pumpe (A5) und Vernebler (A6) deaktiviert.
+
+*   **Kamerasteuerung (Z3):** In einem festen Intervall (z.B. alle 60 Minuten) wird ein Foto in hoher Auflösung (1600x1200) aufgenommen und auf der SD-Karte (Z2) gespeichert. Der Dateiname enthält einen Zeitstempel, um eine chronologische Sortierung zu ermöglichen (z.B. `img_20241017_143000.jpg`).
 
 ### Optimale Klimawerte
 
 Aus folgenden Quellen habe ich optimale Klimawerte für tropische Pflanzen ermittelt:
 
-TODO
+*  Tropische Pflanzen, die oft aus Regenwäldern stammen, benötigen ein stabiles Klima mit hoher Luftfeuchtigkeit und gleichmäßig warmen Temperaturen. [1](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGx9SbxDjkWyQRk0rXKle5gDE0GGT0pcPZAbNu0NsBzqaQmOlg8d6lwg5aGqeAKr3vh10aV__Wy95gPmcb6JUWcxZvhzea7rjxdXfY8fvZeoxM_u1xCDFgNA-P0qRP7_UWSeFVcYySNaUdVWeiandZiRpTnZyXlvMbMttatDpny)]
+
+*   **Temperatur:** Für tropische Pflanzen sind Tagestemperaturen zwischen 20°C und 30°C ideal. [[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQF8VNvW0JlZ75fazx5gVCOKtGiO8jTRYBMnwGTzXVLDf7qKC1yigpKR7uOSccqjZLWK62D2pev8A4SPOwZYc6vRbnHivrRQfAPpwru4XVGFLsEL4ZW6CpWU14iqNyRgJ9I1Cpnt2xZfqDG6hGt28WteAHntxG-Lxaql4Y9PArgrHQtNs8WP)]
+
+* Nachts sollten die Temperaturen nicht wesentlich unter 20°C fallen. [[3](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGRBi53MjxGXUwd-EC8Kx141IKz-JdhB2c-pTNSB5MRoWkN59i0c-iWqfQaqgt_BwMbUVxw7UzXjj-RpLOOOoblhKUdTS14zbeaGlbRCCFtSmXqm7AdCsTUvMn5cqbc7dtHaVTu0MikrxpT3yZoqrBcY9VE6dtLZhMJjuHAKK-A2o7RPOojIlKZScMmU2TELpM-dKjcAgZCFVe-KaJTyoXz)] 
+
+* Die Bodentemperatur ist für die Wurzelaktivität ebenfalls entscheidend und sollte im warmen Bereich liegen. [[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQF8VNvW0JlZ75fazx5gVCOKtGiO8jTRYBMnwGTzXVLDf7qKC1yigpKR7uOSccqjZLWK62D2pev8A4SPOwZYc6vRbnHivrRQfAPpwru4XVGFLsEL4ZW6CpWU14iqNyRgJ9I1Cpnt2xZfqDG6hGt28WteAHntxG-Lxaql4Y9PArgrHQtNs8WP)]
+
+*   **Luftfeuchtigkeit:** Eine hohe relative Luftfeuchtigkeit ist für die meisten tropischen Pflanzen essenziell, um die Transpiration über die Blätter zu minimieren. Werte zwischen 60% und 80% sind optimal. [[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQF8VNvW0JlZ75fazx5gVCOKtGiO8jTRYBMnwGTzXVLDf7qKC1yigpKR7uOSccqjZLWK62D2pev8A4SPOwZYc6vRbnHivrRQfAPpwru4XVGFLsEL4ZW6CpWU14iqNyRgJ9I1Cpnt2xZfqDG6hGt28WteAHntxG-Lxaql4Y9PArgrHQtNs8WP)]
+
+*   **Bodenfeuchte:** Der Boden sollte konstant feucht, aber niemals durchnässt sein. [[4](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGnF1O_MwFdqG1atb97Ym_n1MvM7Ek14t4YkmkbOrIsERtl5XlsQ2BEBRagBhQ0fo8_h-Fvt77bVqzYx3Aa95xZ7PFmaaaZonUoKA8jmu8ksITl80Xxxam8jT7pxBdFZiVby-hueeuZaAicyrKYCKJEnH1dtlASJTXjs4oOTPgWy36YfUvhV0PxnlV3gGPVuDTnDEJ6Z9Jld4ySrMTCqw%3D%3D)]  
+
+* Staunässe führt schnell zu Wurzelfäule und muss unbedingt vermieden werden. [[5](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQFIqqJysazkVRUXV1x9n9avjynkptqZNMOIPqIXJQfqHp_GflxabTTGyxRKxnN_xJAevLsyZDf7aSW9HUyHw2I9pelaQB050XmPb3VBYSa3LoC3sluL0zckD2QaR3Ep_xj9Oocd3UNCoo5FQPnkx6EymLAiRXXDY9wD0NqkrZbS2Q%3D%3D)]
+
+* Der Boden sollte zwischen den Gießvorgängen leicht antrocknen können. [[5](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQFIqqJysazkVRUXV1x9n9avjynkptqZNMOIPqIXJQfqHp_GflxabTTGyxRKxnN_xJAevLsyZDf7aSW9HUyHw2I9pelaQB050XmPb3VBYSa3LoC3sluL0zckD2QaR3Ep_xj9Oocd3UNCoo5FQPnkx6EymLAiRXXDY9wD0NqkrZbS2Q%3D%3D)] 
+
+*   **Lichtzyklus:** Ein Lichtzyklus von 12 bis 14 Stunden pro Tag simuliert die Bedingungen am Äquator und fördert ein gesundes vegetatives Wachstum. [[6](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQG51fHQsw8tGU6QXHpqpLSm43abKthgd_-qdm7uQGN_xrAqZA6WOQVi581OqRNR6YeaBMWQUHHfMs8U41SpHZEwXLBp1Xd-mN07i8ZNCToGSPYqU943mW0HG8XxOqzR0GkYB_6SrxGuUALQtCdXeRWVdxjeN2vA30tjBT33iEOBqmRNmzpRa7D57K7LMaEIiJ5YpXf7pqYsAT837VAG)]
 
 Damit lege ich folgende Sollwerte als Voreinstellung fest (diese können per Webinterface verändert werden): 
 
-TODO
+*   **`SOIL_TEMPERATUR_TARGET`**: `24.0` °C
+*   **`SOIL_MOISTURE_TARGET`**: `50` % (Ein guter Mittelwert, der Staunässe vermeidet)
+*   **`AIR_TEMPERATUR_THRESHOLD_HIGH`**: `28.0` °C (Ab hier wird es kritisch, Kühlung ist nötig)
+*   **`HUMIDITY_TARGET`**: `70.0` %
+*   **`LIGHT_ON_HOUR`**: `6` (6:00 Uhr)
+*   **`LIGHT_OFF_HOUR`**: `20` (20:00 Uhr, ergibt einen 14-Stunden-Tag)
 
 ### Funktionsumfang
 
@@ -1312,8 +1380,7 @@ Lampe
 * K: Relais (Kontaktor)
 * S: Sensor
 * A: Aktor
-* Z: Display
-* M: SD-Karte
+* Z: Sonstige Peripherie
 * R: Widerstand (Resistor)
 * C: Kondensator/Elko (Capacitor)
 * P: Stromversorgung (Power Supply)

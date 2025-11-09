@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 /**
- * Klasse für eine einzelne LED
+ * Klasse für eine LED
  * 
  * Unterstützt aktive High/Low Logik, nicht-blockierendes Blinken und Toggle.
  */

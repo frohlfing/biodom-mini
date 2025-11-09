@@ -15,3 +15,6 @@ Folgende Bibliotheken werden für diese Sketche benötigt und müssen mittels Li
 * [SimpleDHT 1.0.15 by Winlin](https://github.com/winlinvip/SimpleDHT) für den Raumtemperatur- und Luftfeuchtigkeitssensor AM2302
 * [U8g2 2.35.30 by oliver](https://github.com/olikraus/u8g2) für das 1.3 Zoll OLED Display SSH1106
 * [TJpg_Decoder 1.1.0 by Bodmer](https://github.com/Bodmer/TJpg_Decoder) für den JPGtoXBM-Konverter
+
+
+(TODO: Diese nicht: [JPEGDEC 1.8.4 by Larry Bank](https://github.com/bitbank2/JPEGDEC) für den JPGtoXBM-Konverter)

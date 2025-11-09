@@ -4,7 +4,7 @@
 #include <BH1750.h>
 
 /**
- * @brief Klasse für den Lichtsensor GY-302 (BH1750)
+ * @brief Klasse für den Lichtsensor GY-302 BH1750
  */
 class SensorBH1750 {
 public:

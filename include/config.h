@@ -9,12 +9,12 @@
 // ------------------------------------------------------------
 
 // Sensoren
-constexpr int PIN_AIR_SENSOR = 13;              // GPIO-Pin für den Luftsensor AM2302
-constexpr int PIN_SOIL_TEMPERATUR_SENSOR = 4;   // GPIO-Pin für den Bodentemperatursensor DS18B20
-constexpr int PIN_SOIL_MOISTURE_SENSOR = 34;    // GPIO-Pin für den kapazitiven Bodenfeuchtesensor
-constexpr int PIN_WATER_LEVEL_SENSOR = 35;      // GPIO-Pin für den Wasserstandsensor XKC-Y25-NPN
+constexpr int PIN_AIR_SENSOR = 13;              // GPIO-Pin für den Raumtemperatur- und Luftfeuchtigkeitssensormodul AM2302 (S2)
+constexpr int PIN_SOIL_TEMPERATUR_SENSOR = 4;   // GPIO-Pin für den Bodentemperatursensor DS18B20 (S3)
+constexpr int PIN_SOIL_MOISTURE_SENSOR = 34;    // GPIO-Pin für den // Kapazitiver Bodenfeuchtigkeitssensor v1.2 (S4)
+constexpr int PIN_WATER_LEVEL_SENSOR = 35;      // GPIO-Pin für den Füllstandsensor XKC-Y25-NPN (S5)
 
-// I2C-Geräte (Kamera, Display und Lichtsensor BH1750
+// I2C-Geräte (Kamera, Display und Lichtsensor GY-302 BH1750 (S6)
 constexpr int PIN_I2C_SDA = 21;         // GPIO-Pin für I2C SDA (Data) Leitung
 constexpr int PIN_I2C_SCL = 22;         // GPIO-Pin für I2C SCL (Clock) Leitung
 
@@ -22,16 +22,16 @@ constexpr int PIN_I2C_SCL = 22;         // GPIO-Pin für I2C SCL (Clock) Leitung
 constexpr int PIN_SPI_MOSI = 23;        // GPIO-Pin für SPI MOSI Leitung
 constexpr int PIN_SPI_MISO = 19;        // GPIO-Pin für SPI MISO Leitung
 constexpr int PIN_SPI_SCK = 18;         // GPIO-Pin für SPI Clock Leitung
-constexpr int PIN_SPI_SD_CS = 5;        // GPIO-Pin für SPI Chip Select der SD-Karte
-constexpr int PIN_SPI_CAMERA_CS = 15;   // GPIO-Pin für SPI Chip Select der Kamera
+constexpr int PIN_SPI_SD_CS = 16;        // GPIO-Pin für SPI Chip Select der SD-Karte
+constexpr int PIN_SPI_CAMERA_CS = 17;   // GPIO-Pin für SPI Chip Select der Kamera
 
 // Aktoren
-constexpr int PIN_LAMP1_RELAY = 14;     // GPIO-Pin für das Relais der Pflanzenlampe 1
-constexpr int PIN_LAMP2_RELAY = 27;     // GPIO-Pin für das Relais der Pflanzenlampe 2
-constexpr int PIN_HEATER_RELAY = 26;    // GPIO-Pin für das Relais der Heizmatte
-constexpr int PIN_FAN_RELAY = 25;       // GPIO-Pin für das Relais des Lüfters
-constexpr int PIN_PUMP_RELAY = 33;      // GPIO-Pin für das Relais der Wasserpumpe
-constexpr int PIN_MISTER_RELAY = 32;    // GPIO-Pin für das Relais des Luftbefeuchters (Dunst)
+constexpr int PIN_LAMP1_RELAY = 14;     // GPIO-Pin für das Relais der Pflanzenlampe 1 (A1)
+constexpr int PIN_LAMP2_RELAY = 27;     // GPIO-Pin für das Relais der Pflanzenlampe 2 (A2)
+constexpr int PIN_HEATER_RELAY = 26;    // GPIO-Pin für das Relais der Heizmatte (A3)
+constexpr int PIN_FAN_RELAY = 25;       // GPIO-Pin für das Relais des Lüfters (A4)
+constexpr int PIN_PUMP_RELAY = 33;      // GPIO-Pin für das Relais der Wasserpumpe (A5)
+constexpr int PIN_MISTER_RELAY = 32;    // GPIO-Pin für das Relais des Luftbefeuchters (A6)
 
 // Sonstige Peripheriegeräte
 constexpr int PIN_DEBUG_LED = 5;        // GPIO-Pin für die Debug-LED

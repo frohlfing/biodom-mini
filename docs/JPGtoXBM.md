@@ -17,7 +17,11 @@ Die ArduCam oder die SD-Karte liefert den JPG-Datenstrom an die Pipeline.
 
 1.  **Verarbeitungsschritt 1: JPG-Dekompression:**  
 Die JPG-Daten sind komprimiert. Der erste Schritt muss sein, sie zu dekomprimieren, um an die rohen Pixelinformationen (Farbe für jeden einzelnen Bildpunkt) zu gelangen.
-Das erledigt die Bibliothek [TJpg_Decoder by Bodmer](https://github.com/Bodmer/TJpg_Decoder) (Tiny JPEG Decompressor). Sie ist für genau diesen Zweck für zur Ausführung auf Mikrocontroller geschrieben. Um den verfügbaren RAM zu schonen, arbeitet die Bibliothek in kleinen Blöcken (sog. MCUs, oft 8x8 oder 16x16 Pixel). Sie dekomprimiert einen Block, und übergibt diesen an eine **Callback-Funktion**. In dieser Callback-Funktion führen wir dann unsere nachfolgenden Schritte (Skalierung, Dithering, Formatierung) durch, bevor der Decoder den nächsten Block liest.
+Das erledigt die Bibliothek [TJpg_Decoder by Bodmer](https://github.com/Bodmer/TJpg_Decoder).
+
+(TODO: nicht diese: [JPEGDEC by Larry Bank](https://github.com/bitbank2/JPEGDEC))
+
+Sie ist für genau diesen Zweck für zur Ausführung auf Mikrocontroller geschrieben. Um den verfügbaren RAM zu schonen, arbeitet die Bibliothek in kleinen Blöcken (sog. MCUs, oft 8x8 oder 16x16 Pixel). Sie dekomprimiert einen Block, und übergibt diesen an eine **Callback-Funktion**. In dieser Callback-Funktion führen wir dann unsere nachfolgenden Schritte (Skalierung, Dithering, Formatierung) durch, bevor der Decoder den nächsten Block liest.
 
 2.  **Verarbeitungsschritt 2: Skalierung & Graustufen:**  
 Das dekomprimierte Bild ist für das Display zu groß und farbig. Wir müssen es auf die Größe des Zieldisplays (128 x 64) herunterskalieren und die Farbinformationen in einen Graustufenwertumwandeln. 
@@ -54,8 +58,8 @@ Die Sketche hierzu sind unter `sketches/JPGtoXBM` abgelegt.
 
 2.  **Proof Of Concept 2:** Wie kann auf dem ESP32 ein JPG-Bild in ein XBM-Bild umgewandelt werden? Reicht der RAM und wie lange dauert die  Verarbeitungszeit?  
 
-    * In der Arduino IDE habe ich mittels Library Manager `TJpg_Decoder 1.1.0 by Bodmer` installiert.
-
+    * In der Arduino IDE habe ich mittels Library Manager `https://github.com/bitbank2/JPEGDecoder` installiert.
+    (TODO: nicht diese: `JPEGDEC 1.8.4 by Larry Bank`)
     * Das JPG-Bild aus PoC 1 (./assets/frank_128x64.jpg) habe ich nach folgender Anleitung von Meta-Angaben befreit:  
         1.  Öffne das Bild in GIMP.
         2.  Gehe zu `Datei -> Exportieren als...`.

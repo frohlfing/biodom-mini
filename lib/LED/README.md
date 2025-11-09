@@ -1,6 +1,6 @@
 # 📌 LED
 
-Ein kompakter Treiber für eine einzelne LED mit unterstützter Logik:
+Diese Bibliothek kapselt die Nutzung einer LED.
 
 * Ein/Aus/Toggling
 

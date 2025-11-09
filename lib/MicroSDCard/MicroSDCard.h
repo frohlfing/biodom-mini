@@ -52,7 +52,21 @@ public:
     // --- Dateioperationen ---
     
     /**
-     * @brief Liests den Inhalt einer Datei und leitet ihn in einen Stream um.
+     * @brief Öffnet eine Datei zum Lesen und gibt das File-Objekt zurück.
+     * @param path Der Pfad zur Datei.
+     * @return Ein File-Objekt. Wenn die Datei nicht geöffnet werden kann, ist das Objekt "false".
+     */
+    File openFileForReading(const char* path);
+
+    /**
+     * @brief Öffnet eine Datei zum Schreiben und gibt das File-Objekt zurück.
+     * @param path Der Pfad zur Datei.
+     * @return Ein File-Objekt. Wenn die Datei nicht geöffnet werden kann, ist das Objekt "false".
+     */
+    File openFileForWriting(const char* path);
+
+    /**
+     * @brief Liest den Inhalt einer Datei und leitet ihn in einen Stream um.
      * @param path Der Pfad zur Datei.
      * @param output Der Ziel-Stream (z.B. Serial).
      * @return true bei Erfolg, andernfalls false.

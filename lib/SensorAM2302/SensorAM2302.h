@@ -15,6 +15,13 @@ public:
     explicit SensorAM2302(uint8_t pin);
 
     /**
+     * @brief Initialisiert den Sensor.
+     * Führt eine erste Testlesung durch, um die Verbindung zu prüfen.
+     * @return true bei Erfolg, andernfalls false.
+     */
+    bool begin();
+    
+    /**
      * @brief Liest die Raumtemperatur und Luftfeuchtigkeit vom Sensor.
      * @return true bei erfolgreichem Auslesen, false bei Fehler.
      */
