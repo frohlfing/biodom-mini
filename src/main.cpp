@@ -109,22 +109,22 @@ void handleCamera();
  * @param detail Details zur Fehlermeldung (optional).
  */
 void halt(const char* message, const char* detail = "") {
-  Serial.println(message);
-  display.addLogLine(message);
-  if (strlen(detail) > 0) {
-    Serial.println(detail);
-    display.addLogLine(detail);
-  }
-  Serial.println(F("System angehalten"));
-  display.addLogLine(F("System angehalten"));
+    Serial.println(message);
+    display.addLogLine(message);
+    if (strlen(detail) > 0) {
+        Serial.println(detail);
+        display.addLogLine(detail);
+    }
+    Serial.println(F("System angehalten"));
+    display.addLogLine(F("System angehalten"));
 
-  // LED dauerhaft einschalten, um den Halt zu signalisieren.
-  debugLed.on(); 
+    // LED dauerhaft einschalten, um den Halt zu signalisieren.
+    debugLed.on(); 
 
-  // Endlosschleife, um das Programm anzuhalten
-  // while (true) {
-  //   delay(100); // Prozessor entlasten
-  // }
+    // Endlosschleife, um das Programm anzuhalten
+    while (true) {
+        delay(100); // Prozessor entlasten
+    }
 }
 
 /**
@@ -134,333 +134,333 @@ void halt(const char* message, const char* detail = "") {
  * bevor eventuell der nächste Eintrag angezeigt wird.
  */
 void log(const char* message) {
-  Serial.println(message);
-  display.addLogLine(message);
-  delay(1000);
+    Serial.println(message);
+    display.addLogLine(message);
+    delay(1000);
 }
 
 /**
  * @brief Initialisierungsroutine, wird einmal beim Start ausgeführt.
  */
 void setup() {
-  // Z4
+    // Z4
 
-  // --- Debug-LED (Z4) initialisieren ---
+    // --- Debug-LED (Z4) initialisieren ---
 
-  // Die LED ist standardmäßig aus. 
-  // Sie signalisiert, dass da System nicht gestartet werden konnte.
+    // Die LED ist standardmäßig aus. 
+    // Sie signalisiert, dass da System nicht gestartet werden konnte.
 
-  debugLed.begin(); 
+    debugLed.begin(); 
 
-  // --- Serielle Schnittstelle initialisieren ---
+    // --- Serielle Schnittstelle initialisieren ---
 
-  Serial.begin(115200);
-  while (!Serial); // Auf serielle Verbindung warten
-  Serial.println("--- Biodom Mini startet ---");
+    Serial.begin(115200);
+    while (!Serial); // Auf serielle Verbindung warten
+    Serial.println("--- Biodom Mini startet ---");
 
-  // --- I2C-Bus initialisieren ---
+    // --- I2C-Bus initialisieren ---
 
-  // Dies muss nur einmal vor dem begin() aller I2C-Geräte geschehen.
-  // Für den ESP32 ist es eine gute Praxis, die SDA- und SCL-Pins explizit anzugeben.
-  Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
+    // Dies muss nur einmal vor dem begin() aller I2C-Geräte geschehen.
+    // Für den ESP32 ist es eine gute Praxis, die SDA- und SCL-Pins explizit anzugeben.
+    Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
 
-  // --- Hardware-Komponenten initialisieren ---
+    // --- Hardware-Komponenten initialisieren ---
 
-  // Z1 (I2C-Gerät)
-  if (!display.begin()) {  
-    Serial.println("Kein Display! System angehalten.");
-    debugLed.on(); 
-    while (true) { delay(100); } // Endlosschleife, um das Programm anzuhalten
-  }
+    // Z1 (I2C-Gerät)
+    if (!display.begin()) {  
+        Serial.println("Kein Display! System angehalten.");
+        debugLed.on(); 
+        while (true) { delay(100); } // Endlosschleife, um das Programm anzuhalten
+    }
 
-  log("Systemstart...");
+    log("Systemstart...");
 
-  // Sensoren  
+    // Sensoren  
 
-  // S1
-  if (!airSensor.begin()) { 
-    halt("Luftsensor FEHLER", airSensor.getErrorMessage());
-  } 
-  log("Luftsensor OK");
+    // S1
+    if (!airSensor.begin()) { 
+        halt("Luftsensor FEHLER", airSensor.getErrorMessage());
+    } 
+    log("Luftsensor OK");
 
-  // S2
-  if (!soilTempSensor.begin()) { 
-    halt("Bodentemp. FEHLER"); 
-  } 
-  log("Bodentemperatur OK"); 
+    // S2
+    if (!soilTempSensor.begin()) { 
+        halt("Bodentemp. FEHLER"); 
+    } 
+    log("Bodentemperatur OK"); 
 
-  // S3  
-  if (!soilMoistureSensor.begin()) { 
-    halt("Bodenfeuchte FEHLER"); 
-  } 
-  log("Bodenfeuchtesensor OK"); 
+    // S3  
+    if (!soilMoistureSensor.begin()) { 
+        halt("Bodenfeuchte FEHLER"); 
+    } 
+    log("Bodenfeuchtesensor OK"); 
 
-  // S4
-  if (!waterLevelSensor.begin()) {
-    halt("Wasserstand FEHLER"); 
-  } 
-  log("Wasserstandsensor OK");
-  
-  // S5 (I2C-Gerät)
-  if (!lightSensor.begin()) { 
-    halt("Lichtsensor FEHLER"); 
-  } 
-  log("Lichtsensor OK"); 
+    // S4
+    if (!waterLevelSensor.begin()) {
+        halt("Wasserstand FEHLER"); 
+    } 
+    log("Wasserstandsensor OK");
 
-  // Sonstige Peripheriegeräte
+    // S5 (I2C-Gerät)
+    if (!lightSensor.begin()) { 
+        halt("Lichtsensor FEHLER"); 
+    } 
+    log("Lichtsensor OK"); 
 
-  // Z2
-  if (!sdCard.begin()) { 
-    halt("SD-Karte FEHLER"); 
-  } 
-  log("SD-Karte OK"); 
+    // Sonstige Peripheriegeräte
 
-  // Z3 (I2C-Gerät)
-  if (!camera.begin()) { 
-    halt("Kamera FEHLER"); 
-  } 
-  log("Kamera OK"); 
+    // Z2
+    if (!sdCard.begin()) { 
+        halt("SD-Karte FEHLER"); 
+    } 
+    log("SD-Karte OK"); 
 
-  // Relais initialisieren
-  lamp1Relay.begin();  // A1
-  lamp2Relay.begin();  // A2
-  heaterRelay.begin(); // A3
-  fanRelay.begin();    // A4
-  pumpRelay.begin();   // A5
-  misterRelay.begin(); // A6
-  log("Aktoren initialisiert");
+    // Z3 (I2C-Gerät)
+    if (!camera.begin()) { 
+        halt("Kamera FEHLER"); 
+    } 
+    log("Kamera OK"); 
 
-  // --- Initialisierung erfolgreich ---
-  
-  Serial.println("System gestartet.");
-  
-  // Splash-Screen kurz anzeigen (signalisiert, dass alles ok ist)
-  display.showFullscreenXBM(128, 64, frank_128x64_xbm);
-  delay(1000);
-  
-  // Initiales Auslesen aller Sensoren
-  handleSensors();
+    // Relais initialisieren
+    lamp1Relay.begin();  // A1
+    lamp2Relay.begin();  // A2
+    heaterRelay.begin(); // A3
+    fanRelay.begin();    // A4
+    pumpRelay.begin();   // A5
+    misterRelay.begin(); // A6
+    log("Aktoren initialisiert");
+
+    // --- Initialisierung erfolgreich ---
+
+    Serial.println("System gestartet.");
+
+    // Splash-Screen kurz anzeigen (signalisiert, dass alles ok ist)
+    display.showFullscreenXBM(128, 64, frank_128x64_xbm);
+    delay(1000);
+
+    // Initiales Auslesen aller Sensoren
+    handleSensors();
 }
 
 /**
  * @brief Hauptschleife, wird kontinuierlich ausgeführt.
  */
 void loop() {
-  unsigned long currentTime = millis();
+    unsigned long currentTime = millis();
 
-  // Nicht-blockierende Handler aufrufen
-  if (currentTime - lastSensorRead >= SENSOR_READ_INTERVAL) {
-    lastSensorRead = currentTime;
-    handleSensors();
-  }
+    // Nicht-blockierende Handler aufrufen
+    if (currentTime - lastSensorRead >= SENSOR_READ_INTERVAL) {
+        lastSensorRead = currentTime;
+        handleSensors();
+    }
 
-  if (currentTime - lastDisplayUpdate >= DISPLAY_UPDATE_INTERVAL) {
-    lastDisplayUpdate = currentTime;
-    handleDisplay();
-  }
-  
-  if (currentTime - lastCameraCapture >= CAMERA_CAPTURE_INTERVAL) {
-    lastCameraCapture = currentTime;
-    handleCamera();
-  }
+    if (currentTime - lastDisplayUpdate >= DISPLAY_UPDATE_INTERVAL) {
+        lastDisplayUpdate = currentTime;
+        handleDisplay();
+    }
 
-  // Steuerungslogik in jedem Zyklus ausführen, um schnell reagieren zu können
-  handleControlLogic();
+    if (currentTime - lastCameraCapture >= CAMERA_CAPTURE_INTERVAL) {
+        lastCameraCapture = currentTime;
+        handleCamera();
+    }
 
-  // Update-Funktionen für zeitgesteuerte Komponenten aufrufen
-  debugLed.update();
-  fanRelay.update();
-  pumpRelay.update();
-  display.update();
+    // Steuerungslogik in jedem Zyklus ausführen, um schnell reagieren zu können
+    handleControlLogic();
+
+    // Update-Funktionen für zeitgesteuerte Komponenten aufrufen
+    debugLed.update();
+    fanRelay.update();
+    pumpRelay.update();
+    display.update();
 }
 
 /**
  * @brief Liest alle Sensoren aus und speichert die Werte in globalen Variablen.
  */
 void handleSensors() {
-  debugLed.on(); // LED an während des Lesens
+    debugLed.on(); // LED an während des Lesens
 
-  if (airSensor.read()) {
-    currentAirTemp = airSensor.getTemperature();
-    currentHumidity = airSensor.getHumidity();
-  }
-  
-  if (soilTempSensor.read()) { 
-    currentSoilTemp = soilTempSensor.getTemperature(); 
-  }
-  
-  if (soilMoistureSensor.read()) { 
-    currentSoilMoisture = soilMoistureSensor.getPercent(); 
-  }
-  
-  if (lightSensor.read()) { 
-    currentLightLux = lightSensor.getLux(); 
-  }
-  
-  isWaterLevelOk = waterLevelSensor.read();
+    if (airSensor.read()) {
+        currentAirTemp = airSensor.getTemperature();
+        currentHumidity = airSensor.getHumidity();
+    }
+    
+    if (soilTempSensor.read()) { 
+        currentSoilTemp = soilTempSensor.getTemperature(); 
+    }
+    
+    if (soilMoistureSensor.read()) { 
+        currentSoilMoisture = soilMoistureSensor.getPercent(); 
+    }
+    
+    if (lightSensor.read()) { 
+        currentLightLux = lightSensor.getLux(); 
+    }
+    
+    isWaterLevelOk = waterLevelSensor.read();
 
-  debugLed.off(); // LED aus nach dem Lesen
+    debugLed.off(); // LED aus nach dem Lesen
 
-  Serial.printf("Luft: %.1f°C, %.1f%% | Boden: %.1f°C, %d%% | Licht: %.0f Lux | Wasser OK: %d\n", 
-    currentAirTemp, 
-    currentHumidity, 
-    currentSoilTemp, 
-    currentSoilMoisture, 
-    currentLightLux, 
-    isWaterLevelOk
-  );
+    Serial.printf("Luft: %.1f°C, %.1f%% | Boden: %.1f°C, %d%% | Licht: %.0f Lux | Wasser OK: %d\n", 
+        currentAirTemp, 
+        currentHumidity, 
+        currentSoilTemp, 
+        currentSoilMoisture, 
+        currentLightLux, 
+        isWaterLevelOk
+    );
 }
 
 /**
  * @brief Aktualisiert das OLED-Display mit den aktuellen Sensorwerten.
  */
 void handleDisplay() {
-  // Wenn der Wasserstand niedrig ist, hat die Warnung absolute Priorität.
-  if (!isWaterLevelOk) {
-    display.showFullscreenAlert("WASSER\nNACHFUELLEN", true);
-    return;
-  }
+    // Wenn der Wasserstand niedrig ist, hat die Warnung absolute Priorität.
+    if (!isWaterLevelOk) {
+        display.showFullscreenAlert("WASSER\nNACHFUELLEN", true);
+        return;
+    }
 
-  // --- Quadrant Oben Links: Raumtemperatur (S1) ---
+    // --- Quadrant Oben Links: Raumtemperatur (S1) ---
 
-  if (fanRelay.isOn()) {
-    // Wenn der Lüfter läuft, zeige das Icon für den Lüfter.
-    display.setDashboardIcon(OLEDDisplaySH1106::TOP_LEFT, 16, 16, air_16x16_xbm);
-  } else {
-    // Sonst zeige das Icon für die Raumtemperatur.
-    display.setDashboardIcon(OLEDDisplaySH1106::TOP_LEFT, 16, 16, thermometer_16x16_xbm);
-  }
+    if (fanRelay.isOn()) {
+        // Wenn der Lüfter läuft, zeige das Icon für den Lüfter.
+        display.setDashboardIcon(OLEDDisplaySH1106::TOP_LEFT, 16, 16, air_16x16_xbm);
+    } else {
+        // Sonst zeige das Icon für die Raumtemperatur.
+        display.setDashboardIcon(OLEDDisplaySH1106::TOP_LEFT, 16, 16, thermometer_16x16_xbm);
+    }
 
-  // Messwert anzeigen
-  if (!isnan(currentAirTemp)) {
-    display.setDashboardText(OLEDDisplaySH1106::TOP_LEFT, String(currentAirTemp, 1) + "C");
-  } else {
-    display.setDashboardText(OLEDDisplaySH1106::TOP_LEFT, "FEHLER");
-  }
+    // Messwert anzeigen
+    if (!isnan(currentAirTemp)) {
+        display.setDashboardText(OLEDDisplaySH1106::TOP_LEFT, String(currentAirTemp, 1) + "C");
+    } else {
+        display.setDashboardText(OLEDDisplaySH1106::TOP_LEFT, "FEHLER");
+    }
 
-  // --- Quadrant Oben Rechts: Luftfeuchtigkeit (S1) ---
+    // --- Quadrant Oben Rechts: Luftfeuchtigkeit (S1) ---
 
-  if (misterRelay.isOn()) {
-    // Wenn der Vernebler läuft, zeige das Icon für den Vernebler.
-    display.setDashboardIcon(OLEDDisplaySH1106::TOP_RIGHT, 16, 16, dry_16x16_xbm);
-  } else if (fanRelay.isOn()) {
-    // Wenn der Lüfter läuft, zeige das Icon für den Lüfter (da er die Raumtemperatur UND die Luftfeuchtigkeit beeinflusst).
-    display.setDashboardIcon(OLEDDisplaySH1106::TOP_RIGHT, 16, 16, air_16x16_xbm);
-  } else {
-    // Sonst zeige das Icon für die Luftfeuchtigkeit.
-    display.setDashboardIcon(OLEDDisplaySH1106::TOP_RIGHT, 16, 16, wet_16x16_xbm);
-  }
+    if (misterRelay.isOn()) {
+        // Wenn der Vernebler läuft, zeige das Icon für den Vernebler.
+        display.setDashboardIcon(OLEDDisplaySH1106::TOP_RIGHT, 16, 16, dry_16x16_xbm);
+    } else if (fanRelay.isOn()) {
+        // Wenn der Lüfter läuft, zeige das Icon für den Lüfter (da er die Raumtemperatur UND die Luftfeuchtigkeit beeinflusst).
+        display.setDashboardIcon(OLEDDisplaySH1106::TOP_RIGHT, 16, 16, air_16x16_xbm);
+    } else {
+        // Sonst zeige das Icon für die Luftfeuchtigkeit.
+        display.setDashboardIcon(OLEDDisplaySH1106::TOP_RIGHT, 16, 16, wet_16x16_xbm);
+    }
 
-  // Messwert anzeigen
-  if (!isnan(currentHumidity)) {
-    display.setDashboardText(OLEDDisplaySH1106::TOP_RIGHT, String(currentHumidity, 0) + "%");
-  } else {
-    display.setDashboardText(OLEDDisplaySH1106::TOP_RIGHT, "FEHLER");
-  }
+    // Messwert anzeigen
+    if (!isnan(currentHumidity)) {
+        display.setDashboardText(OLEDDisplaySH1106::TOP_RIGHT, String(currentHumidity, 0) + "%");
+    } else {
+        display.setDashboardText(OLEDDisplaySH1106::TOP_RIGHT, "FEHLER");
+    }
 
-  // Quadrant Unten Links: Bodentemperatur (S2)
+    // Quadrant Unten Links: Bodentemperatur (S2)
 
-  if (heaterRelay.isOn()) {
-    // Wenn die Heizung an ist, zeige das Icon für den Heizer.
-    display.setDashboardIcon(OLEDDisplaySH1106::BOTTOM_LEFT, 16, 16, radiator_16x16_xbm);
-  } else {
-    // Sonst zeige das Icon für die Bodentemperatur.
-    display.setDashboardIcon(OLEDDisplaySH1106::BOTTOM_LEFT, 16, 16, engine_coolant_16x16_xbm);
-  }
-  
-  // Messwert anzeigen
-  if (!isnan(currentSoilTemp)) {
-    display.setDashboardText(OLEDDisplaySH1106::BOTTOM_LEFT, String(currentSoilTemp, 1) + "C");
-  } else {
-    display.setDashboardText(OLEDDisplaySH1106::BOTTOM_LEFT, "FEHLER");
-  }
+    if (heaterRelay.isOn()) {
+        // Wenn die Heizung an ist, zeige das Icon für den Heizer.
+        display.setDashboardIcon(OLEDDisplaySH1106::BOTTOM_LEFT, 16, 16, radiator_16x16_xbm);
+    } else {
+        // Sonst zeige das Icon für die Bodentemperatur.
+        display.setDashboardIcon(OLEDDisplaySH1106::BOTTOM_LEFT, 16, 16, engine_coolant_16x16_xbm);
+    }
+    
+    // Messwert anzeigen
+    if (!isnan(currentSoilTemp)) {
+        display.setDashboardText(OLEDDisplaySH1106::BOTTOM_LEFT, String(currentSoilTemp, 1) + "C");
+    } else {
+        display.setDashboardText(OLEDDisplaySH1106::BOTTOM_LEFT, "FEHLER");
+    }
 
-  // Quadrant Unten Rechts: Bodenfeuchte (S3)
-  
-  if (pumpRelay.isOn()) {
-    // Wenn die Pumpe läuft (Bewässerung aktiv), zeige das Icon für die Pumpe.
-    display.setDashboardIcon(OLEDDisplaySH1106::BOTTOM_RIGHT, 16, 16, rainy_weather_16x16_xbm);
-  } else {
-    // Sonst zeige das Icon für die Bodenfeuchte.
-    display.setDashboardIcon(OLEDDisplaySH1106::BOTTOM_RIGHT, 16, 16, dry_16x16_xbm);
-  }
+    // Quadrant Unten Rechts: Bodenfeuchte (S3)
+    
+    if (pumpRelay.isOn()) {
+        // Wenn die Pumpe läuft (Bewässerung aktiv), zeige das Icon für die Pumpe.
+        display.setDashboardIcon(OLEDDisplaySH1106::BOTTOM_RIGHT, 16, 16, rainy_weather_16x16_xbm);
+    } else {
+        // Sonst zeige das Icon für die Bodenfeuchte.
+        display.setDashboardIcon(OLEDDisplaySH1106::BOTTOM_RIGHT, 16, 16, dry_16x16_xbm);
+    }
 
-  // Messwert anzeigen
-  if (currentSoilMoisture != -1) {
-    display.setDashboardText(OLEDDisplaySH1106::BOTTOM_RIGHT, String(currentSoilMoisture) + "%");
-  } else {
-    display.setDashboardText(OLEDDisplaySH1106::BOTTOM_RIGHT, "FEHLER");
-  }
+    // Messwert anzeigen
+    if (currentSoilMoisture != -1) {
+        display.setDashboardText(OLEDDisplaySH1106::BOTTOM_RIGHT, String(currentSoilMoisture) + "%");
+    } else {
+        display.setDashboardText(OLEDDisplaySH1106::BOTTOM_RIGHT, "FEHLER");
+    }
 
-  // Nachdem alle Quadranten konfiguriert sind, das gesamte Dashboard auf dem Display zeichnen.
-  display.showDashboard();  
+    // Nachdem alle Quadranten konfiguriert sind, das gesamte Dashboard auf dem Display zeichnen.
+    display.showDashboard();  
 }
 
 /**
  * @brief Implementiert die Steuerungslogik für alle Aktoren.
  */
 void handleControlLogic() {
-  // Annahme: Es ist eine RTC/NTP-Bibliothek verfügbar. Hier als Dummy-Implementierung.
-  int currentHour = 10; 
-  if (currentHour >= LIGHT_ON_HOUR && currentHour < LIGHT_OFF_HOUR) {
-    lamp1Relay.on(); lamp2Relay.on();
-  } else {
-    lamp1Relay.off(); lamp2Relay.off();
-  }
-
-  if (currentSoilTemp < SOIL_TEMPERATUR_TARGET) { heaterRelay.on(); } 
-  else if (currentSoilTemp > SOIL_TEMPERATUR_TARGET + 0.5f) { heaterRelay.off(); }
-
-  if (currentAirTemp > AIR_TEMPERATUR_THRESHOLD_HIGH && !fanRelay.isOn()) {
-    fanRelay.pulse(FAN_COOLDOWN_DURATION_MS);
-  }
-  
-  if (isWaterLevelOk) {
-    if (currentHumidity < HUMIDITY_TARGET) { 
-      misterRelay.on(); 
-    } 
-    else if (currentHumidity > HUMIDITY_TARGET + 5.0f) { 
-      misterRelay.off(); 
+    // Annahme: Es ist eine RTC/NTP-Bibliothek verfügbar. Hier als Dummy-Implementierung.
+    int currentHour = 10; 
+    if (currentHour >= LIGHT_ON_HOUR && currentHour < LIGHT_OFF_HOUR) {
+        lamp1Relay.on(); lamp2Relay.on();
+    } else {
+        lamp1Relay.off(); lamp2Relay.off();
     }
-  } else {
-    misterRelay.off();
-  }
 
-  if (isWaterLevelOk && !pumpRelay.isOn()) {
-    if (currentSoilMoisture < SOIL_MOISTURE_TARGET && currentSoilMoisture != -1) {
-      pumpRelay.pulse(WATERING_DURATION_MS);
+    if (currentSoilTemp < SOIL_TEMPERATUR_TARGET) { heaterRelay.on(); } 
+    else if (currentSoilTemp > SOIL_TEMPERATUR_TARGET + 0.5f) { heaterRelay.off(); }
+
+    if (currentAirTemp > AIR_TEMPERATUR_THRESHOLD_HIGH && !fanRelay.isOn()) {
+        fanRelay.pulse(FAN_COOLDOWN_DURATION_MS);
     }
-  }
+    
+    if (isWaterLevelOk) {
+        if (currentHumidity < HUMIDITY_TARGET) { 
+        misterRelay.on(); 
+        } 
+        else if (currentHumidity > HUMIDITY_TARGET + 5.0f) { 
+        misterRelay.off(); 
+        }
+    } else {
+        misterRelay.off();
+    }
+
+    if (isWaterLevelOk && !pumpRelay.isOn()) {
+        if (currentSoilMoisture < SOIL_MOISTURE_TARGET && currentSoilMoisture != -1) {
+        pumpRelay.pulse(WATERING_DURATION_MS);
+        }
+    }
 }
 
 /**
  * @brief Nimmt ein Bild auf und speichert es auf der SD-Karte.
  */
 void handleCamera() {
-  Serial.println("Führe Kameraaufnahme aus...");
-  display.showFullscreenAlert("FOTO...", false);
+    Serial.println("Führe Kameraaufnahme aus...");
+    display.showFullscreenAlert("FOTO...", false);
 
-  char filename[30];
-  sprintf(filename, "/img_%lu.jpg", millis());
+    char filename[30];
+    sprintf(filename, "/img_%lu.jpg", millis());
 
-  // KORREKTUR: Die neue Methode der sdCard-Klasse verwenden
-  File imgFile = sdCard.openFileForWriting(filename);
-  if (!imgFile) {
-    Serial.println("Konnte Datei auf SD-Karte nicht erstellen.");
-    display.showFullscreenAlert("SD FEHLER", true);
+    // KORREKTUR: Die neue Methode der sdCard-Klasse verwenden
+    File imgFile = sdCard.openFileForWriting(filename);
+    if (!imgFile) {
+        Serial.println("Konnte Datei auf SD-Karte nicht erstellen.");
+        display.showFullscreenAlert("SD FEHLER", true);
+        delay(2000);
+        return;
+    }
+
+    // Bild aufnehmen und direkt in die Datei streamen
+    if (camera.captureAndStreamTo(ArduCamMini2MPPlusOV2640::S_1600x1200, imgFile)) {
+        Serial.printf("Bild erfolgreich gespeichert: %s\n", filename);
+        display.showFullscreenAlert("FOTO OK", false);
+    } else {
+        Serial.println("Fehler bei der Bildaufnahme.");
+        display.showFullscreenAlert("KAMERA FEHLER", true);
+    }
+
+    imgFile.close();
     delay(2000);
-    return;
-  }
-
-  // Bild aufnehmen und direkt in die Datei streamen
-  if (camera.captureAndStreamTo(ArduCamMini2MPPlusOV2640::S_1600x1200, imgFile)) {
-    Serial.printf("Bild erfolgreich gespeichert: %s\n", filename);
-    display.showFullscreenAlert("FOTO OK", false);
-  } else {
-    Serial.println("Fehler bei der Bildaufnahme.");
-    display.showFullscreenAlert("KAMERA FEHLER", true);
-  }
-
-  imgFile.close();
-  delay(2000);
 }

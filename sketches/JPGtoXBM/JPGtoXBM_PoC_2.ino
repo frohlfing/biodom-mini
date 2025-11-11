@@ -78,7 +78,7 @@ U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 // http://tomeko.net/online_tools/file_to_hex.php erstellt werden und darf
 // keine unnötigen Metadaten enthalten.
 #if !USE_TEST_PATTERN
-  #include "frank_128x64_clean_jpg.h" // definiert das C-Array frank_128x64_clean_jpg[]
+    #include frank_128x64_clean_jpg.h" // definiert das C-Array frank_128x64_clean_jpg[]
 #endif
 
 // --- Ausgabepuffer ---

@@ -6,9 +6,9 @@
 #include "SensorLDR5528.h"
 
 #if defined(ARDUINO_ARCH_ESP32)
-  #define ADC_MAX_VALUE 4095
+    #define ADC_MAX_VALUE 4095
 #else
-  #define ADC_MAX_VALUE 1023
+    #define ADC_MAX_VALUE 1023
 #endif
 
 SensorLDR5528 sensor(36, 10000.0f, ADC_MAX_VALUE); // GPIO36 (ADC1_0 auf ESP32)

@@ -8,19 +8,19 @@ const int valWater = 1100;
 const int valAir = 2500;
 
 void setup() {
-  Serial.begin(115200);
+    Serial.begin(115200);
 }
 
 void loop() {
-  int val = analogRead(34);
-  Serial.print("Raw:");
-  Serial.print(val);
-  Serial.print(",");
-  
-  int percent = map(val, valAir, valWater, 0, 100);
-  percent = constrain(percent, 0, 100);
-  Serial.print("Percent:");
-  Serial.println(percent);
+    int val = analogRead(34);
+    Serial.print("Raw:");
+    Serial.print(val);
+    Serial.print(",");
+    
+    int percent = map(val, valAir, valWater, 0, 100);
+    percent = constrain(percent, 0, 100);
+    Serial.print("Percent:");
+    Serial.println(percent);
 
-  delay(1000);
+    delay(1000);
 }

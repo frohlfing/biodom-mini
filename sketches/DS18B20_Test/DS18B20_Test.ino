@@ -15,19 +15,19 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 void setup(void) {
-  Serial.begin(115200);
-  Serial.println("DS18B20 Test");
-  sensors.begin();
+    Serial.begin(115200);
+    Serial.println("DS18B20 Test");
+    sensors.begin();
 }
 
 void loop(void) {
-  sensors.requestTemperatures();
-  delay(1500);
-  float tempC = sensors.getTempCByIndex(0);
-  if (tempC != DEVICE_DISCONNECTED_C) {
-    Serial.print("Temperature:");
-    Serial.println(tempC);
-  } else {
-    Serial.println("Error: Could not read temperature data");
-  }
+    sensors.requestTemperatures();
+    delay(1500);
+    float tempC = sensors.getTempCByIndex(0);
+    if (tempC != DEVICE_DISCONNECTED_C) {
+        Serial.print("Temperature:");
+        Serial.println(tempC);
+    } else {
+        Serial.println("Error: Could not read temperature data");
+    }
 }
