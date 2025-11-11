@@ -121,10 +121,10 @@ void halt(const char* message, const char* detail = "") {
     // LED dauerhaft einschalten, um den Halt zu signalisieren.
     debugLed.on(); 
 
-    // Endlosschleife, um das Programm anzuhalten
-    while (true) {
-        delay(100); // Prozessor entlasten
-    }
+    // // Endlosschleife, um das Programm anzuhalten
+    // while (true) {
+    //     delay(100); // Prozessor entlasten
+    // }
 }
 
 /**

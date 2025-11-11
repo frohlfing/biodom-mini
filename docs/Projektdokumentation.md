@@ -1,7 +1,7 @@
 # Projekt "Biodom Mini" – Ein Hightech-Gewächshaus
 
-* **Version:** 1.0.1
-* **Datum:** 19.11.2025
+* **Version:** 1.0.2
+* **Datum:** 11.11.2025
 * **Autor:** Frank Rohlfing
 
 Das Ziel ist ein Mini-Gewächshaus für anspruchsvolle Pflanzen, das automatisch für ein tropisches Klima sorgt.
@@ -1264,25 +1264,38 @@ Die Wasserpumpe wird aktiviert, wenn die **Bodenfeuchte (S3)** unter den Zielwer
 
 ### Optimale Klimawerte
 
-Aus folgenden Quellen habe ich optimale Klimawerte für tropische Pflanzen ermittelt:
+Eine Internet-Recherche über optimale Klimawerte für tropische Pflanzen ergab folgendes:
 
-*  Tropische Pflanzen, die oft aus Regenwäldern stammen, benötigen ein stabiles Klima mit hoher Luftfeuchtigkeit und gleichmäßig warmen Temperaturen. [1](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGx9SbxDjkWyQRk0rXKle5gDE0GGT0pcPZAbNu0NsBzqaQmOlg8d6lwg5aGqeAKr3vh10aV__Wy95gPmcb6JUWcxZvhzea7rjxdXfY8fvZeoxM_u1xCDFgNA-P0qRP7_UWSeFVcYySNaUdVWeiandZiRpTnZyXlvMbMttatDpny)]
+*   **Temperatur:** 
+    - Tropische Pflanzen, die oft aus Regenwäldern stammen, benötigen ein stabiles Klima mit hoher Luftfeuchtigkeit und gleichmäßig warmen Temperaturen. [1]
 
-*   **Temperatur:** Für tropische Pflanzen sind Tagestemperaturen zwischen 20°C und 30°C ideal. [[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQF8VNvW0JlZ75fazx5gVCOKtGiO8jTRYBMnwGTzXVLDf7qKC1yigpKR7uOSccqjZLWK62D2pev8A4SPOwZYc6vRbnHivrRQfAPpwru4XVGFLsEL4ZW6CpWU14iqNyRgJ9I1Cpnt2xZfqDG6hGt28WteAHntxG-Lxaql4Y9PArgrHQtNs8WP)]
+    - Für tropische Pflanzen sind Tagestemperaturen zwischen 20°C und 30°C ideal. [2]
 
-* Nachts sollten die Temperaturen nicht wesentlich unter 20°C fallen. [[3](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGRBi53MjxGXUwd-EC8Kx141IKz-JdhB2c-pTNSB5MRoWkN59i0c-iWqfQaqgt_BwMbUVxw7UzXjj-RpLOOOoblhKUdTS14zbeaGlbRCCFtSmXqm7AdCsTUvMn5cqbc7dtHaVTu0MikrxpT3yZoqrBcY9VE6dtLZhMJjuHAKK-A2o7RPOojIlKZScMmU2TELpM-dKjcAgZCFVe-KaJTyoXz)] 
+    - Nachts sollten die Temperaturen nicht wesentlich unter 20°C fallen. [3]
 
-* Die Bodentemperatur ist für die Wurzelaktivität ebenfalls entscheidend und sollte im warmen Bereich liegen. [[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQF8VNvW0JlZ75fazx5gVCOKtGiO8jTRYBMnwGTzXVLDf7qKC1yigpKR7uOSccqjZLWK62D2pev8A4SPOwZYc6vRbnHivrRQfAPpwru4XVGFLsEL4ZW6CpWU14iqNyRgJ9I1Cpnt2xZfqDG6hGt28WteAHntxG-Lxaql4Y9PArgrHQtNs8WP)]
+    - Die Bodentemperatur ist für die Wurzelaktivität ebenfalls entscheidend und sollte im warmen Bereich liegen. [2]
 
-*   **Luftfeuchtigkeit:** Eine hohe relative Luftfeuchtigkeit ist für die meisten tropischen Pflanzen essenziell, um die Transpiration über die Blätter zu minimieren. Werte zwischen 60% und 80% sind optimal. [[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQF8VNvW0JlZ75fazx5gVCOKtGiO8jTRYBMnwGTzXVLDf7qKC1yigpKR7uOSccqjZLWK62D2pev8A4SPOwZYc6vRbnHivrRQfAPpwru4XVGFLsEL4ZW6CpWU14iqNyRgJ9I1Cpnt2xZfqDG6hGt28WteAHntxG-Lxaql4Y9PArgrHQtNs8WP)]
+*   **Luftfeuchtigkeit:** 
+    - Eine hohe relative Luftfeuchtigkeit ist für die meisten tropischen Pflanzen essenziell, um die Transpiration über die Blätter zu minimieren. Werte zwischen 60% und 80% sind optimal. [2]
 
-*   **Bodenfeuchte:** Der Boden sollte konstant feucht, aber niemals durchnässt sein. [[4](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGnF1O_MwFdqG1atb97Ym_n1MvM7Ek14t4YkmkbOrIsERtl5XlsQ2BEBRagBhQ0fo8_h-Fvt77bVqzYx3Aa95xZ7PFmaaaZonUoKA8jmu8ksITl80Xxxam8jT7pxBdFZiVby-hueeuZaAicyrKYCKJEnH1dtlASJTXjs4oOTPgWy36YfUvhV0PxnlV3gGPVuDTnDEJ6Z9Jld4ySrMTCqw%3D%3D)]  
+*   **Bodenfeuchte:**  
+    - Der Boden sollte konstant feucht, aber niemals durchnässt sein. [4]
 
-* Staunässe führt schnell zu Wurzelfäule und muss unbedingt vermieden werden. [[5](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQFIqqJysazkVRUXV1x9n9avjynkptqZNMOIPqIXJQfqHp_GflxabTTGyxRKxnN_xJAevLsyZDf7aSW9HUyHw2I9pelaQB050XmPb3VBYSa3LoC3sluL0zckD2QaR3Ep_xj9Oocd3UNCoo5FQPnkx6EymLAiRXXDY9wD0NqkrZbS2Q%3D%3D)]
+    - Staunässe führt schnell zu Wurzelfäule und muss unbedingt vermieden werden. [5]
 
-* Der Boden sollte zwischen den Gießvorgängen leicht antrocknen können. [[5](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQFIqqJysazkVRUXV1x9n9avjynkptqZNMOIPqIXJQfqHp_GflxabTTGyxRKxnN_xJAevLsyZDf7aSW9HUyHw2I9pelaQB050XmPb3VBYSa3LoC3sluL0zckD2QaR3Ep_xj9Oocd3UNCoo5FQPnkx6EymLAiRXXDY9wD0NqkrZbS2Q%3D%3D)] 
+    - Der Boden sollte zwischen den Gießvorgängen leicht antrocknen können. [5]
 
-*   **Lichtzyklus:** Ein Lichtzyklus von 12 bis 14 Stunden pro Tag simuliert die Bedingungen am Äquator und fördert ein gesundes vegetatives Wachstum. [[6](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQG51fHQsw8tGU6QXHpqpLSm43abKthgd_-qdm7uQGN_xrAqZA6WOQVi581OqRNR6YeaBMWQUHHfMs8U41SpHZEwXLBp1Xd-mN07i8ZNCToGSPYqU943mW0HG8XxOqzR0GkYB_6SrxGuUALQtCdXeRWVdxjeN2vA30tjBT33iEOBqmRNmzpRa7D57K7LMaEIiJ5YpXf7pqYsAT837VAG)]
+*   **Lichtzyklus:** 
+    - Ein Lichtzyklus von 12 bis 14 Stunden pro Tag simuliert die Bedingungen am Äquator und fördert ein gesundes vegetatives Wachstum. [6]
+
+Quellen:
+
+* [[1] hoklartherm.de](https://www.hoklartherm.de/ratgeber/tropische-pflanzen-gewaechshaus/)
+* [[2] erlebnisgaertnerei.com](https://erlebnisgaertnerei.com/die-richtigen-temperaturen-im-gewaechshaus/)
+* [[3] samen.de](https://samen.de/blog/temperaturmanagement-in-der-pflanzenanzucht-fuer-gesundes-pflanzenwachstum.html) 
+* [[4] palmenstadl.de](https://palmenstadl.de/Die-richtige-Luftfeuchtigkeit-fuer-mediterrane-tropische-und-Wuestenpflanzen)  
+* [[5] urban-jungle.store](https://www.urban-jungle.store/wie-giesse-ich-zimmerpflanzen-richtig/) 
+* [[6] harmony-plants.com](https://www.harmony-plants.com/blogs/pflanzenmagazin/topf-und-bodenauswahl-fuer-tropische-pflanzen)
 
 Damit lege ich folgende Sollwerte als Voreinstellung fest (diese können per Webinterface verändert werden): 
 
