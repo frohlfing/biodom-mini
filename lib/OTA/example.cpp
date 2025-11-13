@@ -13,12 +13,10 @@
 #include "OTA.h"
 
 // Ersetzen Sie dies mit Ihren WLAN-Zugangsdaten
-const char* WIFI_SSID = "DEIN_WLAN_NAME";
-const char* WIFI_PASSWORD = "DEIN_WLAN_PASSWORT";
-
-// Konfiguration für OTA
-const char* HOSTNAME = "ota-beispiel";
-const char* OTA_PASSWORD = "ota-passwort";
+constexpr char WIFI_SSID[] = "WOLKE7";
+constexpr char WIFI_PASSWORD[] = "wifi-password";
+constexpr char HOSTNAME[] = "biodom-mini";
+constexpr char OTA_PASSWORD[] = "ota-passwort";
 
 OTA ota(HOSTNAME, OTA_PASSWORD);
 
@@ -44,16 +42,15 @@ void setup() {
 
     // 2. OTA-Dienst starten
     ota.begin();
+
+    Serial.print("Warte auf OTA-Update...");
 }
 
 void loop() {
     // 3. OTA-Handler in der Hauptschleife aufrufen
     ota.handle();
 
-    // Beispiel-Code, der im Hintergrund läuft
-    static unsigned long lastMessageTime = 0;
-    if (millis() - lastMessageTime > 60000) {
-        lastMessageTime = millis();
-        Serial.println("Hello World! Warte auf OTA-Update...");
-    }
+    // sonstiger Code...
+    Serial.print(".");
+    delay(1000);
 }

@@ -22,7 +22,7 @@ Der `upload_port` ist die mDNS-Adresse (Hostname + Suffix ".local") oder IP-Adre
 
 In `upload_flags` wird das Passwort angegeben - am besten indirekt über die Umgebungsvariable `OTA_PASSWORD`, damit es nicht in der Datei steht und vom Git-Repository ausgeschlossen werden muss!
 
-Unter Einstellungen/Arbeitsbereich/Terminal können Umgebungsvariablen definiert werden:
+In VS Code unter Einstellungen/Arbeitsbereich/Features/Terminal können Umgebungsvariablen definiert werden.
 Dabei wird `workspace.json` im `AppData`-Ordner des Benutzers geöffnet, in der folgender Eintrag hinterlegt werden muss:
 
 ```json

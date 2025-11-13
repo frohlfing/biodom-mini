@@ -144,27 +144,6 @@ void log(const char* message) {
     delay(1000);
 }
 
-void setupWifi() {
-    log("Verbinde mit WLAN...");
-    WiFi.mode(WIFI_STA);
-    WiFi.setHostname(HOSTNAME);  // HOSTNAME ist in config.h definiert
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-        delay(500);
-        Serial.print(".");
-        attempts++;
-    }
-    if (WiFi.status() != WL_CONNECTED) {
-        halt("WLAN FEHLER", "Verbindung fehlgeschlagen");
-    }
-    log("WLAN verbunden!");
-    String ipMessage = "IP: " + WiFi.localIP().toString();
-    log(ipMessage.c_str());
-    String hostMessage = "Host: " + String(WiFi.getHostname());
-    log(hostMessage.c_str());
-}
-
 /**
  * @brief Initialisierungsroutine, wird einmal beim Start ausgeführt.
  */
@@ -197,9 +176,29 @@ void setup() {
         while (true) { delay(100); } // Endlosschleife, um das Programm anzuhalten
     }
 
-    // 5) Netzwerk und OTA initialisieren
-    setupWifi();   // 1. WLAN verbinden
-    if (!ota.begin()) {   // 2. OTA-Dienst auf der bestehenden Verbindung starten
+    // 5) Netzwerk initialisieren
+    log("Verbinde mit WLAN...");
+    WiFi.mode(WIFI_STA);
+    WiFi.setHostname(HOSTNAME);  // HOSTNAME ist in config.h definiert
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 20) { // max. 20 * 500ms = 10 Sekunden lang versuchen
+        delay(500);
+        Serial.print(".");
+        attempts++;
+    }
+    Serial.println();
+    if (WiFi.status() != WL_CONNECTED) {
+        halt("WLAN FEHLER", "Verbindung fehlgeschlagen");
+    }
+    log("WLAN verbunden!");
+    String ipMessage = "IP: " + WiFi.localIP().toString();
+    log(ipMessage.c_str());
+    String hostMessage = "Host: " + String(WiFi.getHostname());
+    log(hostMessage.c_str());
+
+    // 6. OTA-Dienst auf der bestehenden Verbindung starten
+    if (!ota.begin()) {   
         halt("OTA FEHLER", "Initialisierung fehlgeschlagen");
     }
     log("OTA-Dienst bereit");
