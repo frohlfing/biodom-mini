@@ -6,20 +6,20 @@
  * Sie initialisiert alle Sensoren und Aktoren, liest periodisch Messwerte aus,
  * wendet die Steuerungslogik an und aktualisiert die Anzeige.
  * 
- * @version 1.0.2
- * @date 10.11.2025
+ * @version 1.0.3
+ * @date 13.11.2025
  * @author Frank Rohlfing
  */
 
 #include <Arduino.h>
-#include <WiFi.h>
 #include <SD.h>
 #include <Wire.h>
+#include <WiFi.h>
+#include <ArduinoOTA.h>
 
 // -- Einbinden der Konfiguration und der lokalen Bibliotheken --
 #include "config.h"
 #include "secrets.h"
-#include "OTA.h"
 #include "ArduCamMini2MPPlusOV2640.h"
 #include "LED.h"
 #include "MicroSDCard.h"
@@ -71,9 +71,6 @@ OLEDDisplaySH1106 display;            // 1.3 Zoll OLED Display, SSH1106 (Z1)
 MicroSDCard sdCard(PIN_SPI_SD_CS);    // MicroSD SPI Kartenleser (Z2)
 ArduCamMini2MPPlusOV2640 camera(PIN_SPI_CAMERA_CS); // ArduCAM Mini 2MP Plus, OV2640 (Z3)
 LED debugLed(PIN_DEBUG_LED);          // LED (Z4)
-
-// --- Netzwerk ---
-OTA ota(HOSTNAME, OTA_PASSWORD); 
 
 // === Globale Variablen zur Zustandsspeicherung ===
 
@@ -151,8 +148,8 @@ void setup() {
     // Zufallsgenerator mit einem unvorhersehbaren Wert von einem offenen Analog-Pin initialisieren 
     randomSeed(analogRead(36)); // der GPIO36 ist ungenutzt
 
-    // --- Als erstes Debug-LED, Serielle Schnittstelle und Display initialisieren ---
-    // (damit Fehler so früh wie möglich Fehler angezeigt werden können)
+    // --- Debug-LED, serielle Schnittstelle und Display initialisieren ---
+    // (als erstes, damit Fehler so früh wie möglich angezeigt werden können)
 
     // 1) Debug-LED (Z4) initialisieren
     // Die LED ist standardmäßig aus. 
@@ -161,8 +158,8 @@ void setup() {
 
     // 2) Serielle Schnittstelle initialisieren
     Serial.begin(115200);
-    while (!Serial); // Auf serielle Verbindung warten
-    Serial.println("--- Biodom Mini startet ---");
+    //while (!Serial); // Auf serielle Verbindung warten
+    Serial.println("Biodom Mini startet");
 
     // 3) I2C-Bus initialisieren
     // Für den ESP32 ist es eine gute Praxis, die SDA- und SCL-Pins explizit anzugeben.
@@ -176,10 +173,12 @@ void setup() {
         while (true) { delay(100); } // Endlosschleife, um das Programm anzuhalten
     }
 
+    // --- Netzwerk und OTA starten ---
+
     // 5) Netzwerk initialisieren
     log("Verbinde mit WLAN...");
-    WiFi.mode(WIFI_STA);
-    WiFi.setHostname(HOSTNAME);  // HOSTNAME ist in config.h definiert
+    WiFi.mode(WIFI_STA); // Station Mode (Client)
+    WiFi.setHostname(HOSTNAME);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     int attempts = 0;
     while (WiFi.status() != WL_CONNECTED && attempts < 20) { // max. 20 * 500ms = 10 Sekunden lang versuchen
@@ -197,10 +196,10 @@ void setup() {
     String hostMessage = "Host: " + String(WiFi.getHostname());
     log(hostMessage.c_str());
 
-    // 6. OTA-Dienst auf der bestehenden Verbindung starten
-    if (!ota.begin()) {   
-        halt("OTA FEHLER", "Initialisierung fehlgeschlagen");
-    }
+    // 6) OTA-Dienst starten
+    ArduinoOTA.setHostname(HOSTNAME);
+    ArduinoOTA.setPassword(OTA_PASSWORD);
+    ArduinoOTA.begin();
     log("OTA-Dienst bereit");
 
     // --- Restliche Hardware-Komponenten initialisieren ---
@@ -276,7 +275,7 @@ void setup() {
  * @brief Hauptschleife, wird kontinuierlich ausgeführt.
  */
 void loop() {
-    ota.handle();
+    ArduinoOTA.handle();
 
     unsigned long currentTime = millis();
 

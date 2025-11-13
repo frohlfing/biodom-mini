@@ -4,13 +4,13 @@ OTA ermöglicht das Hochladen des Codes über WLAN.
 
 ## 📦 Installation & Konfiguration
 
-Für die Nutzung von OTA muss die `platformio.ini`-Datei wie folgt konfiguriert werden:
+Für ein OTA-Update müssen folgende Angaben in die `platformio.ini` eingetragen werden:
 
 ```ini
 [env:esp32-ova]
 ; ...
 upload_protocol = espota
-upload_port = biodom-mini.local
+upload_port = biodom-mini-dev.local
 upload_flags = --auth=${sysenv.OTA_PASSWORD}
 
 ```
@@ -24,61 +24,18 @@ Dabei wird `workspace.json` im `AppData`-Ordner des Benutzers geöffnet, in der 
 ```json
 "settings": {
     "terminal.integrated.env.windows": {
-        "OTA_PASSWORD": "dein-sicheres-passwort"
+        "OTA_PASSWORD": "4321"
     }
 }
 ```
 
-## 💻 Beispiel
+**Anmerkung:**
 
-Das Beispiel verbindet sich mit dem WLAN und startet den OTA-Dienst. Anschließend gibt es minütlich eine Statusmeldung aus.
+Mit der Arduino IDE kann der Code auch drahtlos hochgeladen werden. 
+Wenn das Programm läuft, ist der Port des Entwicklungsboard keine COM-Schnittstelle mehr, sondern ein Netzwerk-Anschluss (Menüpunkt Tools/Port, u.U. erst nach Neustart sichtbar):
 
-```cpp
-#include <Arduino.h>
-#include <WiFi.h>
-#include <ArduinoOTA.h>
+![Tools > Port](./assets/OTA-Port.png)
 
-// Konfiguration
-constexpr char WIFI_SSID[] = "WOLKE7";
-constexpr char WIFI_PASSWORD[] = "wifi-password";
-constexpr char HOSTNAME[] = "biodom-mini";
-constexpr char OTA_PASSWORD[] = "ota-passwort";
+## 💻 Beispiel-Code
 
-void setup() {
-    Serial.begin(115200);
-    while (!Serial);
-    Serial.println("\nOTA Beispiel-Sketch");
-
-    // Mit dem WLAN verbinden
-    Serial.print("Verbinde mit WLAN...");
-    WiFi.mode(WIFI_STA);
-    WiFi.setHostname(HOSTNAME);  
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println("\nWLAN verbunden!");
-    Serial.print("IP-Adresse: ");
-    Serial.println(WiFi.localIP());
-    Serial.print("Host: ");
-    Serial.println(WiFi.getHostname());
-
-    // 2. OTA-Dienst starten
-    ArduinoOTA.setHostname(HOSTNAME);
-    ArduinoOTA.setPassword(OTA_PASSWORD);
-    ArduinoOTA.begin();
-    Serial.println("OTA-Dienst bereit");
-    
-    Serial.print("Warte auf OTA-Update...");
-}
-
-void loop() {
-    // 3. OTA-Handler in der Hauptschleife aufrufen
-    ArduinoOTA.handle();
-
-    // sonstiger Code...
-    Serial.print(".");
-    delay(1000);
-}
-```
+s. [sketches/OTA](/sketches/OTA/OTA.ino)

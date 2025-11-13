@@ -1,7 +1,7 @@
 /**
  * PoC 1: Anzeige eines XBM-Bildes auf dem OLED.
  * 
- * Details hierzu `siehe docs\JPGtoXBM.md`
+ * Details hierzu `siehe /docs/JPGtoXBM.md`.
  */
 
 #include <Arduino.h>
