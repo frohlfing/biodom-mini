@@ -574,7 +574,7 @@ void handleCamera() {
     sprintf(filename, "/img_%lu.jpg", millis());
 
     // KORREKTUR: Die neue Methode der sdCard-Klasse verwenden
-    File imgFile = sdCard.openFileForWriting(filename);
+    File imgFile = MicroSDCard::openFileForWriting(filename);
     if (!imgFile) {
         Serial.println("Konnte Datei auf SD-Karte nicht erstellen.");
         display.showFullscreenAlert("SD FEHLER", true);
