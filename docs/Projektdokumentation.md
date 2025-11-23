@@ -238,33 +238,12 @@ Das Modell mit UCD-C macht nur Probleme. Keins meiner UCB-C-Kabel hat funktionie
                                        └────────────────┘
 </pre>
 
+### Relaismodul
 
-### Relais-Modul
-
-8-Relais-Modul mit Optokoppler, 5V 
-
-![Relais](https://m.media-amazon.com/images/I/71ODw10VbbL._SL1500_.jpg)
-![Relais Anschlüsse](https://m.media-amazon.com/images/I/71N6Hp8Cw7L._SL1500_.jpg)
+8-Kanal Relaismodul mit Optokoppler, 5V
 
 [Amazon](https://www.amazon.de/dp/B07CT7SLYQ)
 9,59 €
-
-[AZ-Delivery e-Book](https://cdn.shopify.com/s/files/1/1509/1638/files/AZ041_C_9-7_DE_B07CT7SLYQ_b3af212d-3531-46ad-b4fc-e49166c8d2f2.pdf),
-[Datasheet](https://cdn.shopify.com/s/files/1/1509/1638/files/8-Relais_Modul_Datenblatt_AZ-Delivery_Vertriebs_GmbH_1f00ff0d-33ca-4546-9ddc-7b2c223f5aa3.pdf)
-
-* Max. DC:  5A, 30V pro Relais
-* Maße: 50 x 140 mm
-
-**Anmerkung:**
-
-* Der Jumper zwischen VCC und JD-VCC muss gesteckt sein, da die Relais-Spulen auch von Steuerstromkreis versorgt werden sollen. Ein Stützkondensator wird die Induktionsspitzen beim Schalten abfangen.
-* **Achtung, invertierte Logik**: Mit LOW wird das Relais geschaltet, nicht mit HIGH!
-
-**Pinbelegung:**
-
-**Achtung:** Die Pinbelegung sowohl im E-Book und als auch im Datasheet ist nicht korrekt abgebildet: 
-NC und NO sind vertauscht. Die Symbole auf dem Modul sind korrekt, sowie hier:
-
 
 <pre>
          ┌────────────────┐
@@ -295,224 +274,52 @@ GPIO32 ──┤ IN7       Com5 ├── +12V        GND ─O──(schwarz)─
          └────────────────┘
 </pre>
 
-## 3. Sensoren
-
-### S1: Luft (Raumtemperatur und Luftfeuchtigkeit)
-
-Raumtemperatur- und Luftfeuchtigkeitssensormodul AM2302, auch bekannt als DHT22.
-
-Tatsächlich ist AM2302 ein Nachfolgemodel von DHT22 und präziser. 
-
-Der Sensor ist auch "pur" ohne Modul erhältlich. Dann muss zusätzlich ein Pullup-Widerstand (typischerweise 4.7 kΩ bis 10 kΩ) zwischen der Datenleitung und VCC angeschlossen werden. Ich verwende hier das Modul, das den Pullup-Widerstand bereits beinhaltet.
-
-![AM2302](https://m.media-amazon.com/images/I/71TPWxnUE8L._SL1500_.jpg)
-
-[Amazon](https://www.amazon.de/dp/B078SVZB1X)
-8,49 €
-
-[AZ-Delivery e-Book](https://cdn.shopify.com/s/files/1/1509/1638/files/AZ073_A10-7_DE_B06XF4TNT9_a2f405a2-b242-44dc-aa26-428bc637eef5.pdf?v=1721198350),
-[Datasheet](https://www.makerguides.com/wp-content/uploads/2019/02/DHT22-AM2302-Datasheet.pdf)
-
 **Anmerkung:**
 
-* Das Protokoll für den AM2302ist (One-Wire) ist bidirektional. Demnach darf dieser Sensor nicht an die GPIO 34, 35, 36 oder 39!
-* Bei einer Versorgungsspannung von 3.3V darf die Kabellänge nicht größer als 1 Meter sein.
+Der Jumper zwischen VCC und JD-VCC muss gesteckt sein, da die Relais-Spulen auch von Steuerstromkreis versorgt werden sollen.
 
-**Pinout:**
+Um Induktionsspitzen beim Schalten abzufangen, wird ein Stützkondensator beim Spannungswandler eingesetzt (s. Kapitel6).
 
-| Pin | Bezeichnung | Farbe    | Beschreibung |
-|-----|-------------|----------|--------------|
-| 1   | +           | rot      | 3.3V - 5.5V  |  
-| 2   | Out         | gelb     | Daten-Pin    |  
-| 3   | -           | schwarz  | GND          | 
+## 3. Sensoren
 
-**Pinbelegung:**
+| Präfix | Name                                        | Spezifikation               | GPIO   | Einkauf                                                                             |
+|--------|---------------------------------------------|-----------------------------|--------|-------------------------------------------------------------------------------------|
+| S1     | Raumtemperatur- und Luftfeuchtigkeitssensor | AM2302 Module               | GPIO13 | [Amazon](https://www.amazon.de/dp/B078SVZB1X) 8,49 €                                |
+| S2     | Bodentemperatursensor                       | DS18B20                     | GPIO4  | [Amazon](https://www.amazon.de/dp/B01MZG48OE) 8,29 € (2 Stück); Einzelpreis: 4,15 € |
+| S3     | Bodenfeuchtigkeitssensor                    | Capacitive Soil Sensor v1.2 | GPIO34 | [Amazon](https://www.amazon.de/dp/B07HJ6N1S4) 6,46 €                                |
+| S4     | Füllstandsensor                             | XKC-Y25-NPN                 | GPIO35 | [Amazon](https://www.amazon.de/dp/B0C1ZVZF2L) 10,19 €                               |
+| S5     | Lichtsensor                                 | GY-302 BH1750               | (I2C)  | [Amazon](https://www.amazon.de/dp/B07TKWNGZ4) 5,49 €                                |
+
+### S1: AM2302
 <pre>
 ┌────────────────┐
 │ AM2302       - ├──(schwarz)─O─── GND 
-│ Module     Out ├─────(gelb)─O─►─ GPIO13
-│              + ├─►────(rot)─O─── +3.3V
-└────────────────┘               
+│ Module     Out ├─►───(gelb)─O──► GPIO13
+│              + ├──────(rot)─O─── +3.3V
+└────────────────┘             
 </pre>
 
-**Benötigte Bibliothek:**
-
-* SimpleDHT 1.0.15 by Winlin
-
-### S2: Bodentemperatur
-
-Bodentemperatursensor DS18B20
-
-Dieser Sensor ist wasserdicht, kommt mit 1m-Kabel und Edelstahlhülse.
-
-![DS18B20](https://m.media-amazon.com/images/I/71-+wN7lSdL._SL1500_.jpg)
-
-[Amazon](https://www.amazon.de/dp/B01MZG48OE)
-8,29 €	(2 Stück); Einzelpreis: 4,15 €
-
-[AZ-Delivery e-Book](https://cdn.shopify.com/s/files/1/1509/1638/files/AZ079_C_12-8_DE_B01MZG48OE_249c2b9f-7891-4e9a-9169-0dc281f12f11.pdf),
-[Datasheet](https://cdn.shopify.com/s/files/1/1509/1638/files/DS18B20_1mCable_datasheet.pdf)
-
-**Anmerkung:**
-
-Das Protokoll für den DS18B20 (One-Wire) ist bidirektional. Demnach darf dieser Sensor nicht an die GPIO 34, 35, 36 oder 39!
-
-**Pinout:**
-
-| Pin  | Bezeichnung | Farbe   | Beschreibung |
-|------|-------------|---------|--------------|
-| 1    | VCC         | rot     | 3.3 - 5.5V   |  
-| 2    | DATA        | gelb    | Daten-Pin    | 
-| 3    | GND         | schwarz | GND          |
-
-**Pull-Up-Widerstand R1 = 4.7 kΩ** 
-
-Wird zwischen dem roten Kabel (VCC) und dem gelben Kabel (DATA) an die Buchsenleiste gelötet.
-
-**Pinbelegung mit Pullup-Widerstand:**
+### S2: DS18B20
 <pre>
 ┌────────────────┐                   R1=4.7k
 │ DS18B20    GND ├──(schwarz)─O────────────────── GND 
-│           DATA ├─────(gelb)─O─────┬───────────► GPIO4
-│            VCC ├─►────(rot)─O──┐  └─[ R1 ]─┐
+│           DATA ├─►───(gelb)─O─────┬───────────► GPIO4
+│            VCC ├──────(rot)─O──┐  └─[ R1 ]─┐
 └────────────────┘               └───────────┴─── +3.3V
 </pre>
 
-**Benötigte Bibliothek:**
+Pull-Up-Widerstand R1 = 4.7 kΩ
 
-* DallasTemperature 4.0.5 by Miles Burton
-
-### S3: Bodenfeuchte
-
-Kapazitiver Bodenfeuchtigkeitssensor v1.2
-
-Auch bekannt als "Capacitive Soil Moisture Sensor v1.2" oder "Hygrometer Module v1.2".
-
-![Hygrometer](https://m.media-amazon.com/images/I/61f-Y-vFplL._SX522_.jpg)
-
-[Amazon](https://www.amazon.de/dp/B07HJ6N1S4)
-6,46 €
-
-[Praxisbericht](https://www.makerguides.com/capacitive-soil-moisture-sensor-with-arduino/), 
-[AZ-Delivery e-Book](https://cdn.shopify.com/s/files/1/1509/1638/files/AZ063_A_16-13_DE_B07HJ6N1S4_1746d1f6-6b82-4b8a-bee1-88d83344cb5a.pdf),
-[Datasheet](https://cdn.shopify.com/s/files/1/1509/1638/files/Hygrometer_V1.2_Sensor_Modul_Datenblatt_AZ-Delivery_Vertriebs_GmbH.pdf)
-
-* 5V (!)
-* Größe: 22 x 97 x 9 mm 
-* analoger Ausgang 
-
-**Anmerkung:** 
-
-[Paradisetronic.com](https://www.amazon.de/dp/B08944FNXV) bietet den Sensor für 3.3V an. Dazu müsste aber ein TLC555C oder TLC555I verbaut sein. 
-Tatsächlich ist wie bei AZDelivery ein NE555 drauf (minimale Versorgungsspannung von 4.5V lt. Datenblatt). 
-Damit ist der Betrieb mit 3.3V nicht möglich oder zumindest kritisch (s. Praxisbericht oder [Kundenrezension](https://www.amazon.de/gp/customer-reviews/R2E7NX4GYVWY0/ref=cm_cr_getr_d_rvw_ttl?ie=UTF8)). 
-
-**Pinout:**
-
-| Pin  | Bezeichnung | Farbe   | Beschreibung |
-|------|-------------|---------|--------------|
-| 1    | GND         | schwarz | GND          |  
-| 2    | VCC         | rot     | 5V           | 
-| 3    | AOUT        | gelb    | Daten-Pin    |
-
-**Anmerkung:**
-
-Der Sensor hat eine Betriebsspannung von 5 V. Die maximale Ausgangsspannung liegt aber deutlich unter 3.3 V. Ein Spannungsteiler ist also nicht erforderlich.
-
-**Pinbelegung:**
+### S3: Capacitive Soil Sensor v1.2
 <pre>
 ┌─────────────────┐
 │ Capacitive  GND ├──(schwarz)─O─── GND 
 │ Hygrometer  VCC ├──────(rot)─O─── +5V
 │ v1.2       AOUT ├─►───(gelb)─O─►─ GPIO34
 └─────────────────┘
-</pre>   
+</pre>
 
-**Messbereich:**
-
-Darüber steht nichts im Datenblatt. Die Werte habe ich experimental ermittelt.
-
-* Komplett trocken (in der Luft): 2080 mV
-* Komplett feucht (im Wasser): 800 mV 
-
-**Benötigte Bibliothek:**
-
-(keine Abhängigkeiten)
-
-**Kalibrierung:**
-
-* Weiße Markierung für die Einstecktiefe beachten!
-
-Messung der Rohwerte: 
-```
-void setup() {
-  Serial.begin(115200);  
-}
-
-int valMax = 0;
-int valMin = 99999; 
-
-void loop() {
-  int val = analogRead(34);  
-  if (val < valMin) {
-    valMin = val;
-  }
-  if (val > valMax) {
-    valMax = val;
-  }
-  Serial.print("Min:");
-  Serial.print(valMin);
-  Serial.print(",Max:");
-  Serial.print(valMax);
-  Serial.print(",Curr:");
-  Serial.println(val);
-  delay(1000);
-}
-``` 
- 
-Die Messung ergibt 
-* im Wasser: 995 bis 1055 => unter 1100
-* in der Luft: 2642 bis 2734 => über 2500
-
-Der folgende Code verwendet die Rohwerte und ordnet sie einem Bereich von 0 bis 100 % zu:
-
-```
-const int valWater = 1100;
-const int valAir = 2500;
-
-void setup() {
-  Serial.begin(115200);
-}
-
-void loop() {
-  int val = analogRead(34);
-  int percent = map(val, valAir, valWater, 0, 100);
-  percent = constrain(percent, 0, 100);
-  Serial.println(percent);
-  delay(1000);
-}
-```
-
-### S4: Wasserstand
-
-Berührungsloser Füllstandsensor XKC-Y25-NPN 
-
-![XKC-Y25-NPN](https://m.media-amazon.com/images/I/61vWOl7DAtL._AC_SL1001_.jpg)
-
-[Amazon](https://www.amazon.de/dp/B0C1ZVZF2L)
-10,19 €
-
-[Tutorial](https://www.kreativekiste.de/arduino-anschluss-fluessigkeitsstandsensor-xkc-y25-pnp-sps), 
-[Datasheet](https://www.nuggetforum.de/media/kunena/attachments/23214/NPN-bb00ea11-07b9-4b43-be78-ce18f0e40b48.pdf)
- 
-* 5-12 V, 100 mA
-* berührungslos, kann Kunststoff-, Glas-, Keramik- und andere nichtmetallische Behälter durchdringen (≤ 20 mm dick)
-* wasserdicht
-* Ausgang: NPN, digital (LOW bei Wassererkennung)
-* Kabellänge: ca. 50 cm
-* Pegelfehler: ±1,5 mm
-
-**Pinout:**
+### S4: XKC-Y25-NPN
 
 | Pin | Bezeichnung | Farbe am Sensor | Farbe am Klinkenstecker | Beschreibung                             |
 |-----|-------------|-----------------|-------------------------|------------------------------------------|
@@ -521,24 +328,8 @@ Berührungsloser Füllstandsensor XKC-Y25-NPN
 | 3   | GND         | blau            | weiß                    | GND                                      |
 | 4   | MODE        | schwarz         | -                       | Modus-Umschaltung (wird nicht benötigt)  | 
 
-**Anmerkung:**
+Eventuell sind Schwarz und Gelb vertauscht (OUT = Schwarz, MODE = Gelb)
 
-* Eventuell sind Schwarz und Gelb vertauscht (OUT = Schwarz, MODE = Gelb)
-
-Pegel am Ausgang:
-
-* Der Sensor wird mit 5 V versorgt, aber das ist in diesem Fall kein Problem für den ESP32. 
-	Denn am Ausgang liegen niemals die +5V an: 
-	* Wasser erkannt: Er verbindet seinen Ausgang (OUT) mit GND.
-	* Kein Wasser: Der Ausgang ist hochohmig (existiert quasi nicht).
-
-**Pull-Up-Widerstand R2 = 10 kΩ**
-
-Wird zwischen +3.3V vom ESP32 und dem gelben Kabel (OUT) an die Buchsenleiste gelötet.
-
-So wird der Pegel auf HIGH (+3.3V) gezogen, wenn Trockenheit erkannt wird.    
-
-**Pinbelegung mit Pullup-Widerstand:**
 <pre>
 ┌────────────────┐                     R2=10k 
 │ XKC-Y25    VCC ├────(braun)─O───────────────── +5V   
@@ -548,37 +339,9 @@ So wird der Pegel auf HIGH (+3.3V) gezogen, wenn Trockenheit erkannt wird.
 └────────────────┘    
 </pre>
 
-**Benötigte Bibliothek:**
+Pull-Up-Widerstand R2 = 10 kΩ
 
-(keine Abhängigkeiten)
-
-### S5: Lichtstärke
-
-Lichtsensormodul GY-302 BH1750
-
-Dieser Sensor ist sehr genau und misst das Licht direkt in LUX.
-
-![GY-302 BH1750](https://m.media-amazon.com/images/I/713WSoL6ERL._SX522_.jpg)
-
-[Amazon](https://www.amazon.de/dp/B07TKWNGZ4)
-5,49 €
-
-[AZ-Delivery e-Book](https://cdn.shopify.com/s/files/1/1509/1638/files/AZ104_A6-9_DE_B07TKWNGZ4.pdf)
-[Datasheet](https://cdn.shopify.com/s/files/1/1509/1638/files/GY-302_Licht_Sensor_Modul_Datenblatt_AZ-Delivery_Vertriebs_GmbH.pdf)
-
-* I2C-Schnittstelle (Adresse 0x23 (oder 0x5C, wenn der ADDR-Pin auf HIGH gelegt wird))
-* Der IC auf der Platine direkt über dem Schriftzug "BH1750" ist das lichtempfindliche Bauteil. 
-**Pinout:**
-
-| Pin | Bezeichnung | Farbe   | Beschreibung                    |
-|-----|-------------|---------|---------------------------------|
-| 1   | VCC         | rot     | 3.3V, 5V                        |  
-| 2   | GND         | schwarz | GND                             | 
-| 3   | SCL         | braun   | I2C Serial Clock (input)        | 
-| 4   | SDA         | orange  | I2C Serial Data (bidirectional) |  
-| 5   | ADDR        | gelb    | Geräteadresse (input)           |  
-
-**Pinbelegung:**
+#### S5: BH1750
 <pre>
 ┌────────────────┐
 │ GY-302     VDD ├──────(rot)─O── +3.3V
@@ -589,50 +352,16 @@ Dieser Sensor ist sehr genau und misst das Licht direkt in LUX.
 └────────────────┘
 </pre>
 
-**Anmerkung:**
-
-Da kein anderes I2C-Gerät die Adresse 0x23 verwendet, wird ADDR nicht benötigt.
-
-**Benötigte Bibliothek:**
-
-* BH1750 1.3.0 by Christofer Laws
-
-### S6: Reserve
-
-Der Analog-/Digitaleingang GPIO36 wird über eine Stiftleiste zugänglich gemacht. Er ist noch nicht verplant.
-
-Als Beispiel könnte ein Fotowiderstand (auch Fotozelle oder LDR (Licht-Dependent Resistor) genannt) angeschlossen werden:
-
-Fotowiderstand LDR5528
-
-[Amazon](https://www.amazon.de/dp/B089YNCYG4)
-4,49 € (10 Stück), Einzelpreis: 0,49 €
-
-[AZ-Delivery e-Book](https://cdn.shopify.com/s/files/1/1509/1638/files/AZ098_B_16-1_DE_B089YNCYG4_ff124573-82f8-46ba-8411-8660b6462697.pdf)
-[Datasheet](https://cdn.shopify.com/s/files/1/1509/1638/files/Fotowiderstand_Photo_Resistor_Dioden_150V_5mm_LDR5528_GL5528_5528_Datenblatt_AZ-Delivery_Vertriebs_GmbH.pdf)
-
-5mm
-* 0.5 - 200 kΩ
-* Maximale Spannung: 150 V
-* Maximale Leistung: 100 mW
-
-Der Fotowiderstand ist lichtabhängig. Je mehr Licht auf die Oberfläche fällt, desto geringer ist sein Widerstand.
-
-Der Sensor wird zusammen mit einem Widerstand als Spannungsteiler an einem analogen Eingang des ESP32 geschaltet. 
-Dieser wandelt die Spannung in ganzzahlige Werte zw. 0 (dunkel) und 4049 (hell) um, die als ADC-Wert oder Analogwert bezeichnet werden.
-
-<pre>
-                    ↙↙
-GND ───[ R3 ]──┬──[ LDR ]──── +3.3V
-        10 kΩ  │  LDR5528
-               └───────────►─ GPIO36
-</pre>
-
-**Benötigte Bibliothek:**
-
-(keine Abhängigkeiten)
-
 ## 4. Aktoren
+
+| Präfix | Name      | GPIO   |
+|--------|-----------|--------|
+| A1     | Lampe 1   | GPIO14 | 
+| A2     | Lampe 2   | GPIO27 |
+| A3     | Heizer    | GPIO26 |
+| A4     | Lüfter    | GPIO25 |
+| A5     | Pumpe     | GPIO33 |
+| A6     | Vernebler | GPIO32 |
 
 ### A1, A2: Lampe
 
@@ -877,6 +606,13 @@ Kabeladern:
 
 ## 5. Sonstige Peripheriegeräte
 
+| Präfix | Name           | Spezifikation                  | GPIO       |
+|--------|----------------|--------------------------------|------------|
+| Z1     | Display        | 1.3 Zoll OLED Display, SSH1106 | (I2C)      |
+| Z2     | SD-Kartenleser | MicroSD SPI Kartenleser        | CS: GPIO16 |
+| Z3     | Kamera         | ArduCAM Mini 2MP Plus, OV2640  | CS: GPIO17 |
+| Z4     | LED            | LED 3mm, rot                   | GPIO5      |
+
 ### Z1: Display
 
 1.3 Zoll OLED Display, SSH1106
@@ -1071,9 +807,6 @@ die ca. 16 GPIO-Pins belegt (also fast alle verfügbaren). Die ArduCAM belegt da
 
 [Arducam_mini 1.0.1 by Arducam](https://github.com/ArduCAM/Arducam_mini)
 
-Leider ist die Bibliothek so konzipiert, dass die Datei ./Arduino/libraries/Arducam_mini/src/memorysaver.h für die jeweilige Hardware angepasst werden muss. Für meine Kamera muss diese Definition einkommentiert werden:
-	#define OV2640_MINI_2MP_PLUS
-
 ### Z4: LED
 
 Leuchtdiode 3mm, rot 
@@ -1207,38 +940,6 @@ Es wird auch jeweils eine Bibliothek für das Webinterface, für OTA und für de
 ### Steuerungslogik
 
 Die Steuerung soll dafür sorgen, dass ein gleichmäßiges Klima für die Pflanzen im Gewächshaus herrscht. 
-
-Die dafür verfügbaren Sensoren und die zu steuernden Aktoren sind hier nochmal kurz zusammengefasst: 
-
-**Sensoren:**
-
-| Präfix | Name                                        | Spezifikation               | GPIO   |
-|--------|---------------------------------------------|-----------------------------|--------|
-| S1     | Raumtemperatur- und Luftfeuchtigkeitssensor | AM2302 Module               | GPIO13 | 
-| S2     | Bodentemperatursensor                       | DS18B20                     | GPIO4  |
-| S3     | Bodenfeuchtigkeitssensor                    | Capacitive Soil Sensor v1.2 | GPIO34 |
-| S4     | Füllstandsensor                             | XKC-Y25-NPN                 | GPIO35 |
-| S5     | Lichtsensor                                 | GY-302 BH1750               | (I2C)  |
-
-**Aktoren:**
-
-| Präfix | Name      | GPIO   |
-|--------|-----------|--------|
-| A1     | Lampe 1   | GPIO14 | 
-| A2     | Lampe 2   | GPIO27 |
-| A3     | Heizer    | GPIO26 |
-| A4     | Lüfter    | GPIO25 |
-| A5     | Pumpe     | GPIO33 |
-| A6     | Vernebler | GPIO32 |
-
-**Sonstige Peripheriegeräte:**
-
-| Präfix | Name           | Spezifikation                  | GPIO       |
-|--------|----------------|--------------------------------|------------|
-| Z1     | Display        | 1.3 Zoll OLED Display, SSH1106 | (I2C)      |
-| Z2     | SD-Kartenleser | MicroSD SPI Kartenleser        | CS: GPIO16 |
-| Z3     | Kamera         | ArduCAM Mini 2MP Plus, OV2640  | CS: GPIO17 |
-| Z4     | LED            | LED 3mm, rot                   | GPIO5      |
 
 Es wird folgende Steuerungslogik programmiert (in `main.cpp`):
 

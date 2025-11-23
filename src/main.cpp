@@ -12,10 +12,10 @@
  */
 
 #include <Arduino.h>
-#include <SD.h>
-#include <Wire.h>
 #include <WiFi.h>
 #include <ArduinoOTA.h>
+#include <SD.h>
+#include <Wire.h>
 
 // -- Einbinden der Konfiguration und der lokalen Bibliotheken --
 #include "config.h"
@@ -176,13 +176,13 @@ void setup() {
     WiFiClass::setHostname(HOSTNAME);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     int attempts = 0;
-    while (WiFiClass::status() != WL_CONNECTED && attempts < 20) { // max. 20 * 500ms = 10 Sekunden lang versuchen
+    while (WiFi.status() != WL_CONNECTED && attempts < 20) { // max. 20 * 500ms = 10 Sekunden lang versuchen NOLINT(*-static-accessed-through-instance)
         delay(500);
         Serial.print(".");
         attempts++;
     }
     Serial.println();
-    if (WiFiClass::status() != WL_CONNECTED) {
+    if (WiFi.status() != WL_CONNECTED) { // NOLINT(*-static-accessed-through-instance)
         halt("WLAN FEHLER", "Verbindung fehlgeschlagen");
     }
     log("WLAN verbunden!");
@@ -456,54 +456,56 @@ void handleControlLogic() {
     // -- Steuerung für die Lampen (A1 und A2) --
     
     if (currentHour >= LIGHT_ON_HOUR && currentHour < LIGHT_OFF_HOUR) { // "Licht an"-Zeitfenster ist gegeben
-        if (isnan(currentLightLux)) { // der Lichtsensor ist ausgefallen
-            lamp1Relay.on(); // beide Lampen an
-            lamp2Relay.on();
-        } else { // der Lichtsensor funktioniert
-
-            // TODO: Die Logik stimmt noch nicht!
-            
-            /*
-            Strategie 1: Hysterese
-            Es gibt zwei Schellen:
-            * Einschalt-Schwelle (`THRESHOLD_DARK`): Bei dem bei ausgeschalteten Lampen das Tageslicht zu dunkel ist.
-            * Ausschalt-Schwelle (`THRESHOLD_BRIGHT`): Bei dem bei eingeschalteten Lampen das Tageslicht zu hell ist. 
-            */
-
-            if (lamp1Relay.isOn() && lamp2Relay.isOn()) { // beide Lampen sind derzeit an
-                if (currentLightLux > LIGHT_LUX_THRESHOLD_DARK) { // das Tageslicht ist mittel-hell
-                    if (random(2) == 0) {// Zufällig eine Lampe ausschalten
-                        lamp1Relay.off(); 
-                    } else {
-                        lamp2Relay.off();
-                    }
-                }
-            } 
-            else if (lamp1Relay.isOn() || lamp2Relay.isOn()) { // nur eine Lampe ist derzeit an
-                if (currentLightLux > LIGHT_LUX_THRESHOLD_BRIGHT) { // das Tageslicht ist sehr hell
-                    lamp1Relay.off(); // beide Lampen ausschalten
-                    lamp2Relay.off();
-                }
-                // Bedingung zum Zuschalten von Lampe 2 (wenn es wieder dunkler wird)
-                else if (currentLightLux < LIGHT_LUX_THRESHOLD_DARK) { // das Tageslicht ist dunkler
-                    lamp1Relay.on(); // beide Lampen einschalten
-                    lamp2Relay.on();
-                }
-            }
-            else { // beide Lampen sind derzeit aus
-                if (currentLightLux < LIGHT_LUX_THRESHOLD_BRIGHT) { // das Tageslicht ist nicht sehr hell
-                    if (random(2) == 0) {// Zufällig eine Lampe einschalten
-                        lamp1Relay.on(); 
-                    } else {
-                        lamp2Relay.on();
-                    }
-                }
-                if (currentLightLux < LIGHT_LUX_THRESHOLD_DARK) { // das Tageslicht ist dunkel
-                    lamp1Relay.on();
-                    lamp2Relay.on();
-                }
-            }
-        }
+        // if (isnan(currentLightLux)) { // der Lichtsensor ist ausgefallen
+        //     lamp1Relay.on(); // beide Lampen an
+        //     lamp2Relay.on();
+        // } else { // der Lichtsensor funktioniert
+        //
+        //     // TODO: Die Logik stimmt noch nicht!
+        //
+        //     /*
+        //     Strategie 1: Hysterese
+        //     Es gibt zwei Schellen:
+        //     * Einschalt-Schwelle (`THRESHOLD_DARK`): Bei dem bei ausgeschalteten Lampen das Tageslicht zu dunkel ist.
+        //     * Ausschalt-Schwelle (`THRESHOLD_BRIGHT`): Bei dem bei eingeschalteten Lampen das Tageslicht zu hell ist.
+        //     */
+        //
+        //     if (lamp1Relay.isOn() && lamp2Relay.isOn()) { // beide Lampen sind derzeit an
+        //         if (currentLightLux > LIGHT_LUX_THRESHOLD_DARK) { // das Tageslicht ist mittel-hell
+        //             if (random(2) == 0) {// Zufällig eine Lampe ausschalten
+        //                 lamp1Relay.off();
+        //             } else {
+        //                 lamp2Relay.off();
+        //             }
+        //         }
+        //     }
+        //     else if (lamp1Relay.isOn() || lamp2Relay.isOn()) { // nur eine Lampe ist derzeit an
+        //         if (currentLightLux > LIGHT_LUX_THRESHOLD_BRIGHT) { // das Tageslicht ist sehr hell
+        //             lamp1Relay.off(); // beide Lampen ausschalten
+        //             lamp2Relay.off();
+        //         }
+        //         // Bedingung zum Zuschalten von Lampe 2 (wenn es wieder dunkler wird)
+        //         else if (currentLightLux < LIGHT_LUX_THRESHOLD_DARK) { // das Tageslicht ist dunkler
+        //             lamp1Relay.on(); // beide Lampen einschalten
+        //             lamp2Relay.on();
+        //         }
+        //     }
+        //     else { // beide Lampen sind derzeit aus
+        //         if (currentLightLux < LIGHT_LUX_THRESHOLD_BRIGHT) { // das Tageslicht ist nicht sehr hell
+        //             if (random(2) == 0) {// Zufällig eine Lampe einschalten
+        //                 lamp1Relay.on();
+        //             } else {
+        //                 lamp2Relay.on();
+        //             }
+        //         }
+        //         if (currentLightLux < LIGHT_LUX_THRESHOLD_DARK) { // das Tageslicht ist dunkel
+        //             lamp1Relay.on();
+        //             lamp2Relay.on();
+        //         }
+        //     }
+        // }
+        lamp1Relay.on();
+        lamp2Relay.on();
     } else {
         // Außerhalb des Zeitfensters: Beide Lampen sind immer aus, egal wie dunkel es ist.
         lamp1Relay.off();

@@ -41,8 +41,8 @@ constexpr int PIN_DEBUG_LED = 5;        // GPIO-Pin für die Debug-LED
 // ------------------------------------------------------------
 
 const char* NTP_SERVER = "pool.ntp.org";    // NTP-Server
-const long  GMT_OFFSET = 3600;              // Mitteleuropäische Zeit (MEZ) = UTC+1 = 3600 Sekunden für Zeitzone "Berlin"
-const int   DAYLIGHT_OFFSET = 3600;         // Sommerzeit (MESZ) = UTC+2, also zusätzliche 3600 Sekunden (Sommer-/Winterzeit wird automatisch umgestellt)
+constexpr long GMT_OFFSET = 3600;           // Mitteleuropäische Zeit (MEZ) = UTC+1 = 3600 Sekunden für Zeitzone "Berlin"
+constexpr int DAYLIGHT_OFFSET = 3600;       // Sommerzeit (MESZ) = UTC+2, also zusätzliche 3600 Sekunden (Sommer-/Winterzeit wird automatisch umgestellt)
 
 // ------------------------------------------------------------
 // Kalibrierung
@@ -85,8 +85,8 @@ constexpr int SOIL_MOISTURE_TARGET = 50; // Zielwert für Bodenfeuchte in Prozen
 constexpr bool WATER_LEVEL_TRIGGERED = false; // LOW/false = Wasser erkannt
 
 // Betriebszeit für Lampen (A1 und A2)
-constexpr int LIGHT_ON_HOUR = 8;    // Stunde, 0-23: Ab wann soll die Lampe angehen?
-constexpr int LIGHT_OFF_HOUR = 17;  // Stunde, 0-23: Ab wann soll die Lampe ausgehen?
+constexpr int LIGHT_ON_HOUR = 01;    // Stunde, 0-23: Ab wann soll die Lampe angehen?
+constexpr int LIGHT_OFF_HOUR = 02;  // Stunde, 0-23: Ab wann soll die Lampe ausgehen?
 
 // Schwellwerte für Lichtsensor (S5), dass selbst in der Licht-An-Zeit eine oder beide Lampen aus bleiben dürfen 
 constexpr float LIGHT_LUX_THRESHOLD_DARK   = 5.0f;  // Lux-Wert: ist das Tageslicht heller, bleibt eine Lampe aus

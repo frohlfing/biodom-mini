@@ -6,6 +6,14 @@ Dieses Verzeichnis ist für projektspezifische (lokale) Bibliotheken vorgesehen.
 
 Die benötigten Bibliotheken sind in `platformio.ini` mit der Variable `lib_deps` aufgeführt.
 
+** Aktualisierung:**
+
+So können die Projektabhängigkeiten und benutzerdefinierten Pakete aktualisiert werden:
+
+```shell
+pio pkg update
+```
+
 ## ▶️ Beispielprogramm
 
 Jede lokale Bibliothek enthält ein Anwendungsbeispiel namens `example.cpp`. Um dieses auszuführen, kann das Quellcode-Verzeichnis in `platformio.ini` temporär auf die Bibliothek umgebogen werden, z.B.:
