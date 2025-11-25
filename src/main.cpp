@@ -14,13 +14,16 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ArduinoOTA.h>
+#include <LittleFS.h>
 #include <SD.h>
 #include <Wire.h>
 
 // -- Einbinden der Konfiguration und der lokalen Bibliotheken --
 #include "config.h"
 #include "secrets.h"
-#include "ConfigManager.h" // TODO: FEHLER! Wird nicht gefunden!!
+#include "settings.h"
+#include "SettingsManager.h"
+#include "WebInterface.h"
 #include "ArduCamMini2MPPlusOV2640.h"
 #include "LED.h"
 #include "MicroSDCard.h"
@@ -50,6 +53,12 @@
 // === Globale Objektinstanzen ===
 // Hier werden für alle Hardware-Komponenten Objekte erstellt.
 // Die Pin-Konfiguration wird aus der config.h geladen.
+
+// --- Einstellungen ---
+SettingsManager settingsManager;
+
+// --- WebInterface ---
+WebInterface webInterface;
 
 // --- Sensoren ---
 SensorAM2302 airSensor(PIN_AIR_SENSOR); // Raumtemperatur- und Luftfeuchtigkeitssensormodul AM2302 (S1)
@@ -147,21 +156,29 @@ void setup() {
     // --- Debug-LED, serielle Schnittstelle und Display initialisieren ---
     // (als erstes, damit Fehler so früh wie möglich angezeigt werden können)
 
-    // 1) Debug-LED (Z4) initialisieren
+    // Debug-LED (Z4) initialisieren
     // Die LED ist standardmäßig aus. 
     // Sie signalisiert, dass da System nicht gestartet werden konnte.
     debugLed.begin(); 
 
-    // 2) Serielle Schnittstelle initialisieren
+    // Serielle Schnittstelle initialisieren
     Serial.begin(115200);
-    //while (!Serial); // Auf serielle Verbindung warten
+    // Auf ein Zeichen des Seriellen Monitors warten (max. 5 Sekunden)
+    const unsigned long startWait = millis();
+    while (millis() - startWait < 5000) {
+        if (Serial.available() > 0) {
+            break; // Benutzer hat etwas gesendet, starte sofort
+        }
+        delay(100);
+    }
+
     Serial.println("Biodom Mini startet");
 
-    // 3) I2C-Bus initialisieren
+    // I2C-Bus initialisieren
     // Für den ESP32 ist es eine gute Praxis, die SDA- und SCL-Pins explizit anzugeben.
     Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
 
-    // 4) Display (Z1) initialisieren
+    // Display (Z1) initialisieren
     if (!display.begin()) {  
         Serial.println("Kein Display! System angehalten.");
         // halt() sollte hier besser noch nicht aufgerufen werden, da die Funktion das Display voraussetzt
@@ -169,9 +186,28 @@ void setup() {
         while (true) { delay(100); } // Endlosschleife, um das Programm anzuhalten
     }
 
+    // Dateisystem initialisieren
+    if (!LittleFS.begin(true)) {
+        halt("LittleFS FEHLER", "Dateisystem korrupt");
+    }
+    Serial.println("Dateien im LittleFS:");
+    File root = LittleFS.open("/");
+    File file = root.openNextFile();
+    while (file) {
+        Serial.print(file.name());
+        file = root.openNextFile();
+    }
+    // todo: belegten Platz und freien Platz anzeigen
+
+    // Einstellungen laden
+    if (!settingsManager.begin()) {
+        halt("Settings FEHLER", "Einstellungen korrupt");
+    }
+    log("Einstellungen geladen");
+
     // --- Netzwerkdienste starten ---
 
-    // 5) Netzwerk initialisieren
+    // Netzwerk initialisieren
     log("Verbinde mit WLAN...");
     WiFiClass::mode(WIFI_STA); // Station Mode (Client)
     WiFiClass::setHostname(HOSTNAME);
@@ -192,13 +228,13 @@ void setup() {
     String hostMessage = "Host: " + String(WiFiClass::getHostname());
     log(hostMessage.c_str());
 
-    // 6) OTA-Dienst starten
+    // OTA-Dienst starten
     ArduinoOTA.setHostname(HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);
     ArduinoOTA.begin();
     log("OTA-Dienst bereit");
 
-    // 7. NTP-Client initialisieren
+    // NTP-Client initialisieren
     configTime(GMT_OFFSET, DAYLIGHT_OFFSET, NTP_SERVER); // started Hintergrund-Task für Zeitsynchronisation 
     log("Synchronisiere Zeit...");
     attempts = 0;
@@ -273,6 +309,30 @@ void setup() {
     misterRelay.begin(); // A6
     log("Aktoren initialisiert");
 
+    // --- Webinterface initialisieren ---
+
+    if (!webInterface.begin()) {
+        halt("WebServer FEHLER", "WebServer nicht ok");
+    }
+
+    // Hier definieren wir die Logik, die ausgeführt wird, wenn eine Nachricht vom Browser ankommt.
+    webInterface.onMessage = [](const String& msg) {
+        if (msg == "ON") {
+            debugLed.on();
+            Serial.println("LED eingeschaltet via Web");
+        } else if (msg == "OFF") {
+            debugLed.off();
+            Serial.println("LED ausgeschaltet via Web");
+        }
+
+        // Sende sofort den neuen Status an alle Clients zurück
+        if (debugLed.isOn()) {
+            webInterface.broadcast("STATE_ON");
+        } else {
+            webInterface.broadcast("STATE_OFF");
+        }
+    };
+
     // --- Initialisierung erfolgreich ---
 
     Serial.println("System gestartet.");
@@ -307,6 +367,18 @@ void loop() {
     if (currentTime - lastCameraCapture >= CAMERA_CAPTURE_INTERVAL) {
         lastCameraCapture = currentTime;
         handleCamera();
+    }
+
+    // Periodischer Broadcast per WebSocket
+    static unsigned long lastBroadcastTime = 0;
+    if (millis() - lastBroadcastTime > 2000) {
+        lastBroadcastTime = millis();
+        // Sende alle 2 Sekunden den aktuellen LED-Status an alle Clients
+        if (debugLed.isOn()) {
+            webInterface.broadcast("STATE_ON");
+        } else {
+            webInterface.broadcast("STATE_OFF");
+        }
     }
 
     // Steuerungslogik in jedem Zyklus ausführen, um schnell reagieren zu können
@@ -447,6 +519,9 @@ void handleDisplay() {
  * @brief Implementiert die Steuerungslogik für alle Aktoren.
  */
 void handleControlLogic() {
+    // Verweis auf die aktuellen Einstellungen holen
+    const auto& settings = settingsManager.get();
+
     tm timeInfo{};
     if (!getLocalTime(&timeInfo)) {
         log("Fehler beim Abrufen der Zeit."); // dürfte nie vorkommen, da im Setup die Zeit synchronisiert wurde
@@ -456,55 +531,55 @@ void handleControlLogic() {
 
     // -- Steuerung für die Lampen (A1 und A2) --
     
-    if (currentHour >= LIGHT_ON_HOUR && currentHour < LIGHT_OFF_HOUR) { // "Licht an"-Zeitfenster ist gegeben
-        // if (isnan(currentLightLux)) { // der Lichtsensor ist ausgefallen
-        //     lamp1Relay.on(); // beide Lampen an
-        //     lamp2Relay.on();
-        // } else { // der Lichtsensor funktioniert
-        //
-        //     // TODO: Die Logik stimmt noch nicht!
-        //
-        //     /*
-        //     Strategie 1: Hysterese
-        //     Es gibt zwei Schellen:
-        //     * Einschalt-Schwelle (`THRESHOLD_DARK`): Bei dem bei ausgeschalteten Lampen das Tageslicht zu dunkel ist.
-        //     * Ausschalt-Schwelle (`THRESHOLD_BRIGHT`): Bei dem bei eingeschalteten Lampen das Tageslicht zu hell ist.
-        //     */
-        //
-        //     if (lamp1Relay.isOn() && lamp2Relay.isOn()) { // beide Lampen sind derzeit an
-        //         if (currentLightLux > LIGHT_LUX_THRESHOLD_DARK) { // das Tageslicht ist mittel-hell
-        //             if (random(2) == 0) {// Zufällig eine Lampe ausschalten
-        //                 lamp1Relay.off();
-        //             } else {
-        //                 lamp2Relay.off();
-        //             }
-        //         }
-        //     }
-        //     else if (lamp1Relay.isOn() || lamp2Relay.isOn()) { // nur eine Lampe ist derzeit an
-        //         if (currentLightLux > LIGHT_LUX_THRESHOLD_BRIGHT) { // das Tageslicht ist sehr hell
-        //             lamp1Relay.off(); // beide Lampen ausschalten
-        //             lamp2Relay.off();
-        //         }
-        //         // Bedingung zum Zuschalten von Lampe 2 (wenn es wieder dunkler wird)
-        //         else if (currentLightLux < LIGHT_LUX_THRESHOLD_DARK) { // das Tageslicht ist dunkler
-        //             lamp1Relay.on(); // beide Lampen einschalten
-        //             lamp2Relay.on();
-        //         }
-        //     }
-        //     else { // beide Lampen sind derzeit aus
-        //         if (currentLightLux < LIGHT_LUX_THRESHOLD_BRIGHT) { // das Tageslicht ist nicht sehr hell
-        //             if (random(2) == 0) {// Zufällig eine Lampe einschalten
-        //                 lamp1Relay.on();
-        //             } else {
-        //                 lamp2Relay.on();
-        //             }
-        //         }
-        //         if (currentLightLux < LIGHT_LUX_THRESHOLD_DARK) { // das Tageslicht ist dunkel
-        //             lamp1Relay.on();
-        //             lamp2Relay.on();
-        //         }
-        //     }
-        // }
+    if (currentHour >= settings.lightOnHour && currentHour < settings.lightOffHour) { // "Licht an"-Zeitfenster ist gegeben
+        if (isnan(currentLightLux)) { // der Lichtsensor ist ausgefallen
+            lamp1Relay.on(); // beide Lampen an
+            lamp2Relay.on();
+        } else { // der Lichtsensor funktioniert
+
+            // TODO: Die Logik stimmt noch nicht!
+
+            // /*
+            // Strategie 1: Hysterese
+            // Es gibt zwei Schellen:
+            // * Einschalt-Schwelle (`lightLuxThresholdDark`): Bei dem bei ausgeschalteten Lampen das Tageslicht zu dunkel ist.
+            // * Ausschalt-Schwelle (`lightLuxThresholdBright`): Bei dem bei eingeschalteten Lampen das Tageslicht zu hell ist.
+            // */
+            //
+            // if (lamp1Relay.isOn() && lamp2Relay.isOn()) { // beide Lampen sind derzeit an
+            //     if (currentLightLux > settings.lightLuxThresholdDark) { // das Tageslicht ist mittel-hell
+            //         if (random(2) == 0) {// Zufällig eine Lampe ausschalten
+            //             lamp1Relay.off();
+            //         } else {
+            //             lamp2Relay.off();
+            //         }
+            //     }
+            // }
+            // else if (lamp1Relay.isOn() || lamp2Relay.isOn()) { // nur eine Lampe ist derzeit an
+            //     if (currentLightLux > settings.lightLuxThresholdBright) { // das Tageslicht ist sehr hell
+            //         lamp1Relay.off(); // beide Lampen ausschalten
+            //         lamp2Relay.off();
+            //     }
+            //     // Bedingung zum Zuschalten von Lampe 2 (wenn es wieder dunkler wird)
+            //     else if (currentLightLux < settings.lightLuxThresholdDark) { // das Tageslicht ist dunkler
+            //         lamp1Relay.on(); // beide Lampen einschalten
+            //         lamp2Relay.on();
+            //     }
+            // }
+            // else { // beide Lampen sind derzeit aus
+            //     if (currentLightLux < settings.lightLuxThresholdBright) { // das Tageslicht ist nicht sehr hell
+            //         if (random(2) == 0) {// Zufällig eine Lampe einschalten
+            //             lamp1Relay.on();
+            //         } else {
+            //             lamp2Relay.on();
+            //         }
+            //     }
+            //     if (currentLightLux < settings.lightLuxThresholdDark) { // das Tageslicht ist dunkel
+            //         lamp1Relay.on();
+            //         lamp2Relay.on();
+            //     }
+            // }
+        }
         lamp1Relay.on();
         lamp2Relay.on();
     } else {
@@ -531,34 +606,34 @@ void handleControlLogic() {
 
     // -- Steuerung für den Heizer (A3) --
 
-    if (currentSoilTemp < SOIL_TEMPERATUR_TARGET) { 
+    if (currentSoilTemp < settings.soilTempTarget) {
         heaterRelay.on(); 
     } 
-    else if (currentSoilTemp > SOIL_TEMPERATUR_TARGET + 0.5f) { 
+    else if (currentSoilTemp > settings.soilTempTarget + 0.5f) {
         heaterRelay.off(); 
     }
 
     // -- Steuerung für den Lüfter (A4) --
 
-    if (currentAirTemp > AIR_TEMPERATUR_THRESHOLD_HIGH && !fanRelay.isOn()) {
-        fanRelay.pulse(FAN_COOLDOWN_DURATION_MS);
+    if (currentAirTemp > settings.airTempThresholdHigh && !fanRelay.isOn()) {
+        fanRelay.pulse(settings.fanCooldownDurationMs);
     }
 
     // Steuerung für die Pumpe (A5)
 
     if (isWaterLevelOk && !pumpRelay.isOn()) {
-        if (currentSoilMoisture < SOIL_MOISTURE_TARGET && currentSoilMoisture != -1) {
-            pumpRelay.pulse(WATERING_DURATION_MS);
+        if (currentSoilMoisture < settings.soilMoistureTarget && currentSoilMoisture != -1) {
+            pumpRelay.pulse(settings.wateringDurationMs);
         }
     }
 
     // -- Steuerung für den Vernebler (A6) --
     
     if (isWaterLevelOk) {
-        if (currentHumidity < HUMIDITY_TARGET) { 
+        if (currentHumidity < settings.humidityTarget) {
             misterRelay.on(); 
         } 
-        else if (currentHumidity > HUMIDITY_TARGET + 5.0f) { 
+        else if (currentHumidity > settings.humidityTarget + 5.0f) {
             misterRelay.off(); 
         }
     } else {

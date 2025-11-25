@@ -1,20 +1,15 @@
 #pragma once
+
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
-#include <functional> // Für std::function (Callbacks)
-#include <FS.h>
-
-// Vorwärtsdeklaration, um ArduinoJson.h nicht im Header einbinden zu müssen.
-class JsonDocument;
+#include <functional> // Notwendig für Callbacks
 
 /**
- * @class WebInterface
- * @brief Eine generische, wiederverwendbare Klasse für ein Webinterface auf dem ESP32.
+ * Stellt ein Webinterface zur Steuerung via WebSocket bereit.
  *
- * Stellt einen asynchronen Webserver bereit, der eine Single-Page-Application (SPA)
- * aus einem Dateisystem ausliefert und über WebSockets kommuniziert.
- * Bietet Handler für Datei-Uploads, -Downloads und das Auflisten von Verzeichnissen.
- * Die Anwendungslogik wird über Callbacks an das Hauptprogramm angebunden.
+ * Kapselt die Logik für den asynchronen Web- und WebSocket-Server.
+ * Liefert statische Dateien (HTML, CSS, JS) aus dem LittleFS und
+ * meldet empfangene WebSocket-Nachrichten über einen Callback an die Hauptanwendung.
  */
 class WebInterface {
 public:
@@ -22,61 +17,40 @@ public:
      * @brief Konstruktor.
      * @param port Der Port, auf dem der Webserver lauschen soll (Standard 80).
      */
-    WebInterface(uint16_t port = 80);
+    explicit WebInterface(uint16_t port = 80);
 
     /**
-     * @brief Initialisiert den Webserver und registriert alle Routen.
-     * @param fs Ein Pointer auf das Dateisystem für die Webseiten-Dateien (z.B. &LittleFS).
-     * @param sd Ein Pointer auf das SD-Karten-Dateisystem (optional, für SD-Funktionen).
-     * @return true bei Erfolg, andernfalls false.
+     * @brief Initialisiert den Server und registriert die Routen.
+     * @return true bei Erfolg.
      */
-    bool begin(FS* fs, FS* sd = nullptr);
+    bool begin();
 
     /**
-     * @brief Sendet eine Nachricht an alle verbundenen WebSocket-Clients.
-     * @param message Der zu sendende String (sollte typischerweise JSON sein).
+     * @brief Sendet eine Nachricht an alle verbundenen WebSocket-Clients (Broadcast).
+     * @param message Der zu sendende String.
      */
     void broadcast(const String& message);
 
     /**
-     * @brief Bereinigt die Liste der WebSocket-Clients. Sollte periodisch aufgerufen werden.
+     * @property onMessage
+     * @brief Callback, der aufgerufen wird, wenn eine Nachricht über WebSocket empfangen wird.
+     * Die Hauptanwendung (main.cpp) muss diesen Callback definieren, um auf Befehle vom Browser zu reagieren.
+     * Format: (Nachricht als String)
      */
-    void cleanupClients();
-
-    // --- Callbacks für die Anwendungslogik in main.cpp ---
-
-    /**
-     * @brief Callback, der aufgerufen wird, wenn eine WebSocket-Nachricht empfangen wird.
-     * Format: (Client-Pointer, Nachricht als String)
-     */
-    std::function<void(AsyncWebSocketClient*, const String&)> onWsMessage;
-
-    /**
-     * @brief Callback für Anfragen zum Auflisten von Dateien (z.B. /files/sd/).
-     * Format: (HTTP-Request-Pointer)
-     */
-    std::function<void(AsyncWebServerRequest*)> onFileListRequest;
+    std::function<void(const String& msg)> onMessage;
 
 private:
     /**
-     * @brief Registriert alle HTTP-Routen des Servers.
-     */
-    void registerRoutes();
-
-    /**
      * @brief Interner Handler, der WebSocket-Events verarbeitet.
+     * @param server Pointer auf den WebSocket-Server.
+     * @param client Pointer auf den verbundenen Client.
+     * @param type Art des Events (Verbindung, Trennung, Daten, etc.).
+     * @param arg Event-Argumente.
+     * @param data Empfangene Daten (Payload).
+     * @param len Länge der empfangenen Daten.
      */
-    void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len);
+    void onWsEvent(AsyncWebSocket *server, const AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) const;
 
-    /**
-     * @brief Interner Handler, der Datei-Uploads verarbeitet.
-     */
-    void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
-
-    // Member-Variablen
-    FS* _fs = nullptr;              // Pointer auf das Haupt-Dateisystem (LittleFS).
-    FS* _sd = nullptr;              // Pointer auf das SD-Karten-Dateisystem.
-    AsyncWebServer _server;         // Die Instanz des Webservers.
-    AsyncWebSocket _ws;             // Die Instanz des WebSocket-Servers am Endpunkt "/ws".
-    String _lastStateJson = "{}";   // Cache für den letzten Systemstatus, um neue Clients sofort zu informieren.
+    AsyncWebServer _server; // Die Instanz des Webservers.
+    AsyncWebSocket _ws;     // Die Instanz des WebSocket-Servers am Endpunkt "/ws".
 };
