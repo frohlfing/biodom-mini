@@ -1,49 +1,181 @@
-body { 
-    font-family: sans-serif; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    height: 100vh; 
-    background-color: #2c3e50; 
-    color: #ecf0f1; 
-    margin: 0; 
+/* Grundlegende Stile */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    margin: 0;
+    padding: 15px;
 }
-.container { 
-    text-align: center; 
+.container {
+    max-width: 900px;
+    margin: 0 auto;
 }
-h1 { 
-    color: #3498db; 
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #3c3c3c;
+    padding-bottom: 10px;
 }
-.button { 
-    display: inline-block; 
-    padding: 20px 40px; 
-    font-size: 1.5em; 
-    cursor: pointer; 
-    border: none; 
-    border-radius: 8px; 
-    margin: 10px; 
-    transition: background-color 0.3s; 
+h1, h2 {
+    color: #4e9ad4;
 }
-.on { 
-    background-color: #2ecc71; 
-    color: white; 
+
+/* Status-Indikator für WebSocket-Verbindung */
+.status-indicator {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    transition: background-color 0.5s;
 }
-.off { 
-    background-color: #e74c3c; 
-    color: white; 
+.status-indicator.connected {
+    background-color: #2ecc71; /* Grün */
 }
-.status { 
-    margin-top: 20px; 
-    font-size: 1.2em; 
+.status-indicator.disconnected {
+    background-color: #e74c3c; /* Rot */
 }
-.led-state { 
-    font-weight: bold; 
-    padding: 5px; 
-    border-radius: 5px; 
+
+/* Tab-Navigation */
+.tab-bar {
+    overflow: hidden;
+    background-color: #252526;
+    margin-top: 20px;
 }
-.led-on { 
-    color: #2ecc71; 
+.tab-link {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: background-color 0.3s;
+    font-size: 16px;
+    color: #cccccc;
 }
-.led-off { 
-    color: #e74c3c; 
+.tab-link:hover {
+    background-color: #3e3e42;
+}
+.tab-link.active {
+    background-color: #4e9ad4;
+    color: #ffffff;
+}
+.tab-content {
+    display: none;
+    padding: 20px 15px;
+    border: 1px solid #3c3c3c;
+    border-top: none;
+    animation: fadeEffect 0.5s;
+}
+@keyframes fadeEffect {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+/* Allgemeine Layout-Elemente */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    align-items: center;
+}
+.action-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 1.1em;
+    cursor: pointer;
+    background-color: #4e9ad4;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+}
+.status-message {
+    margin-top: 10px;
+    color: #98c379;
+}
+
+/* Stile für die Dashboard-Kacheln */
+.card {
+    background-color: #252526;
+    border: 1px solid #3c3c3c;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: left;
+}
+.card h3 {
+    margin-top: 0;
+    color: #4e9ad4;
+    border-bottom: 1px solid #3c3c3c;
+    padding-bottom: 10px;
+}
+.card p {
+    margin: 10px 0;
+    font-size: 1.1em;
+    display: flex;
+    justify-content: space-between; /* Label links, Wert rechts */
+}
+.card .value {
+    color: #dcdcaa; /* Gelbliche Farbe für Werte */
+    font-weight: bold;
+}
+
+/* Stile für den Aktor-Status (AN/AUS) */
+.card span[id$="On"], .card span[id$="Ok"] { /* Wählt alle spans, deren ID auf 'On' oder 'Ok' endet */
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+.status-on {
+    background-color: #2ecc71; /* Grün */
+    color: #1e1e1e;
+}
+.status-off {
+    background-color: #e74c3c; /* Rot */
+    color: #ffffff;
+}
+
+/* Icons im Dashboard */
+.card-header {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #3c3c3c;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+.card-header .icon {
+    width: 24px;  /* Etwas größer als 16px für bessere Sichtbarkeit */
+    height: 24px;
+    margin-right: 10px;
+    background-color: #4e9ad4;
+}
+.card-header h3 {
+    margin: 0;
+    border-bottom: none; /* Entferne doppelten Border */
+    padding-bottom: 0;
+}
+
+/* Tab für Steuerung */
+.control-card {
+    background-color: #252526;
+    border: 1px solid #3c3c3c;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.control-card h3 {
+    margin-top: 0;
+    color: #4e9ad4;
+}
+.notice {
+    font-style: italic;
+    color: #dcdcaa;
+    background-color: #3e3e42;
+    padding: 10px;
+    border-radius: 5px;
 }

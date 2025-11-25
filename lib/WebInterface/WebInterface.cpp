@@ -12,20 +12,24 @@ bool WebInterface::begin() {
     _server.addHandler(&_ws);
 
     // --- HTTP-Routen für die Web-Dateien ---
-    // Handler für die Hauptseite
-    _server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(LittleFS, "/index.html", "text/html");
-    });
+    // // Handler für die Hauptseite
+    // _server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    //     request->send(LittleFS, "/index.html", "text/html");
+    // });
+    //
+    // // Handler für die CSS-Datei
+    // _server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request) {
+    //     request->send(LittleFS, "/style.css", "text/css");
+    // });
+    //
+    // // Handler für die JavaScript-Datei
+    // _server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+    //     request->send(LittleFS, "/script.js", "application/javascript");
+    // });
 
-    // Handler für die CSS-Datei
-    _server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(LittleFS, "/style.css", "text/css");
-    });
-
-    // Handler für die JavaScript-Datei
-    _server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(LittleFS, "/script.js", "application/javascript");
-    });
+    // Registriere einen Handler, der ALLE statischen Dateien aus dem LittleFS ausliefert.
+    // Dieser eine Befehl kümmert sich um "/", "/style.css", "/script.js" UND alle Anfragen an "/icons/...".
+    _server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
 
     // Handler für nicht gefundene Seiten
     _server.onNotFound([](AsyncWebServerRequest *request){

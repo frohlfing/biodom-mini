@@ -9,12 +9,12 @@
 // ------------------------------------------------------------
 
 // Sensoren
-constexpr int PIN_AIR_SENSOR = 13;              // GPIO-Pin für den Raumtemperatur- und Luftfeuchtigkeitssensormodul AM2302 (S2)
-constexpr int PIN_SOIL_TEMPERATUR_SENSOR = 4;   // GPIO-Pin für den Bodentemperatursensor DS18B20 (S3)
-constexpr int PIN_SOIL_MOISTURE_SENSOR = 34;    // GPIO-Pin für den // Kapazitiver Bodenfeuchtigkeitssensor v1.2 (S4)
-constexpr int PIN_WATER_LEVEL_SENSOR = 35;      // GPIO-Pin für den Füllstandsensor XKC-Y25-NPN (S5)
+constexpr int PIN_AIR_SENSOR = 13;              // GPIO-Pin für den Raumtemperatur- und Luftfeuchtigkeitssensormodul AM2302 (S1)
+constexpr int PIN_SOIL_TEMPERATUR_SENSOR = 4;   // GPIO-Pin für den Bodentemperatursensor DS18B20 (S2)
+constexpr int PIN_SOIL_MOISTURE_SENSOR = 34;    // GPIO-Pin für den // Kapazitiver Bodenfeuchtigkeitssensor v1.2 (S3)
+constexpr int PIN_WATER_LEVEL_SENSOR = 35;      // GPIO-Pin für den Füllstandsensor XKC-Y25-NPN (S4)
 
-// I2C-Geräte (Kamera, Display und Lichtsensor GY-302 BH1750 (S6)
+// I2C-Geräte (Kamera, Display und Lichtsensor GY-302 BH1750 (S5)
 constexpr int PIN_I2C_SDA = 21;         // GPIO-Pin für I2C SDA (Data) Leitung
 constexpr int PIN_I2C_SCL = 22;         // GPIO-Pin für I2C SCL (Clock) Leitung
 
@@ -68,6 +68,9 @@ constexpr unsigned long SENSOR_READ_INTERVAL = 5000;    // alle 5 Sekunden (in m
 
 // Display aktualisieren
 constexpr unsigned long DISPLAY_UPDATE_INTERVAL = 1000; // jede Sekunde (in ms)
+
+// WebSocket Broadcast
+constexpr unsigned long BROADCAST_INTERVAL = 2000; // jede zweite Sekunde (in ms)
 
 // Kamera auslösen
 constexpr unsigned long CAMERA_CAPTURE_INTERVAL = 3600000; // alle 60 Minuten (in ms)

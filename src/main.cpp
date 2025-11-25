@@ -14,6 +14,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ArduinoOTA.h>
+#include <ArduinoJson.h>
 #include <LittleFS.h>
 #include <SD.h>
 #include <Wire.h>
@@ -100,12 +101,14 @@ float currentLightLux = NAN;        // Aktuelle Lichtstärke in Lux (S5)
 unsigned long lastSensorRead = 0;     // Zeitpunkt der letzten Sensormessung
 unsigned long lastDisplayUpdate = 0;  // Zeitpunkt der letzten Display-Aktualisierung
 unsigned long lastCameraCapture = 0;  // Zeitpunkt der letzten Kameraaufnahme
+unsigned long lastBroadcastTime = 0;  // Zeitpunkt der letzten Broadcast-Nachricht
 
 // === Funktionsprototypen ===
 void handleSensors();
 void handleControlLogic();
 void handleDisplay();
 void handleCamera();
+void handleBroadcast();
 
 /**
  * Hält das Programm an.
@@ -190,14 +193,25 @@ void setup() {
     if (!LittleFS.begin(true)) {
         halt("LittleFS FEHLER", "Dateisystem korrupt");
     }
+
+    Serial.println("--- LittleFS Dateisystem ---");
+    const size_t totalBytes = LittleFS.totalBytes(); // Gesamtgröße der LittleFS-Partition
+    const size_t usedBytes = LittleFS.usedBytes(); // den von Dateien belegter Speicherplatz
+    const size_t freeBytes = totalBytes - usedBytes; // der freie Speicherplatz
+    Serial.printf("Gesamtgröße:  %10u Bytes (%.2f KB)\n", totalBytes, totalBytes / 1024.0);
+    Serial.printf("Belegt:       %10u Bytes (%.2f KB)\n", usedBytes, usedBytes / 1024.0);
+    Serial.printf("Frei:         %10u Bytes (%.2f KB)\n", freeBytes, freeBytes / 1024.0);
+
     Serial.println("Dateien im LittleFS:");
     File root = LittleFS.open("/");
     File file = root.openNextFile();
+    if (!file) {
+        Serial.println("  (Keine Dateien gefunden)");
+    }
     while (file) {
-        Serial.print(file.name());
+        Serial.printf("  - %-20s (%u Bytes)\n", file.name(), file.size());
         file = root.openNextFile();
     }
-    // todo: belegten Platz und freien Platz anzeigen
 
     // Einstellungen laden
     if (!settingsManager.begin()) {
@@ -315,21 +329,60 @@ void setup() {
         halt("WebServer FEHLER", "WebServer nicht ok");
     }
 
-    // Hier definieren wir die Logik, die ausgeführt wird, wenn eine Nachricht vom Browser ankommt.
+     // Definiert die Logik, die ausgeführt wird, wenn eine Nachricht vom Browser ankommt.
     webInterface.onMessage = [](const String& msg) {
-        if (msg == "ON") {
-            debugLed.on();
-            Serial.println("LED eingeschaltet via Web");
-        } else if (msg == "OFF") {
-            debugLed.off();
-            Serial.println("LED ausgeschaltet via Web");
+        // Parse die empfangene Nachricht als JSON-Dokument.
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, msg);
+
+        // Prüfe auf Parsing-Fehler.
+        if (error) {
+            Serial.print("WebSocket JSON-Fehler: ");
+            Serial.println(error.c_str());
+            return;
         }
 
-        // Sende sofort den neuen Status an alle Clients zurück
-        if (debugLed.isOn()) {
-            webInterface.broadcast("STATE_ON");
+        // Extrahiere den Nachrichtentyp.
+        const char* type = doc["type"];
+        if (!type) {
+            Serial.println("WebSocket-Fehler: Nachricht ohne 'type'-Feld.");
+            return;
+        }
+
+        // --- Verarbeite die Nachricht basierend auf ihrem Typ ---
+
+        if (strcmp(type, "command") == 0) {
+            // Ein BEFEHL zur Steuerung von Aktoren wurde empfangen.
+            const char* command = doc["command"];
+            const char* target = doc["target"];
+
+            if (!command || !target) {
+                Serial.println("WebSocket-Fehler: 'command' oder 'target' fehlt.");
+                return;
+            }
+
+            Serial.printf("Befehl empfangen: %s, Ziel: %s\n", command, target);
+
+            if (strcmp(command, "toggle") == 0) {
+                if (strcmp(target, "lamp1") == 0) lamp1Relay.toggle();
+                else if (strcmp(target, "lamp2") == 0) lamp2Relay.toggle();
+                else if (strcmp(target, "heater") == 0) heaterRelay.toggle();
+                else if (strcmp(target, "fan") == 0) fanRelay.toggle();
+                else if (strcmp(target, "pump") == 0) pumpRelay.toggle();
+                else if (strcmp(target, "mister") == 0) misterRelay.toggle();
+
+                // Nach der manuellen Änderung SOFORT den neuen Systemstatus an alle
+                // Browser senden, damit das UI sich sofort aktualisiert.
+                handleBroadcast();
+            }
+            // Hier könnten später weitere Befehle wie "setState" hin.
+
+        } else if (strcmp(type, "saveSettings") == 0) {
+            // EINSTELLUNGEN sollen gespeichert werden.
+            // ... (diese Logik implementieren wir im nächsten Schritt) ...
+
         } else {
-            webInterface.broadcast("STATE_OFF");
+            Serial.printf("Unbekannter WebSocket-Nachrichtentyp: %s\n", type);
         }
     };
 
@@ -354,6 +407,7 @@ void loop() {
     unsigned long currentTime = millis();
 
     // Nicht-blockierende Handler aufrufen
+
     if (currentTime - lastSensorRead >= SENSOR_READ_INTERVAL) {
         lastSensorRead = currentTime;
         handleSensors();
@@ -370,15 +424,9 @@ void loop() {
     }
 
     // Periodischer Broadcast per WebSocket
-    static unsigned long lastBroadcastTime = 0;
-    if (millis() - lastBroadcastTime > 2000) {
-        lastBroadcastTime = millis();
-        // Sende alle 2 Sekunden den aktuellen LED-Status an alle Clients
-        if (debugLed.isOn()) {
-            webInterface.broadcast("STATE_ON");
-        } else {
-            webInterface.broadcast("STATE_OFF");
-        }
+    if (currentTime - lastBroadcastTime >= BROADCAST_INTERVAL) {
+        lastBroadcastTime = currentTime;
+        handleBroadcast();
     }
 
     // Steuerungslogik in jedem Zyklus ausführen, um schnell reagieren zu können
@@ -671,4 +719,33 @@ void handleCamera() {
 
     imgFile.close();
     delay(2000);
+}
+
+/**
+ * @brief Sende den Status aller Sensoren und Aktoren an alle Clients
+ */
+void handleBroadcast() {
+    // Erstelle das vollständige 'state'-Objekt für das Dashboard.
+    JsonDocument doc;
+    doc["type"] = "state"; // Der Typ, den das JS für das Dashboard erwartet
+
+    const JsonObject values = doc["values"].to<JsonObject>();
+    values["airTemp"] = currentAirTemp; // Raumtemperatur in °C (S1)
+    values["humidity"] = currentHumidity; // Luftfeuchtigkeit in % (S1)
+    values["soilTemp"] = currentSoilTemp; // Bodentemperatur in °C (S2)
+    values["soilMoisture"] = currentSoilMoisture; // Bodenfeuchtigkeit in % (S3)
+    values["waterLevelOk"] = isWaterLevelOk; // Wasserstand (S4)
+    values["lightLux"] = currentLightLux; // Tageslicht in Lux (S5)
+
+    // Aktor-Zustände
+    values["lamp1On"] = lamp1Relay.isOn(); // Lampe 1 (A1)
+    values["lamp2On"] = lamp2Relay.isOn(); // Lampe 2 (A2)
+    values["heaterOn"] = heaterRelay.isOn(); // Heizer (A3)
+    values["fanOn"] = fanRelay.isOn(); // Lüfter (A4)
+    values["pumpOn"] = pumpRelay.isOn(); // Pumpe (A5)
+    values["misterOn"] = misterRelay.isOn(); // Vernebler (A6)
+
+    String jsonString;
+    serializeJson(doc, jsonString);
+    webInterface.broadcast(jsonString);
 }
