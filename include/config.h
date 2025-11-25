@@ -53,6 +53,13 @@ constexpr int SOIL_MOISTURE_ADC_DRY = 2500; // ADC-Wert, wenn der Sensor in der 
 constexpr int SOIL_MOISTURE_ADC_WET = 1100; // ADC-Wert, wenn der Sensor in Wasser getaucht ist (komplett nass)
 
 // ------------------------------------------------------------
+// Flags
+// ------------------------------------------------------------
+
+// Wasserstand (S4)
+constexpr bool WATER_LEVEL_TRIGGERED = false; // LOW/false = Wasser erkannt
+
+// ------------------------------------------------------------
 // Intervalle
 // ------------------------------------------------------------
 
@@ -81,9 +88,6 @@ constexpr float SOIL_TEMPERATUR_TARGET = 19.0; // Zielwert für Bodentemperatur
 // Bodenfeuchte (S3)
 constexpr int SOIL_MOISTURE_TARGET = 50; // Zielwert für Bodenfeuchte in Prozent
 
-// Wasserstand (S4)
-constexpr bool WATER_LEVEL_TRIGGERED = false; // LOW/false = Wasser erkannt
-
 // Betriebszeit für Lampen (A1 und A2)
 constexpr int LIGHT_ON_HOUR = 01;    // Stunde, 0-23: Ab wann soll die Lampe angehen?
 constexpr int LIGHT_OFF_HOUR = 02;  // Stunde, 0-23: Ab wann soll die Lampe ausgehen?
@@ -97,3 +101,26 @@ constexpr unsigned long FAN_COOLDOWN_DURATION_MS = 300000;  // 5 Minuten (in ms)
 
 // Dauer der Bewässerung (A5)
 constexpr unsigned long WATERING_DURATION_MS = 5000; // 5 Sekunden (in ms)
+
+/**
+ * Definiert alle zur Laufzeit veränderbaren Konfigurationsparameter.
+ */
+struct ConfigData {
+    // Steuerungsparameter
+    float airTempThresholdHigh = 28.0f; // Zielwert für Raumtemperatur (S1) in °C
+    float humidityTarget = 70.0f; // Zielwert Luftfeuchtigkeit (S1) in %
+    float soilTempTarget = 24.0f; // Zielwert für Bodentemperatur (S2) in °C
+    int soilMoistureTarget = 50; // Zielwert für Bodenfeuchte (S3) in %
+
+    // Betriebszeit für Lampen (A1 und A2)
+    int lightOnHour = 6; // Stunde, 0-23: Ab wann soll die Lampe angehen?
+    int lightOffHour = 20; // Stunde, 0-23: Ab wann soll die Lampe ausgehen?
+
+    // Schwellwerte für Lichtsensor (S5), dass selbst in der Licht-An-Zeit eine oder beide Lampen aus bleiben dürfen
+    float lightLuxThresholdDark = 5.0f; // Lux-Wert: ist das Tageslicht heller, bleibt eine Lampe aus
+    float lightLuxThresholdBright = 15.0f; // Lux-Wert: ist das Tageslicht heller, bleiben beide Lampen aus
+
+    // Laufzeiten für Aktor A4 und A5
+    unsigned long fanCooldownDurationMs = 300000; // Laufzeit des Lüfters (A4) in ms (Default: 5 Minuten)
+    unsigned long wateringDurationMs = 5000; // Dauer der Bewässerung (A5) in ms (Default: 5 Sekunden)
+};

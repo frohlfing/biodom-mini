@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!--suppress HtmlUnknownTarget -->
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biodom Mini</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Biodom Mini</h1>
+    <div id="main-content">
+        <!-- Tabs für die Navigation -->
+        <div class="tab">
+            <button class="tablinks active" onclick="openTab(event, 'Dashboard')">Dashboard</button>
+            <button class="tablinks" onclick="openTab(event, 'Control')">Steuerung</button>
+            <button class="tablinks" onclick="openTab(event, 'Config')">Konfiguration</button>
+            <button class="tablinks" onclick="openTab(event, 'Files')">Dateien</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="Dashboard" class="tabcontent" style="display:block;">
+            <h2>Live-Status</h2>
+            <!-- Hier werden die Sensor-Werte dynamisch eingefügt -->
+        </div>
+
+        <!-- Manuelle Steuerung Tab -->
+        <div id="Control" class="tabcontent">
+            <h2>Manuelle Steuerung</h2>
+            <!-- Hier kommen die Buttons für die Relais hin -->
+        </div>
+
+        <!-- Konfiguration Tab -->
+        <div id="Config" class="tabcontent">
+            <h2>Einstellungen</h2>
+            <form id="configForm" class="form-grid">
+                <div class="form-group">
+                    <label for="soilTempTarget">Bodentemp. Ziel (°C)</label>
+                    <input type="number" step="0.5" id="soilTempTarget">
+                </div>
+                <div class="form-group">
+                    <label for="soilMoistureTarget">Bodenfeuchte Ziel (%)</label>
+                    <input type="number" step="1" id="soilMoistureTarget">
+                </div>
+                <div class="form-group">
+                    <label for="airTempThresholdHigh">Max. Raumtemp. (°C)</label>
+                    <input type="number" step="0.5" id="airTempThresholdHigh">
+                </div>
+                <div class="form-group">
+                    <label for="humidityTarget">Luftfeuchte Ziel (%)</label>
+                    <input type="number" step="1" id="humidityTarget">
+                </div>
+                <div class="form-group">
+                    <label for="lightOnHour">Licht AN (Stunde)</label>
+                    <input type="number" min="0" max="23" id="lightOnHour">
+                </div>
+                <div class="form-group">
+                    <label for="lightOffHour">Licht AUS (Stunde)</label>
+                    <input type="number" min="0" max="23" id="lightOffHour">
+                </div>
+                <div class="form-group">
+                    <label for="lightLuxThresholdDark">Licht-Schwelle Dunkel (Lux)</label>
+                    <input type="number" step="100" id="lightLuxThresholdDark">
+                </div>
+                <div class="form-group">
+                    <label for="lightLuxThresholdBright">Licht-Schwelle Hell (Lux)</label>
+                    <input type="number" step="100" id="lightLuxThresholdBright">
+                </div>
+                <div class="form-group">
+                    <label for="wateringDurationMs">Bewässerungsdauer (ms)</label>
+                    <input type="number" step="1000" id="wateringDurationMs">
+                </div>
+                <div class="form-group">
+                    <label for="fanCooldownDurationMs">Lüfter-Laufzeit (ms)</label>
+                    <input type="number" step="1000" id="fanCooldownDurationMs">
+                </div>
+            </form>
+            <button class="save-button" onclick="saveConfig()">Speichern</button>
+            <div id="configStatus"></div>
+        </div>
+
+        <!-- Dateien Tab -->
+        <div id="Files" class="tabcontent">
+            <h2>Dateimanager</h2>
+            <!-- Hier kommen Upload, Dateiliste und Bildergalerie hin -->
+        </div>
+    </div>
+</div>
+<script src="/script.js"></script>
+</body>
+</html>

@@ -6,8 +6,8 @@
  * Sie initialisiert alle Sensoren und Aktoren, liest periodisch Messwerte aus,
  * wendet die Steuerungslogik an und aktualisiert die Anzeige.
  * 
- * @version 1.0.3
- * @date 13.11.2025
+ * @version 1.0.4
+ * @date 25.11.2025
  * @author Frank Rohlfing
  */
 
@@ -20,6 +20,7 @@
 // -- Einbinden der Konfiguration und der lokalen Bibliotheken --
 #include "config.h"
 #include "secrets.h"
+#include "ConfigManager.h" // TODO: FEHLER! Wird nicht gefunden!!
 #include "ArduCamMini2MPPlusOV2640.h"
 #include "LED.h"
 #include "MicroSDCard.h"
