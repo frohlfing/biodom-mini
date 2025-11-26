@@ -37,6 +37,11 @@
                     <p>Temperatur: <span id="airTemp" class="value">--.-</span> °C</p>
                     <p>Feuchtigkeit: <span id="humidity" class="value">--</span> %</p>
                     <p>Lüfter: <span id="fanOn" class="status-off">AUS</span></p>
+                    <div class="mode-selector" id="mode-fan">
+                        <input type="radio" id="fan-on" name="fan" value="on"><label for="fan-on">An</label>
+                        <input type="radio" id="fan-off" name="fan" value="off"><label for="fan-off">Aus</label>
+                        <input type="radio" id="fan-auto" name="fan" value="auto"><label for="fan-auto">Auto</label>
+                    </div>
                 </div>
 
                 <!-- Kachel: Boden -->
@@ -48,6 +53,11 @@
                     <p>Temperatur: <span id="soilTemp" class="value">--.-</span> °C</p>
                     <p>Feuchtigkeit: <span id="soilMoisture" class="value">--</span> %</p>
                     <p>Heizung: <span id="heaterOn" class="status-off">AUS</span></p>
+                    <div class="mode-selector" id="mode-heater">
+                        <input type="radio" id="heater-on" name="heater" value="on"><label for="heater-on">An</label>
+                        <input type="radio" id="heater-off" name="heater" value="off"><label for="heater-off">Aus</label>
+                        <input type="radio" id="heater-auto" name="heater" value="auto"><label for="heater-auto">Auto</label>
+                    </div>
                 </div>
 
                 <!-- Kachel: Beleuchtung -->
@@ -58,7 +68,17 @@
                     </div>
                     <p>Tageslicht: <span id="lightLux" class="value">----</span> Lux</p>
                     <p>Lampe 1: <span id="lamp1On" class="status-off">AUS</span></p>
+                    <div class="mode-selector" id="mode-lamp1">
+                        <input type="radio" id="lamp1-on" name="lamp1" value="on"><label for="lamp1-on">An</label>
+                        <input type="radio" id="lamp1-off" name="lamp1" value="off"><label for="lamp1-off">Aus</label>
+                        <input type="radio" id="lamp1-auto" name="lamp1" value="auto"><label for="lamp1-auto">Auto</label>
+                    </div>
                     <p>Lampe 2: <span id="lamp2On" class="status-off">AUS</span></p>
+                    <div class="mode-selector" id="mode-lamp2">
+                        <input type="radio" id="lamp2-on" name="lamp2" value="on"><label for="lamp2-on">An</label>
+                        <input type="radio" id="lamp2-off" name="lamp2" value="off"><label for="lamp2-off">Aus</label>
+                        <input type="radio" id="lamp2-auto" name="lamp2" value="auto"><label for="lamp2-auto">Auto</label>
+                    </div>
                 </div>
 
                 <!-- Kachel: Wasser & Bewässerung -->
@@ -67,36 +87,19 @@
                         <img id="iconWater" src="/icons/watering_can_16x16.png" class="icon">
                         <h3>Wasser</h3>
                     </div>
-                    <p>Tank-Füllstand: <span id="waterLevelOk" class="status-off">NIEDRIG</span></p>
+                    <p>Tank-Füllstand: <span id="waterLevelOk" class="water-level-empty">👎</span></p>
                     <p>Pumpe: <span id="pumpOn" class="status-off">AUS</span></p>
+                    <div class="mode-selector" id="mode-pump">
+                        <input type="radio" id="pump-on" name="pump" value="on"><label for="pump-on">An</label>
+                        <input type="radio" id="pump-off" name="pump" value="off"><label for="pump-off">Aus</label>
+                        <input type="radio" id="pump-auto" name="pump" value="auto"><label for="pump-auto">Auto</label>
+                    </div>
                     <p>Vernebler: <span id="misterOn" class="status-off">AUS</span></p>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Inhalt für den "Steuerung"-Tab -->
-        <div id="Controls" class="tab-content">
-            <h2>Manuelle Aktor-Steuerung</h2>
-            <p class="notice">Achtung: Manuelle Eingriffe überschreiben die Automatik, bis der nächste Regelzyklus stattfindet.</p>
-            <div id="controls-grid" class="grid-container">
-
-                <div class="control-card">
-                    <h3>Lampen</h3>
-                    <button class="action-button" onclick="sendCommand('toggle', 'lamp1')">Lampe 1 Umschalten</button>
-                    <button class="action-button" onclick="sendCommand('toggle', 'lamp2')">Lampe 2 Umschalten</button>
-                </div>
-
-                <div class="control-card">
-                    <h3>Klima</h3>
-                    <button class="action-button" onclick="sendCommand('toggle', 'heater')">Heizung Umschalten</button>
-                    <button class="action-button" onclick="sendCommand('toggle', 'fan')">Lüfter Umschalten</button>
-                </div>
-
-                <div class="control-card">
-                    <h3>Wasser</h3>
-                    <button class="action-button" onclick="sendCommand('toggle', 'pump')">Pumpe Umschalten</button>
-                    <button class="action-button" onclick="sendCommand('toggle', 'mister')">Vernebler Umschalten</button>
+                    <div class="mode-selector" id="mode-mister">
+                        <input type="radio" id="mister-on" name="mister" value="on"><label for="mister-on">An</label>
+                        <input type="radio" id="mister-off" name="mister" value="off"><label for="mister-off">Aus</label>
+                        <input type="radio" id="mister-auto" name="mister" value="auto"><label for="mister-auto">Auto</label>
+                    </div>
                 </div>
 
             </div>
@@ -120,19 +123,20 @@
             </div>
         </div>
 
-        <!-- Inhalt für den "Dateimanager"-Tab -->
-        <div id="Files" class="tab-content">
-            <h2>Dateimanager</h2>
-            <div id="file-uploader">
-                <h3>Webseiten-Dateien hochladen</h3>
-                <input type="file" id="file-input" multiple>
-                <button class="action-button" onclick="uploadFiles()">Hochladen</button>
-                <progress id="upload-progress" value="0" max="100"></progress>
-            </div>
-            <div id="file-list">
-                <!-- Dateiliste wird hier dynamisch per JS eingefügt -->
-            </div>
-        </div>
+<!--        PlatformIO bietet die Funktion "Upload Filesystem Image OTA", daher brauche ich den Dateimanager vorerst nicht -->
+<!--        &lt;!&ndash; Inhalt für den "Dateimanager"-Tab &ndash;&gt;-->
+<!--        <div id="Files" class="tab-content">-->
+<!--            <h2>Dateimanager</h2>-->
+<!--            <div id="file-uploader">-->
+<!--                <h3>Webseiten-Dateien hochladen</h3>-->
+<!--                <input type="file" id="file-input" multiple>-->
+<!--                <button class="action-button" onclick="uploadFiles()">Hochladen</button>-->
+<!--                <progress id="upload-progress" value="0" max="100"></progress>-->
+<!--            </div>-->
+<!--            <div id="file-list">-->
+<!--                &lt;!&ndash; Dateiliste wird hier dynamisch per JS eingefügt &ndash;&gt;-->
+<!--            </div>-->
+<!--        </div>-->
 
     </div>
     <script src="/script.js"></script>

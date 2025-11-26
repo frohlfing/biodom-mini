@@ -6,8 +6,8 @@
  * Sie initialisiert alle Sensoren und Aktoren, liest periodisch Messwerte aus,
  * wendet die Steuerungslogik an und aktualisiert die Anzeige.
  * 
- * @version 1.0.4
- * @date 25.11.2025
+ * @version 1.0.5
+ * @date 26.11.2025
  * @author Frank Rohlfing
  */
 
@@ -103,7 +103,18 @@ unsigned long lastDisplayUpdate = 0;  // Zeitpunkt der letzten Display-Aktualisi
 unsigned long lastCameraCapture = 0;  // Zeitpunkt der letzten Kameraaufnahme
 unsigned long lastBroadcastTime = 0;  // Zeitpunkt der letzten Broadcast-Nachricht
 
+// === Zustands-Management für manuelle Steuerung ===
+
+enum ControlMode { MODE_AUTO, MODE_ON, MODE_OFF };
+ControlMode lamp1Mode = MODE_AUTO;  // Lampe 1 (A1)
+ControlMode lamp2Mode = MODE_AUTO;  // Lampe 2 (A2)
+ControlMode heaterMode = MODE_AUTO; // Heizer (A3)
+ControlMode fanMode = MODE_AUTO;    // Lüfter (A4)
+ControlMode pumpMode = MODE_AUTO;   // Wasserpumpe (A5)
+ControlMode misterMode = MODE_AUTO; // Vernebler (A6)
+
 // === Funktionsprototypen ===
+
 void handleSensors();
 void handleControlLogic();
 void handleDisplay();
@@ -146,7 +157,9 @@ void halt(const char* message, const char* detail = "") {
 void log(const char* message) {
     Serial.println(message);
     display.addLogLine(message);
-    delay(1000);
+    // todo wieder auf 1000 setzen
+    delay(100);
+    //delay(1000);
 }
 
 /**
@@ -333,7 +346,7 @@ void setup() {
     webInterface.onMessage = [](const String& msg) {
         // Parse die empfangene Nachricht als JSON-Dokument.
         JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, msg);
+        const DeserializationError error = deserializeJson(doc, msg);
 
         // Prüfe auf Parsing-Fehler.
         if (error) {
@@ -370,11 +383,42 @@ void setup() {
                 else if (strcmp(target, "fan") == 0) fanRelay.toggle();
                 else if (strcmp(target, "pump") == 0) pumpRelay.toggle();
                 else if (strcmp(target, "mister") == 0) misterRelay.toggle();
+                handleBroadcast(); // nch der manuellen Änderung sofort den neuen Systemstatus an alle Browser senden
 
-                // Nach der manuellen Änderung SOFORT den neuen Systemstatus an alle
-                // Browser senden, damit das UI sich sofort aktualisiert.
-                handleBroadcast();
+            } else if (strcmp(command, "setMode") == 0) {
+                const char* modeStr = doc["mode"];
+                ControlMode mode;
+                if (strcmp(modeStr, "auto") == 0) mode = MODE_AUTO;
+                else if (strcmp(modeStr, "on") == 0) mode = MODE_ON;
+                else if (strcmp(modeStr, "off") == 0) mode = MODE_OFF;
+                else {
+                    Serial.println("WebSocket-Fehler: 'mode' fehlerhaft.");
+                    return;
+                }
+                if (strcmp(target, "lamp1") == 0) { lamp1Mode = mode; }
+                else if (strcmp(target, "lamp2") == 0) { lamp2Mode = mode; }
+                else if (strcmp(target, "heater") == 0) { heaterMode = mode; }
+                else if (strcmp(target, "fan") == 0) { fanMode = mode; }
+                else if (strcmp(target, "pump") == 0) { pumpMode = mode; }
+                else if (strcmp(target, "mister") == 0) { misterMode = mode; }
+                if (mode == MODE_ON) {
+                    if (strcmp(target, "lamp1") == 0) lamp1Relay.on();
+                    else if (strcmp(target, "lamp2") == 0) lamp2Relay.on();
+                    else if (strcmp(target, "heater") == 0) heaterRelay.on();
+                    else if (strcmp(target, "fan") == 0) fanRelay.on();
+                    else if (strcmp(target, "pump") == 0) pumpRelay.on();
+                    else if (strcmp(target, "mister") == 0) misterRelay.on();
+                } else if (mode == MODE_OFF) {
+                    if (strcmp(target, "lamp1") == 0) lamp1Relay.off();
+                    else if (strcmp(target, "lamp2") == 0) lamp2Relay.off();
+                    else if (strcmp(target, "heater") == 0) heaterRelay.off();
+                    else if (strcmp(target, "fan") == 0) fanRelay.off();
+                    else if (strcmp(target, "pump") == 0) pumpRelay.off();
+                    else if (strcmp(target, "mister") == 0) misterRelay.off();
+                }
+                handleBroadcast(); // Sende sofort den neuen Modus-Status
             }
+
             // Hier könnten später weitere Befehle wie "setState" hin.
 
         } else if (strcmp(type, "saveSettings") == 0) {
@@ -570,122 +614,90 @@ void handleControlLogic() {
     // Verweis auf die aktuellen Einstellungen holen
     const auto& settings = settingsManager.get();
 
+    // Aktuelle Stunde ermitteln
     tm timeInfo{};
     if (!getLocalTime(&timeInfo)) {
         log("Fehler beim Abrufen der Zeit."); // dürfte nie vorkommen, da im Setup die Zeit synchronisiert wurde
         return;
     }
-    int currentHour = timeInfo.tm_hour;
+    const int currentHour = timeInfo.tm_hour;
 
-    // -- Steuerung für die Lampen (A1 und A2) --
-    
-    if (currentHour >= settings.lightOnHour && currentHour < settings.lightOffHour) { // "Licht an"-Zeitfenster ist gegeben
-        if (isnan(currentLightLux)) { // der Lichtsensor ist ausgefallen
-            lamp1Relay.on(); // beide Lampen an
-            lamp2Relay.on();
-        } else { // der Lichtsensor funktioniert
+    // -- Steuerung für die Lampe 1 (A1) --
 
-            // TODO: Die Logik stimmt noch nicht!
-
-            // /*
-            // Strategie 1: Hysterese
-            // Es gibt zwei Schellen:
-            // * Einschalt-Schwelle (`lightLuxThresholdDark`): Bei dem bei ausgeschalteten Lampen das Tageslicht zu dunkel ist.
-            // * Ausschalt-Schwelle (`lightLuxThresholdBright`): Bei dem bei eingeschalteten Lampen das Tageslicht zu hell ist.
-            // */
-            //
-            // if (lamp1Relay.isOn() && lamp2Relay.isOn()) { // beide Lampen sind derzeit an
-            //     if (currentLightLux > settings.lightLuxThresholdDark) { // das Tageslicht ist mittel-hell
-            //         if (random(2) == 0) {// Zufällig eine Lampe ausschalten
-            //             lamp1Relay.off();
-            //         } else {
-            //             lamp2Relay.off();
-            //         }
-            //     }
-            // }
-            // else if (lamp1Relay.isOn() || lamp2Relay.isOn()) { // nur eine Lampe ist derzeit an
-            //     if (currentLightLux > settings.lightLuxThresholdBright) { // das Tageslicht ist sehr hell
-            //         lamp1Relay.off(); // beide Lampen ausschalten
-            //         lamp2Relay.off();
-            //     }
-            //     // Bedingung zum Zuschalten von Lampe 2 (wenn es wieder dunkler wird)
-            //     else if (currentLightLux < settings.lightLuxThresholdDark) { // das Tageslicht ist dunkler
-            //         lamp1Relay.on(); // beide Lampen einschalten
-            //         lamp2Relay.on();
-            //     }
-            // }
-            // else { // beide Lampen sind derzeit aus
-            //     if (currentLightLux < settings.lightLuxThresholdBright) { // das Tageslicht ist nicht sehr hell
-            //         if (random(2) == 0) {// Zufällig eine Lampe einschalten
-            //             lamp1Relay.on();
-            //         } else {
-            //             lamp2Relay.on();
-            //         }
-            //     }
-            //     if (currentLightLux < settings.lightLuxThresholdDark) { // das Tageslicht ist dunkel
-            //         lamp1Relay.on();
-            //         lamp2Relay.on();
-            //     }
-            // }
+    if (lamp1Mode == MODE_AUTO) {
+        if (currentHour >= settings.lightOnHour && currentHour < settings.lightOffHour) { // todo je ein eigenes Zeitfenster für Lampe1 und Lampe 2 verwenden
+            // Tageszeit
+            if (!isnan(currentLightLux)) {
+                // todo Logik einbauen
+                lamp1Relay.on();
+            } else {
+                lamp1Relay.off();
+            }
+        } else {
+            // Nachtzeit
+            lamp1Relay.off();
         }
-        lamp1Relay.on();
-        lamp2Relay.on();
-    } else {
-        // Außerhalb des Zeitfensters: Beide Lampen sind immer aus, egal wie dunkel es ist.
-        lamp1Relay.off();
-        lamp2Relay.off();
     }
 
-    /*
-    Strategie 2 für die Lichtsteuerung: Verzögerung (Trägheit einbauen)
+    // -- Steuerung für die Lampe 2 (A2) --
 
-    Diese Strategie verhindert, dass das System auf kurzfristige Schwankungen (z.B. eine schnell vorbeiziehende Wolke) überreagiert.
-
-    **Die Idee:** Eine Lampe wird erst dann an- oder ausgeschaltet, wenn der Schwellwert für eine **bestimmte Zeit** (z.B. 5 Minuten) ununterbrochen über- oder unterschritten wurde.
-
-    **Wie du das umsetzen würdest:**
-    Du bräuchtest zusätzliche globale Variablen, z.B. `unsigned long timeThresholdWasCrossed = 0;`.
-    In `handleControlLogic` würdest du dann:
-    1. Prüfen, ob `currentLightLux` über einer Schwelle liegt.
-    2. Wenn ja, und `timeThresholdWasCrossed` ist `0`, setze `timeThresholdWasCrossed = millis();`.
-    3. Wenn `currentLightLux` wieder unter die Schwelle fällt, setze `timeThresholdWasCrossed` zurück auf `0`.
-    4. Schalte die Lampe erst dann, wenn `timeThresholdWasCrossed > 0` UND `millis() - timeThresholdWasCrossed > 300000` (5 Minuten).
-    */
+    if (lamp2Mode == MODE_AUTO) {
+        if (currentHour >= settings.lightOnHour && currentHour < settings.lightOffHour) { // todo je ein eigenes Zeitfenster für Lampe1 und Lampe 2 verwenden
+            // Tageszeit
+            if (!isnan(currentLightLux)) {
+                // todo Logik einbauen
+                lamp2Relay.on();
+            } else {
+                lamp2Relay.off();
+            }
+        } else {
+            // Nachtzeit
+            lamp2Relay.off();
+        }
+    }
 
     // -- Steuerung für den Heizer (A3) --
 
-    if (currentSoilTemp < settings.soilTempTarget) {
-        heaterRelay.on(); 
-    } 
-    else if (currentSoilTemp > settings.soilTempTarget + 0.5f) {
-        heaterRelay.off(); 
+    if (heaterMode == MODE_AUTO) {
+        if (currentSoilTemp < settings.soilTempTarget) {
+            heaterRelay.on();
+        }
+        else if (currentSoilTemp > settings.soilTempTarget + 0.5f) {
+            heaterRelay.off();
+        }
     }
 
     // -- Steuerung für den Lüfter (A4) --
 
-    if (currentAirTemp > settings.airTempThresholdHigh && !fanRelay.isOn()) {
-        fanRelay.pulse(settings.fanCooldownDurationMs);
+    if (fanMode == MODE_AUTO) {
+        if (currentAirTemp > settings.airTempThresholdHigh && !fanRelay.isOn()) {
+            fanRelay.pulse(settings.fanCooldownDurationMs);
+        }
     }
 
     // Steuerung für die Pumpe (A5)
 
-    if (isWaterLevelOk && !pumpRelay.isOn()) {
-        if (currentSoilMoisture < settings.soilMoistureTarget && currentSoilMoisture != -1) {
-            pumpRelay.pulse(settings.wateringDurationMs);
+    if (pumpMode == MODE_AUTO) {
+        if (isWaterLevelOk && !pumpRelay.isOn()) {
+            if (currentSoilMoisture < settings.soilMoistureTarget && currentSoilMoisture != -1) {
+                pumpRelay.pulse(settings.wateringDurationMs);
+            }
         }
     }
 
     // -- Steuerung für den Vernebler (A6) --
-    
-    if (isWaterLevelOk) {
-        if (currentHumidity < settings.humidityTarget) {
-            misterRelay.on(); 
-        } 
-        else if (currentHumidity > settings.humidityTarget + 5.0f) {
-            misterRelay.off(); 
+
+    if (pumpMode == MODE_AUTO) {
+        if (isWaterLevelOk) {
+            if (currentHumidity < settings.humidityTarget) {
+                misterRelay.on();
+            }
+            else if (currentHumidity > settings.humidityTarget + 5.0f) {
+                misterRelay.off();
+            }
+        } else {
+            misterRelay.off();
         }
-    } else {
-        misterRelay.off();
     }
 }
 
@@ -744,6 +756,14 @@ void handleBroadcast() {
     values["fanOn"] = fanRelay.isOn(); // Lüfter (A4)
     values["pumpOn"] = pumpRelay.isOn(); // Pumpe (A5)
     values["misterOn"] = misterRelay.isOn(); // Vernebler (A6)
+
+    // Modus
+    values["lamp1Mode"] = lamp1Mode == MODE_AUTO ? "auto" : lamp1Mode == MODE_ON ? "on" : "off" ;
+    values["lamp2Mode"] = lamp2Mode == MODE_AUTO ? "auto" : lamp2Mode == MODE_ON ? "on" : "off";
+    values["heaterMode"] =heaterMode == MODE_AUTO ? "auto" : heaterMode == MODE_ON ? "on" : "off";
+    values["fanMode"] = fanMode == MODE_AUTO ? "auto" : fanMode == MODE_ON ? "on" : "off";
+    values["pumpMode"] = pumpMode == MODE_AUTO ? "auto" : pumpMode == MODE_ON ? "on" : "off";
+    values["misterMode"] = misterMode == MODE_AUTO ? "auto" : misterMode == MODE_ON ? "on" : "off";
 
     String jsonString;
     serializeJson(doc, jsonString);

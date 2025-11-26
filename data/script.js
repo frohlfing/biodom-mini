@@ -85,6 +85,12 @@ function openTab(evt, tabName) {
  * @property {boolean} fanOn - Zustand des Lüfters (A4).
  * @property {boolean} pumpOn - Zustand der Pumpe (A5).
  * @property {boolean} misterOn - Zustand des Verneblers (A6).
+ * @property {string} lamp1Mode - Der Steuermodus ('auto', 'on', 'off') für die Lampe 1 (A1).
+ * @property {string} lamp2Mode - Der Steuermodus ('auto', 'on', 'off') für die Lampe 2 (A2).
+ * @property {string} heaterMode - Der Steuermodus ('auto', 'on', 'off') für die Heizung (A3).
+ * @property {string} fanMode - Der Steuermodus ('auto', 'on', 'off') für den Lüfter (A4).
+ * @property {string} pumpMode - Der Steuermodus ('auto', 'on', 'off') für die Pumpe (A5).
+ * @property {string} misterMode - Der Steuermodus ('auto', 'on', 'off') für den Vernebler (A6).
  */
 
 /**
@@ -92,115 +98,101 @@ function openTab(evt, tabName) {
  * @param {SystemState} values Ein Objekt mit den Sensor- und Aktor-Zuständen vom ESP32.
  */
 function updateDashboard(values) {
-    let element;
+    let icon, element, radio;
 
     // --- Kachel für Raumklima ---
 
-    const iconAir = document.getElementById('iconAir');
-    if (iconAir) {
-        iconAir.src = values.fanOn ? '/icons/air_16x16.png' : '/icons/thermometer_16x16.png';
-    }
+    icon = document.getElementById('iconAir');
+    icon.src = values.fanOn ? '/icons/air_16x16.png' : '/icons/thermometer_16x16.png';
 
     element = document.getElementById('airTemp');
-    if (element) {
-        element.innerText = (values.airTemp !== null) ? values.airTemp.toFixed(1) : '---';
-    }
+    element.innerText = (values.airTemp !== null) ? values.airTemp.toFixed(1) : '---';
 
     element = document.getElementById('humidity');
-    if (element) {
-        element.innerText = (values.humidity !== null) ? values.humidity.toFixed(0) : '---';
-    }
+    element.innerText = (values.humidity !== null) ? values.humidity.toFixed(0) : '---';
 
     element = document.getElementById('fanOn');
-    if (element) {
-        element.innerText = values.fanOn ? 'AN' : 'AUS';
-        element.className = values.fanOn ? 'status-on' : 'status-off';
-    }
+    element.innerText = values.fanOn ? 'AN' : 'AUS';
+    element.className = values.fanOn ? 'status-on' : 'status-off';
+
+    radio = document.querySelector(`input[name="fan"][value="${values.fanMode}"]`);
+    radio.checked = true;
 
     // --- Kachel für Boden ---
 
-    const iconSoil = document.getElementById('iconSoil');
-    if (iconSoil) {
-        iconSoil.src = values.heaterOn ? '/icons/radiator_16x16.png' : '/icons/engine_coolant_16x16.png';
-    }
+    icon = document.getElementById('iconSoil');
+    icon.src = values.heaterOn ? '/icons/radiator_16x16.png' : '/icons/engine_coolant_16x16.png';
 
     element = document.getElementById('soilTemp');
-    if (element) {
-        element.innerText = (values.soilTemp !== null) ? values.soilTemp.toFixed(1) : '---';
-    }
+    element.innerText = (values.soilTemp !== null) ? values.soilTemp.toFixed(1) : '---';
 
     element = document.getElementById('soilMoisture');
-    if (element) {
-        element.innerText = (values.soilMoisture !== -1) ? values.soilMoisture : '---';
-    }
+    element.innerText = (values.soilMoisture !== -1) ? values.soilMoisture : '---';
 
     element = document.getElementById('heaterOn');
-    if (element) {
-        element.innerText = values.heaterOn ? 'AN' : 'AUS';
-        element.className = values.heaterOn ? 'status-on' : 'status-off';
-    }
+    element.innerText = values.heaterOn ? 'AN' : 'AUS';
+    element.className = values.heaterOn ? 'status-on' : 'status-off';
+
+    radio = document.querySelector(`input[name="heater"][value="${values.heaterMode}"]`);
+    radio.checked = true;
 
     // --- Kachel für Beleuchtung ---
 
-    const iconLight = document.getElementById('iconLight');
-    if (iconLight) {
-        if (values.lamp1On && values.lamp2On) {
-            iconLight.src = '/icons/sun_16x16.png';
-        } else if (values.lamp1On || values.lamp2On) {
-            iconLight.src = '/icons/sun_and_moon_16x16.png';
-        } else {
-            iconLight.src = '/icons/moon_and_stars_16x16.png';
-        }
+    icon = document.getElementById('iconLight');
+    if (values.lamp1On && values.lamp2On) {
+        icon.src = '/icons/sun_16x16.png';
+    } else if (values.lamp1On || values.lamp2On) {
+        icon.src = '/icons/sun_and_moon_16x16.png';
+    } else {
+        icon.src = '/icons/moon_and_stars_16x16.png';
     }
 
     element = document.getElementById('lightLux');
-    if (element) {
-        element.innerText = (values.lightLux !== null) ? values.lightLux.toFixed(0) : '---';
-    }
+    element.innerText = (values.lightLux !== null) ? values.lightLux.toFixed(0) : '---';
 
     element = document.getElementById('lamp1On');
-    if (element) {
-        element.innerText = values.lamp1On ? 'AN' : 'AUS';
-        element.className = values.lamp1On ? 'status-on' : 'status-off';
-    }
+    element.innerText = values.lamp1On ? 'AN' : 'AUS';
+    element.className = values.lamp1On ? 'status-on' : 'status-off';
+
+    radio = document.querySelector(`input[name="lamp1"][value="${values.lamp1Mode}"]`);
+    radio.checked = true;
 
     element = document.getElementById('lamp2On');
-    if (element) {
-        element.innerText = values.lamp2On ? 'AN' : 'AUS';
-        element.className = values.lamp2On ? 'status-on' : 'status-off';
-    }
+    element.innerText = values.lamp2On ? 'AN' : 'AUS';
+    element.className = values.lamp2On ? 'status-on' : 'status-off';
+
+    radio = document.querySelector(`input[name="lamp2"][value="${values.lamp2Mode}"]`);
+    radio.checked = true;
 
     // --- Kachel für Wasser ---
 
     // Logik: Pumpe hat Vorrang vor Vernebler
-    const iconWater = document.getElementById('iconWater');
-    if (iconWater) {
-        if (values.pumpOn) {
-            iconWater.src = '/icons/rainy_weather_16x16.png';
-        } else if (values.misterOn) {
-            iconWater.src = '/icons/dry_16x16.png';
-        } else {
-            iconWater.src = '/icons/watering_can_16x16.png';
-        }
+    icon = document.getElementById('iconWater');
+    if (values.pumpOn) {
+        icon.src = '/icons/rainy_weather_16x16.png';
+    } else if (values.misterOn) {
+        icon.src = '/icons/dry_16x16.png';
+    } else {
+        icon.src = '/icons/watering_can_16x16.png';
     }
 
     element = document.getElementById('waterLevelOk');
-    if (element) {
-        element.innerText = values.waterLevelOk ? 'OK' : 'NIEDRIG';
-        element.className = values.waterLevelOk ? 'status-on' : 'status-off';
-    }
+    element.innerText = values.waterLevelOk ? '👍' : '👎';
+    element.className = values.waterLevelOk ? 'water-level-full' : 'water-level-empty';
 
     element = document.getElementById('pumpOn');
-    if (element) {
-        element.innerText = values.pumpOn ? 'AN' : 'AUS';
-        element.className = values.pumpOn ? 'status-on' : 'status-off';
-    }
+    element.innerText = values.pumpOn ? 'AN' : 'AUS';
+    element.className = values.pumpOn ? 'status-on' : 'status-off';
+
+    radio = document.querySelector(`input[name="pump"][value="${values.pumpMode}"]`);
+    radio.checked = true;
 
     element = document.getElementById('misterOn');
-    if (element) {
-        element.innerText = values.misterOn ? 'AN' : 'AUS';
-        element.className = values.misterOn ? 'status-on' : 'status-off';
-    }
+    element.innerText = values.misterOn ? 'AN' : 'AUS';
+    element.className = values.misterOn ? 'status-on' : 'status-off';
+
+    radio = document.querySelector(`input[name="mister"][value="${values.misterMode}"]`);
+    radio.checked = true;
 }
 
 // --- Event Listener ---
@@ -208,18 +200,30 @@ window.addEventListener('load', () => {
     initWebSocket();
     // Standardmäßig den ersten Tab öffnen
     document.querySelector('.tab-link').click();
+
+    // Ereignishändler für Radio-Button auto/on/off
+    document.querySelectorAll('.mode-selector').forEach(selector => {
+        selector.addEventListener('change', (event) => {
+            // 'event.target' ist der Radio-Button, der geklickt wurde.
+            const target = event.target.name;
+            const mode = event.target.value; // 'on', 'off' oder 'auto'
+            sendCommand("setMode", target, { mode: mode });
+        });
+    });
 });
 
 /**
  * @brief Sendet einen Befehl als JSON-Objekt an den ESP32.
  * @param {string} command Der Name des Befehls (z.B. 'toggle').
  * @param {string} target Das Ziel des Befehls (z.B. der Name des Relais 'lamp1').
+ * @param {object} [payload={}] - Ein optionales Objekt mit zusätzlichen Daten.
  */
-function sendCommand(command, target) {
+function sendCommand(command, target, payload = {}) {
     const message = {
         type: "command",
         command: command,
-        target: target
+        target: target,
+        ...payload,
     };
     console.log("Sende Befehl: ", message);
     websocket.send(JSON.stringify(message));

@@ -133,11 +133,22 @@ h1, h2 {
     background-color: #2ecc71; /* Grün */
     color: #1e1e1e;
     width: 34px;
+    text-align: center;
 }
 .status-off {
     background-color: #e74c3c; /* Rot */
     color: #ffffff;
     width: 34px;
+    text-align: center;
+}
+.water-level-full {
+    width: 34px;
+    text-align: center;
+}
+.water-level-empty {
+    background-color: #e74c3c; /* Rot */
+    width: 34px;
+    text-align: center;
 }
 
 /* Icons im Dashboard */
