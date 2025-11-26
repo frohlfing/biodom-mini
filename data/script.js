@@ -102,8 +102,8 @@ function updateDashboard(values) {
 
     // --- Kachel für Raumklima ---
 
-    icon = document.getElementById('iconAir');
-    icon.src = values.fanOn ? '/icons/air_16x16.png' : '/icons/thermometer_16x16.png';
+    //icon = document.getElementById('iconAir');
+    //icon.src = values.fanOn ? '/icons/air_16x16.png' : '/icons/thermometer_16x16.png';
 
     element = document.getElementById('airTemp');
     element.innerText = (values.airTemp !== null) ? values.airTemp.toFixed(1) : '---';
@@ -120,8 +120,8 @@ function updateDashboard(values) {
 
     // --- Kachel für Boden ---
 
-    icon = document.getElementById('iconSoil');
-    icon.src = values.heaterOn ? '/icons/radiator_16x16.png' : '/icons/engine_coolant_16x16.png';
+    //icon = document.getElementById('iconSoil');
+    //icon.src = values.heaterOn ? '/icons/radiator_16x16.png' : '/icons/engine_coolant_16x16.png';
 
     element = document.getElementById('soilTemp');
     element.innerText = (values.soilTemp !== null) ? values.soilTemp.toFixed(1) : '---';
@@ -138,14 +138,14 @@ function updateDashboard(values) {
 
     // --- Kachel für Beleuchtung ---
 
-    icon = document.getElementById('iconLight');
-    if (values.lamp1On && values.lamp2On) {
-        icon.src = '/icons/sun_16x16.png';
-    } else if (values.lamp1On || values.lamp2On) {
-        icon.src = '/icons/sun_and_moon_16x16.png';
-    } else {
-        icon.src = '/icons/moon_and_stars_16x16.png';
-    }
+    // icon = document.getElementById('iconLight');
+    // if (values.lamp1On && values.lamp2On) {
+    //     icon.src = '/icons/sun_16x16.png';
+    // } else if (values.lamp1On || values.lamp2On) {
+    //     icon.src = '/icons/sun_and_moon_16x16.png';
+    // } else {
+    //     icon.src = '/icons/moon_and_stars_16x16.png';
+    // }
 
     element = document.getElementById('lightLux');
     element.innerText = (values.lightLux !== null) ? values.lightLux.toFixed(0) : '---';
@@ -166,15 +166,15 @@ function updateDashboard(values) {
 
     // --- Kachel für Wasser ---
 
-    // Logik: Pumpe hat Vorrang vor Vernebler
-    icon = document.getElementById('iconWater');
-    if (values.pumpOn) {
-        icon.src = '/icons/rainy_weather_16x16.png';
-    } else if (values.misterOn) {
-        icon.src = '/icons/dry_16x16.png';
-    } else {
-        icon.src = '/icons/watering_can_16x16.png';
-    }
+    // // Logik: Pumpe hat Vorrang vor Vernebler
+    // icon = document.getElementById('iconWater');
+    // if (values.pumpOn) {
+    //     icon.src = '/icons/rainy_weather_16x16.png';
+    // } else if (values.misterOn) {
+    //     icon.src = '/icons/dry_16x16.png';
+    // } else {
+    //     icon.src = '/icons/watering_can_16x16.png';
+    // }
 
     element = document.getElementById('waterLevelOk');
     element.innerText = values.waterLevelOk ? '👍' : '👎';

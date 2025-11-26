@@ -157,9 +157,7 @@ void halt(const char* message, const char* detail = "") {
 void log(const char* message) {
     Serial.println(message);
     display.addLogLine(message);
-    // todo wieder auf 1000 setzen
-    delay(100);
-    //delay(1000);
+    delay(LOG_DELAY);
 }
 
 /**
@@ -365,25 +363,31 @@ void setup() {
         // --- Verarbeite die Nachricht basierend auf ihrem Typ ---
 
         if (strcmp(type, "command") == 0) {
-            // Ein BEFEHL zur Steuerung von Aktoren wurde empfangen.
+            // Ein Befehl zur Steuerung von Aktoren wurde empfangen.
             const char* command = doc["command"];
-            const char* target = doc["target"];
+            if (!command) {
+                Serial.println("WebSocket-Fehler: 'command' fehlt.");
+                return;
+            }
+            //Serial.printf("Befehl empfangen: %s\n", command);
 
-            if (!command || !target) {
-                Serial.println("WebSocket-Fehler: 'command' oder 'target' fehlt.");
+            // Das zugehörige Relais ermitteln
+            Relay* targetRelay = nullptr;
+            const char* targetStr = doc["target"];
+            if (strcmp(targetStr, "lamp1") == 0) targetRelay = &lamp1Relay;
+            else if (strcmp(targetStr, "lamp2") == 0) targetRelay = &lamp2Relay;
+            else if (strcmp(targetStr, "heater") == 0) targetRelay = &heaterRelay;
+            else if (strcmp(targetStr, "fan") == 0) targetRelay = &fanRelay;
+            else if (strcmp(targetStr, "pump") == 0) targetRelay = &pumpRelay;
+            else if (strcmp(targetStr, "mister") == 0) targetRelay = &misterRelay;
+            else {
+                Serial.printf("WebSocket-Fehler: Unbekanntes 'target': %s\n", targetStr);
                 return;
             }
 
-            Serial.printf("Befehl empfangen: %s, Ziel: %s\n", command, target);
-
             if (strcmp(command, "toggle") == 0) {
-                if (strcmp(target, "lamp1") == 0) lamp1Relay.toggle();
-                else if (strcmp(target, "lamp2") == 0) lamp2Relay.toggle();
-                else if (strcmp(target, "heater") == 0) heaterRelay.toggle();
-                else if (strcmp(target, "fan") == 0) fanRelay.toggle();
-                else if (strcmp(target, "pump") == 0) pumpRelay.toggle();
-                else if (strcmp(target, "mister") == 0) misterRelay.toggle();
-                handleBroadcast(); // nch der manuellen Änderung sofort den neuen Systemstatus an alle Browser senden
+                targetRelay->toggle();
+                handleBroadcast(); // nach der manuellen Änderung sofort den neuen Systemstatus an alle Browser senden
 
             } else if (strcmp(command, "setMode") == 0) {
                 const char* modeStr = doc["mode"];
@@ -395,26 +399,16 @@ void setup() {
                     Serial.println("WebSocket-Fehler: 'mode' fehlerhaft.");
                     return;
                 }
-                if (strcmp(target, "lamp1") == 0) { lamp1Mode = mode; }
-                else if (strcmp(target, "lamp2") == 0) { lamp2Mode = mode; }
-                else if (strcmp(target, "heater") == 0) { heaterMode = mode; }
-                else if (strcmp(target, "fan") == 0) { fanMode = mode; }
-                else if (strcmp(target, "pump") == 0) { pumpMode = mode; }
-                else if (strcmp(target, "mister") == 0) { misterMode = mode; }
+                if (strcmp(targetStr, "lamp1") == 0) { lamp1Mode = mode; }
+                else if (strcmp(targetStr, "lamp2") == 0) { lamp2Mode = mode; }
+                else if (strcmp(targetStr, "heater") == 0) { heaterMode = mode; }
+                else if (strcmp(targetStr, "fan") == 0) { fanMode = mode; }
+                else if (strcmp(targetStr, "pump") == 0) { pumpMode = mode; }
+                else if (strcmp(targetStr, "mister") == 0) { misterMode = mode; }
                 if (mode == MODE_ON) {
-                    if (strcmp(target, "lamp1") == 0) lamp1Relay.on();
-                    else if (strcmp(target, "lamp2") == 0) lamp2Relay.on();
-                    else if (strcmp(target, "heater") == 0) heaterRelay.on();
-                    else if (strcmp(target, "fan") == 0) fanRelay.on();
-                    else if (strcmp(target, "pump") == 0) pumpRelay.on();
-                    else if (strcmp(target, "mister") == 0) misterRelay.on();
+                    targetRelay->on();
                 } else if (mode == MODE_OFF) {
-                    if (strcmp(target, "lamp1") == 0) lamp1Relay.off();
-                    else if (strcmp(target, "lamp2") == 0) lamp2Relay.off();
-                    else if (strcmp(target, "heater") == 0) heaterRelay.off();
-                    else if (strcmp(target, "fan") == 0) fanRelay.off();
-                    else if (strcmp(target, "pump") == 0) pumpRelay.off();
-                    else if (strcmp(target, "mister") == 0) misterRelay.off();
+                    targetRelay->off();
                 }
                 handleBroadcast(); // Sende sofort den neuen Modus-Status
             }

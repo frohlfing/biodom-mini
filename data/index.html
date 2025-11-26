@@ -31,12 +31,16 @@
                 <!-- Kachel: Raumklima -->
                 <div class="card">
                     <div class="card-header">
-                        <img id="iconAir" src="/icons/thermometer_16x16.png" class="icon">
+<!--                        <img id="iconAir" src="/icons/thermometer_16x16.png" class="icon">-->
                         <h3>Raumklima</h3>
                     </div>
                     <p>Temperatur: <span id="airTemp" class="value">--.-</span> °C</p>
                     <p>Feuchtigkeit: <span id="humidity" class="value">--</span> %</p>
-                    <p>Lüfter: <span id="fanOn" class="status-off">AUS</span></p>
+                    <p class="status-line">
+                        <img id="fanIcon" class="inline-icon" src="/icons/air_16x16.png" alt="fan">
+                        Lüfter:
+                        <span id="fanOn" class="status-off">AUS</span>
+                    </p>
                     <div class="mode-selector" id="mode-fan">
                         <input type="radio" id="fan-on" name="fan" value="on"><label for="fan-on">An</label>
                         <input type="radio" id="fan-off" name="fan" value="off"><label for="fan-off">Aus</label>
@@ -47,12 +51,16 @@
                 <!-- Kachel: Boden -->
                 <div class="card">
                     <div class="card-header">
-                        <img id="iconSoil" src="/icons/engine_coolant_16x16.png" class="icon">
+<!--                        <img id="iconSoil" src="/icons/engine_coolant_16x16.png" class="icon">-->
                         <h3>Boden</h3>
                     </div>
                     <p>Temperatur: <span id="soilTemp" class="value">--.-</span> °C</p>
                     <p>Feuchtigkeit: <span id="soilMoisture" class="value">--</span> %</p>
-                    <p>Heizung: <span id="heaterOn" class="status-off">AUS</span></p>
+                    <p class="status-line">
+                        <img id="heaterIcon" class="inline-icon" src="/icons/radiator_16x16.png" alt="heater">
+                        Heizung:
+                        <span id="heaterOn" class="status-off">AUS</span>
+                    </p>
                     <div class="mode-selector" id="mode-heater">
                         <input type="radio" id="heater-on" name="heater" value="on"><label for="heater-on">An</label>
                         <input type="radio" id="heater-off" name="heater" value="off"><label for="heater-off">Aus</label>
@@ -63,17 +71,25 @@
                 <!-- Kachel: Beleuchtung -->
                 <div class="card">
                     <div class="card-header">
-                        <img id="iconLight" src="/icons/sun_16x16.png" class="icon">
+<!--                        <img id="iconLight" src="/icons/sun_16x16.png" class="icon">-->
                         <h3>Beleuchtung</h3>
                     </div>
                     <p>Tageslicht: <span id="lightLux" class="value">----</span> Lux</p>
-                    <p>Lampe 1: <span id="lamp1On" class="status-off">AUS</span></p>
+                    <p class="status-line">
+                        <img id="lamp1Icon" class="inline-icon" src="/icons/sun_16x16.png" alt="lamp1">
+                        Lampe 1:
+                        <span id="lamp1On" class="status-off">AUS</span>
+                    </p>
                     <div class="mode-selector" id="mode-lamp1">
                         <input type="radio" id="lamp1-on" name="lamp1" value="on"><label for="lamp1-on">An</label>
                         <input type="radio" id="lamp1-off" name="lamp1" value="off"><label for="lamp1-off">Aus</label>
                         <input type="radio" id="lamp1-auto" name="lamp1" value="auto"><label for="lamp1-auto">Auto</label>
                     </div>
-                    <p>Lampe 2: <span id="lamp2On" class="status-off">AUS</span></p>
+                    <p class="status-line">
+                        <img id="lamp2Icon" class="inline-icon" src="/icons/sun_16x16.png" alt="lamp2">
+                        Lampe 2:
+                        <span id="lamp2On" class="status-off">AUS</span>
+                    </p>
                     <div class="mode-selector" id="mode-lamp2">
                         <input type="radio" id="lamp2-on" name="lamp2" value="on"><label for="lamp2-on">An</label>
                         <input type="radio" id="lamp2-off" name="lamp2" value="off"><label for="lamp2-off">Aus</label>
@@ -84,17 +100,25 @@
                 <!-- Kachel: Wasser & Bewässerung -->
                 <div class="card">
                     <div class="card-header">
-                        <img id="iconWater" src="/icons/watering_can_16x16.png" class="icon">
+<!--                        <img id="iconWater" src="/icons/watering_can_16x16.png" class="icon">-->
                         <h3>Wasser</h3>
                     </div>
                     <p>Tank-Füllstand: <span id="waterLevelOk" class="water-level-empty">👎</span></p>
-                    <p>Pumpe: <span id="pumpOn" class="status-off">AUS</span></p>
+                    <p class="status-line">
+                        <img id="pumpIcon" class="inline-icon" src="/icons/rainy_weather_16x16.png" alt="pump">
+                        Pumpe:
+                        <span id="pumpOn" class="status-off">AUS</span>
+                    </p>
                     <div class="mode-selector" id="mode-pump">
                         <input type="radio" id="pump-on" name="pump" value="on"><label for="pump-on">An</label>
                         <input type="radio" id="pump-off" name="pump" value="off"><label for="pump-off">Aus</label>
                         <input type="radio" id="pump-auto" name="pump" value="auto"><label for="pump-auto">Auto</label>
                     </div>
-                    <p>Vernebler: <span id="misterOn" class="status-off">AUS</span></p>
+                    <p class="status-line">
+                        <img id="misterIcon" class="inline-icon" src="/icons/dry_16x16.xbm.png" alt="mister">
+                        Vernebler:
+                        <span id="misterOn" class="status-off">AUS</span>
+                    </p>
                     <div class="mode-selector" id="mode-mister">
                         <input type="radio" id="mister-on" name="mister" value="on"><label for="mister-on">An</label>
                         <input type="radio" id="mister-off" name="mister" value="off"><label for="mister-off">Aus</label>
