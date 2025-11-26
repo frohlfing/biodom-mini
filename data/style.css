@@ -132,10 +132,12 @@ h1, h2 {
 .status-on {
     background-color: #2ecc71; /* Grün */
     color: #1e1e1e;
+    width: 34px;
 }
 .status-off {
     background-color: #e74c3c; /* Rot */
     color: #ffffff;
+    width: 34px;
 }
 
 /* Icons im Dashboard */
@@ -150,7 +152,8 @@ h1, h2 {
     width: 24px;  /* Etwas größer als 16px für bessere Sichtbarkeit */
     height: 24px;
     margin-right: 10px;
-    background-color: #4e9ad4;
+    background-color: #d4d4d4;
+    border-radius: 4px;
 }
 .card-header h3 {
     margin: 0;
