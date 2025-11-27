@@ -172,7 +172,6 @@ python -m esptool chip-id
 
 Versionen einer Bibliothek auflisten:
 
-
 ```bash
 pio lib show OneWire
 ```

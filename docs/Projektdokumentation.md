@@ -606,41 +606,15 @@ Kabeladern:
 
 ## 5. Sonstige Peripheriegeräte
 
-| Präfix | Name           | Spezifikation                  | GPIO       |
-|--------|----------------|--------------------------------|------------|
-| Z1     | Display        | 1.3 Zoll OLED Display, SSH1106 | (I2C)      |
-| Z2     | SD-Kartenleser | MicroSD SPI Kartenleser        | CS: GPIO16 |
-| Z3     | Kamera         | ArduCAM Mini 2MP Plus, OV2640  | CS: GPIO17 |
-| Z4     | LED            | LED 3mm, rot                   | GPIO5      |
+| Präfix | Name           | Spezifikation                  | GPIO       | Einkauf                                                                                                                                                                    |
+|--------|----------------|--------------------------------|------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Z1     | Display        | 1.3 Zoll OLED Display, SSH1106 | (I2C)      | [Amazon](https://www.amazon.de/dp/B078J78R45) 8,49 €                                                                                                                       |
+| Z2     | SD-Kartenleser | MicroSD SPI Kartenleser        | CS: GPIO16 | [Amazon](https://www.amazon.de/gp/product/B0DQZFBCST) 4,29 € (3 Stück); Einzelpreis: 1,43 €                                                                                |
+| Z3     | Kamera         | ArduCAM Mini 2MP Plus, OV2640  | CS: GPIO17 | [BotLand](https://botland.de/kameras-fur-arduino-und-raspberry-pi/6556-arducam-mini-ov2640-2mpx-1600x1200px-60fps-spi-kameramodul-fur-arduino--5904422358242.html) 28,86 € |
+| Z4     | LED            | LED 3mm, rot                   | GPIO5      |                                                                                                                                                                            |
 
 ### Z1: Display
 
-1.3 Zoll OLED Display, SSH1106
-
-![Display](https://m.media-amazon.com/images/I/71HZLmSHn8L.jpg)
-
-[Amazon](https://www.amazon.de/dp/B078J78R45)
-8,49 €
-
-[AZ-Delivery e-Book](https://cdn.shopify.com/s/files/1/1509/1638/files/AZ003_A_1-6_DE_B078J78R45_1.pdf?v=1721030497), 
-[Datasheet](https://cdn.shopify.com/s/files/1/1509/1638/files/1_3_Zoll_Display_Datenblatt_AZ-Delivery_Vertriebs_GmbH_rev.pdf?v=1606164520)
-
-* 3.3V, 5V
-* I2C-Schnittstelle (Adresse 0x3C)
-* 128 x 64 Pixel
-* Chip: SSH1106 
-* Platine: 36 x 34 mm
-
-**Pinout:**
-
-| Pin | Bezeichnung | Farbe | Beschreibung                    |
-|-----|-------------|-------|---------------------------------|
-| 1   | VDD         | grün  | 3.3V, 5V                        |  
-| 2   | GND         | blau  | GND                             | 
-| 3   | SCK         | lila  | I2C Serial Clock (input)        | 
-| 4   | SDA         | grau  | I2C Serial Data (bidirectional) |  
-
-**Pinbelegung:**
 <pre>
 ┌────────────────┐
 │ 1.3″       VDD ├──────(rot)─O── +3.3V
@@ -650,44 +624,8 @@ Kabeladern:
 └────────────────┘
 </pre>
 
-**Benötigte Bibliothek:**
-
-U8g2 2.35.30 by oliver
-
 ### Z2: SD-Kartenleser
 
-MicroSD SPI Kartenleser, 3.3V 
-
-Dies ist ein MicroSD-Kartenlesemodul.
-
-![Kartenleser](https://m.media-amazon.com/images/I/61vfbUm6CNL._SL1200_.jpg)
-![Kartenleser Pins](https://m.media-amazon.com/images/I/61Ul-PLkYDL._SX466_.jpg)
-
-[Amazon](https://www.amazon.de/gp/product/B0DQZFBCST)
-4,29 € (3 Stück); Einzelpreis: 1,43 €
-
-Auf der Amazon-Webseite ist die Versorgungsspannung falsch angegeben. Richtig ist 3.3V.  
-
-[AZ-Delivery e-Book](https://cdn.shopify.com/s/files/1/1509/1638/files/AZ234_C_10-4_DE_B06X1DX5WS_ec398a85-2534-4b15-9f3e-1d3a37b6ce96.pdf?v=1721122338), 
-
-* 3.3V
-* SPI-Schnittstelle
-* 0,2 bis 200 mA
-* gerade Pins!
-* Platinengröße: 17,9 x 17,9 mm
-
-**Pinout:**
-
-| Pin | Bezeichnung | Beschreibung                           |
-|-----|-------------|----------------------------------------|
-| 1   | 3v3         | 3.3V                                   |  
-| 2   | CS          | SPI Chip Select (input)                |  
-| 3   | MOSI        | SPI Master Output Slave Input (input)  |  
-| 4   | CLK         | SPI Serial Clock (input)               | 
-| 5   | MISO        | SPI Master Input Slave Output (output) | 
-| 6   | GND         | GND                                    | 
-
-**Pinbelegung:**
 <pre>
 ┌────────────────┐
 │ MicroSD    GND ├───O─── GND
@@ -721,7 +659,8 @@ Ich habe noch eine alte 4 GB SD-Karte Class 4. Wie lang reicht die Karte, wenn p
 Wie schnell ist sie in der Praxis?
 
 * 93 % einer SD-Karte sind durchschnittlich praktisch nutzbar.
-* Die höchste Auflösung der ArduCAM-Kamera ist 1600 x 1200 Pixel. Die Bilder werden im JPEG-Format gespeichert. Ich schätze 600 KB durchschnittlich.  
+* Die höchste Auflösung der ArduCAM-Kamera ist 1600 x 1200 Pixel. Die Bilder werden im JPEG-Format gespeichert. 
+  Ich schätze 600 KB / Bild durchschnittlich.  
 
 Es folgt:
 * 4 GB: 4 GB * 0,93 * 1024 * 1024 / 600 KB = ≈ 6500 Bilder => 6500 / 24 ≈ **270 Tage**
@@ -736,60 +675,6 @@ Der gesamte Vorgang (Auslesen von der Kamera + Schreiben auf die Karte) wird ver
 
 ### Z3: Kamera
 
-ArduCAM Mini 2MP Plus (mit OV2640-Chip)
-
-![ArduCAM](https://cdn1.botland.de/81994-pdt_540/arducam-mini-ov2640-2mpx-1600x1200px-60fps-spi-kameramodul-fur-arduino-.jpg)
-![ArduCAM Anschlüsse](https://cdn1.botland.de/81992-pdt_540/arducam-mini-ov2640-2mpx-1600x1200px-60fps-spi-kameramodul-fur-arduino-.jpg)
-
-[BotLand](https://botland.de/kameras-fur-arduino-und-raspberry-pi/6556-arducam-mini-ov2640-2mpx-1600x1200px-60fps-spi-kameramodul-fur-arduino--5904422358242.html)
-28,86 €
-
-[User Guide](https://cdn.arducam.com/downloads/shields/ArduCAM_Mini_2MP_Camera_Shield_DS.pdf), 
-[Hardware Application Note](https://www.uctronics.com/download/Amazon/ArduCAM_Mini_2MP_Camera_Shield_Hardware_Application_Note.pdf),
-[Software Application Note](https://blog.arducam.com/downloads/shields/ArduCAM_Camera_Shield_Software_Application_Note.pdf)
-
-* Sensor: OV2640
-* SPI-Interface für Befehle und Kameradaten
-* I2C-Interface für die Konfiguration (Adresse 0x60 für Write und 0x61 für Read)
-* 3.3 - 5 V
-* 20 - 70 mA 
-* Größe: 34.1 x 24,4 mm
-* Auflösung: 2 Megapixel, 1600 x 1200 px 
-* 60 fpsm max. 8 MHz
-* Output-Format: JPEG RGB
-
-**Anmerkung:**
-
-Ein SPI-Kabel muss kurz gehalten werden. Die mit Jumper-Kabel (Dupont) empfohlene max. Kabellänge beträgt 20 cm.
-Mit geschirmtem Kabel und reduziertem Takt (1–2 MHz) sind 50 cm möglich. 
-
-Tipps für eine stabile SPI-Verbindung:
-
-* SCLK mit GND verdrillen → reduziert EM-Störungen
-* MISO mit GND verdrillen → schützt das empfindlichste Signal
-* Jede zweite Leitung auf GND bei Flachbandkabel
-* Pull-Up-Widerstände an CS und MISO können helfen
-* Serienwiderstand (100 Ω) direkt am Mikrocontroller-Ausgang → reduziert Reflexionen
-
-**Warum die relative teure SPI-ArduCAM-Kamera?**
-
-* Die meisten günstigen Kameramodule (auch die auf dem ESP32-CAM) verwenden eine DVP-Schnittstelle (Digital Video Port).
-die ca. 16 GPIO-Pins belegt (also fast alle verfügbaren). Die ArduCAM belegt dagegen nur 6 Pins (4 für die SPI und 2 für I2C). 
- 
-**Pinout:**
-
-| Pin | Bezeichnung | Farbe   | Beschreibung                                                                                    |
-|-----|-------------|---------|-------------------------------------------------------------------------------------------------|
-| 1   | CS          | schwarz | SPI Chip Select (input). Auswahl eines Geräts auf dem SPI-Bus, aktiviert durch den Low-Zustand. |  
-| 2   | MOSI        | weiß    | SPI Master Output Slave Input (input). Die Ausgangsdatenleitung des SPI-Busses.                 |  
-| 3   | MISO        | grau    | SPI Master Input Slave Output (output). Eingangsdatenleitung des SPI-Busses.                    | 
-| 4   | SCK         | lila    | SPI Serial Clock (input). Taktleitung des SPI-Busses.                                           | 
-| 5   | GND         | blau    | GND                                                                                             | 
-| 6   | VCC         | grün    | 3.3V - 5V                                                                                       |  
-| 7   | SDA         | gelb    | Two-Wire Serial Interface Data I/O (bidirectional). Die Ausgangsdatenleitung des I2C-Busses.    |  
-| 8   | SCL         | orange  | Two-Wire Serial Interface Clock (input). Die Taktleitung des I2C-Busses.                        | 
-
-**Pinbelegung:**
 <pre>
 ┌────────────────┐
 │ ArduCAM    SCL ├─◄───(orange)─O─── GPIO22
@@ -802,10 +687,6 @@ die ca. 16 GPIO-Pins belegt (also fast alle verfügbaren). Die ArduCAM belegt da
 │             CS ├─◄──(schwarz)─O─── GPIO17 
 └────────────────┘        
  </pre>
-
-**Benötigte Bibliothek:**
-
-[Arducam_mini 1.0.1 by Arducam](https://github.com/ArduCAM/Arducam_mini)
 
 ### Z4: LED
 
@@ -825,25 +706,12 @@ GPIO5 ─▶───[ R2 ]─────▶├───── GND
 
 ## 6. Stromversorgung
 
+| Präfix | Name                       | Spezifikation                     | Einkauf                                                                                             |
+|--------|----------------------------|-----------------------------------|-----------------------------------------------------------------------------------------------------|
+| P1     | Spannungswandler 12V zu 5V | Step-Down-Module XL4015           | [Amazon](https://www.amazon.de/dp/B07VQCXDTC) 9,99 € (3 Stück); Einzelpreis:	3,33 €                 |
+| P2     | 12V Netzteil, 120W         | 12V Steckernetzteil Adapter, 120W | [Amazon](https://www.amazon.de/gp/product/B0DBL4FV6C) 11,99 € 9,99 € (3 Stück); Einzelpreis:	3,33 € |
+
 ### P1: Spannungswandler 12V zu 5V
-
-Step-Down-Module XL4015, 5 A
-
-![Step-Down-Modul](https://m.media-amazon.com/images/I/61Miv6WUVJL._SX385_.jpg)
-
-[Amazon](https://www.amazon.de/dp/B07VQCXDTC)
-9,99 €	(3 Stück); Einzelpreis:	3,33 €
-
-[AZ-Delivery e-Book](https://cdn.shopify.com/s/files/1/1509/1638/files/AZ233_C_9-4_DE_B07SRXR1VT_7e75912c-950c-49d9-aeb2-2b6e195245f1.pdf?v=1721042154),
-[Datasheet](https://www.xlsemi.com/datasheet/XL4015-EN.pdf)
-
-**Übersetzungsfehler im E-Book:** "Einstellbare Eingangsspannung" muss heißen "Einstellbare Ausgangsspannung" (orig.: "Output Voltage is Adjustable")
- 
-* von 8V-36V zu 1,25V-32V einstellbar, max. 5A
-* Arbeitstemperatur: -40 ℃ bis +85 ℃
-* Übertemperaturschutz (thermische Abschaltfunktion)
-* Größe: 54 x 23 x 18 mm (L x B x H)
-* XL4015-Chip
 
 **Pinbelegung:**
 <pre>
@@ -866,20 +734,11 @@ Das längere Beinchen und der Pin ohne Markierung auf dem Gehäuse ist PLUS (+).
  
 **Anmerkung:**
 
-In- und Out-Pin ist dasselbe Potenzial. 
-
 Die Ausgangsspannung muss auf **5 Volt** eingestellt werden!
 
 ### Netzteil
 
 12V Steckernetzteil Adapter, 120W
-
-![Netzteil](https://m.media-amazon.com/images/I/71J0iCEh9IL._SX466_.jpg)
-
-[Amazon](https://www.amazon.de/gp/product/B0DBL4FV6C)
-11,99 €
-
-5.5x2.1 mm DC-Holstecker
 
 **Benötigte Leistung / max. Stromaufnahme:**
 
@@ -944,12 +803,15 @@ Die Steuerung soll dafür sorgen, dass ein gleichmäßiges Klima für die Pflanz
 Es wird folgende Steuerungslogik programmiert (in `main.cpp`):
 
 *   **Lichtsteuerung (A1 und A2):**  
-Die Lampen können grundsätzlich nur innerhalb eines festgelegten Zeitfensters aktiv werden, das durch `LIGHT_ON_HOUR` (Einschaltzeit) und `LIGHT_OFF_HOUR` (Ausschaltzeit) definiert ist. Außerhalb dieser Zeit bleiben die Lampen immer aus. Innerhalb des Zeitfensters misst der Lichtsensor (S5) kontinuierlich das Tageslicht. Basierend auf den Schwellwerten `LIGHT_LUX_THRESHOLD_BRIGHT` und `LIGHT_LUX_THRESHOLD_DARK` wird die künstliche Beleuchtung dynamisch angepasst:
-    *   **Mittleres Tageslicht:** Wenn das Tageslicht den mittleren Schwellwert (`_DARK`) überschreitet, reicht eine Lampe, die andere wird ausgeschaltet.
-    *   **Helles Tageslicht:** Wenn das Tageslicht den oberen Schwellwert (`_BRIGHT`) überschreitet, werden beide Lampen ausgeschaltet.
-    *   Ansonsten werden beide Lampen eingeschaltet.
-
-*   **Heizungssteuerung (A3):**  
+	* **Zur Tageszeit** werden die Lampen eingeschaltet, wenn das natürliche Tageslicht nicht ausreicht. 
+	Dazu misst der Lichtsensor (S5) kontinuierlich das Tageslicht. 
+	Ist das Tageslicht dunkler als der Schwellwert `LIGHT_LUX_THRESHOLD_DARK`, wird die Lampe eingeschaltet.
+	Ist das Tageslicht heller als der Schwellwert `LIGHT_LUX_THRESHOLD_BRIGHT`, wird die Lampe ausgeschaltet.
+    * **Außerhalb der Tageszeit** bleiben die Lampen aus.
+    * Die Tageszeit ist definiert durch Einschaltzeit `LIGHT_ON_HOUR` und Ausschaltzeit `LIGHT_OFF_HOUR`.
+    * Lampe 1 und Lampe 2 werden unabhängig voneinander gesteuert, d.h., für die Lampen können unterschiedliche Tageszeiten und Schwellwerte haben. 
+  
+* **Heizungssteuerung (A3):**  
 Die Heizmatte wird aktiviert, wenn die **Bodentemperatur (S2)** unter den Zielwert `SOIL_TEMPERATUR_TARGET` fällt. Um ein ständiges An- und Ausschalten (Flattern) zu verhindern, wird eine Hysterese implementiert: Die Heizung schaltet sich erst wieder aus, wenn die Temperatur den Zielwert um 0.5 °C überschreitet.
 
 *   **Lüftersteuerung (A4):**
@@ -1012,11 +874,11 @@ Damit lege ich folgende Sollwerte als Voreinstellung fest (diese können per Web
 
 ### Funktionsumfang
 
-* **Bootvorgang:**
+* **Bootvorgang:**  
   Nach dem Start wird eine Funktionsprüfung durchgeführt. Die Ergebnisse scrollen durch das Display. Wenn alles funktioniert, wird ein Splash-Screen (mein Portrait) für ein paar Sekunden angezeigt. Danach wird das Dashboard angezeigt. 
 
-* **Dashboard:**
-  Das Dashboard teilt den Bildschirm in vier gleichmäßige Bereiche auf. In jedem Bereich wird ein Messwert angezeigt. 
+* **Dashboard:**  
+  Das Dashboard teilt den Bildschirm in mehreren Bereichen auf. In jedem Bereich werden zusammenhängende Messwerte angezeigt. 
 
   Die Werte im Dashboard werden mit passenden Icons versehen:
 
@@ -1031,22 +893,25 @@ Damit lege ich folgende Sollwerte als Voreinstellung fest (diese können per Web
   | rainy_weather  | ![rainy_weather](./assets/icons/rainy_weather_16x16.xbm.png)   | Pumpe (A5) aktiviert (überlagert Icon für Bodenfeuchte)                          |
   | dry            | ![dry](./assets/icons/dry_16x16.xbm.png)                       | Vernebler (A6) aktiviert (überlagert Icon für Bodenfeuchte)                      |
   
-
   Die ursprünglichen Icons habe ich bei [Icons8](https://icons8.com/icons/all--mono--size-small--technique-line) gefunden und in `data/icons` gespeichert (wo sie für das WebInterface verfügbar sind).  
   Diese unterliegen der [Universal Multimedia License von Icons8](https://intercom.help/icons8-7fb7577e8170/en/articles/5534926-universal-multimedia-license-agreement-for-icons8).
   Demnach dürfen sie verwendet werden, solange das Projekt nicht-kommerziell ist. 
   
   Die Icons habe ich mit GIMP in das XMB-Format konvertiert und im `Include`-Verzeichnis gespeichert, sodass sie auf dem OLED-Display angezeigt werden können.
 
-* **Warnung bei niedrigem Wasserstand:**
+* **Warnung bei niedrigem Wasserstand:**  
   Bevor der Wasserreservoir (Teich) trocken läuft, soll nicht das Dashboard, sondern eine blinkende Warnung auf dem Display angezeigt werden (gern mit Icon). Über das Handy soll der Benutzer auch gewarnt werden (per E-Mail?).
 
-* **Bild aufnehmen:**
+* **Bild aufnehmen:**  
   Nach einem festgelegten Intervall (alle x Stunden) wird ein Bild geschossen und auf der SD-Karte gespeichert. Direkt danach wird ein weiteres Bild mit niedrigster Auflösung erzeugt und auf dem Display für ein paar Sekunden angezeigt, um zu zeigen, dass ein Bild gespeichert wurde. 
 
-* **Webinterface:**
-
-Über das Handy kann das Dashboard angezeigt werden. Hier können auch die Sollwerte verändert werden. Außerdem gibt es eine Gallery mit den aufgenommenen Bilder und die Möglichkeit, diese als Zeitraffer-Video abzuspielen. Eine weitere Funktion zeigt Liniendiagramme mit den Messwerten.
+* **Webinterface:**  
+  Das Webinterface bietet folgende Funktionen für das Handy an:
+  * Als Startseite wird das Dashboard angezeigt. 
+  * Auf einer anderen Seite (bzw. Kartenreiter) können die Parameter für die Automatisierung verändert werden.
+  *	Die Aktoren können manuell ein- und ausgeschaltet werden (wobei die Automatisierung dann außer Kraft gesetzt wird).
+  * Außerdem gibt es eine Gallery mit den aufgenommenen Bilder und die Möglichkeit, diese als Zeitraffer-Video abzuspielen. 
+  * Eine weitere Funktion zeigt Liniendiagramme mit den Messwerten.
 
 ## Anhang
 

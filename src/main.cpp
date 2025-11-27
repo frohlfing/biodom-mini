@@ -103,16 +103,6 @@ unsigned long lastDisplayUpdate = 0;  // Zeitpunkt der letzten Display-Aktualisi
 unsigned long lastCameraCapture = 0;  // Zeitpunkt der letzten Kameraaufnahme
 unsigned long lastBroadcastTime = 0;  // Zeitpunkt der letzten Broadcast-Nachricht
 
-// === Zustands-Management für manuelle Steuerung ===
-
-enum ControlMode { MODE_AUTO, MODE_ON, MODE_OFF };
-ControlMode lamp1Mode = MODE_AUTO;  // Lampe 1 (A1)
-ControlMode lamp2Mode = MODE_AUTO;  // Lampe 2 (A2)
-ControlMode heaterMode = MODE_AUTO; // Heizer (A3)
-ControlMode fanMode = MODE_AUTO;    // Lüfter (A4)
-ControlMode pumpMode = MODE_AUTO;   // Wasserpumpe (A5)
-ControlMode misterMode = MODE_AUTO; // Vernebler (A6)
-
 // === Funktionsprototypen ===
 
 void handleSensors();
@@ -171,8 +161,7 @@ void setup() {
     // (als erstes, damit Fehler so früh wie möglich angezeigt werden können)
 
     // Debug-LED (Z4) initialisieren
-    // Die LED ist standardmäßig aus. 
-    // Sie signalisiert, dass da System nicht gestartet werden konnte.
+    // Die LED ist standardmäßig aus. Sie signalisiert, dass da System nicht gestartet werden konnte.
     debugLed.begin(); 
 
     // Serielle Schnittstelle initialisieren
@@ -340,8 +329,23 @@ void setup() {
         halt("WebServer FEHLER", "WebServer nicht ok");
     }
 
-     // Definiert die Logik, die ausgeführt wird, wenn eine Nachricht vom Browser ankommt.
-    webInterface.onMessage = [](const String& msg) {
+    // Callback für neue Client-Verbindungen
+    webInterface.onClientConnect = [](AsyncWebSocketClient* client) {
+        // 1. Sende dem neuen Client sofort den letzten bekannten Live-Status
+        handleBroadcast(); // todo sauber wäre es, den Live-Status nur an den neuen Client zu senden!
+
+        // 2. Sende dem neuen Client danach die aktuellen Einstellungen
+        JsonDocument doc;
+        doc["type"] = "settings";
+        const JsonObject values = doc["values"].to<JsonObject>();
+        settingsManager.serialize(values);
+        String jsonString;
+        serializeJson(doc, jsonString);
+        client->text(jsonString); // Sende nur an den neuen Client
+    };
+
+    // Callback für eingehende Nachrichten
+    webInterface.onMessage = [](AsyncWebSocketClient* client, const String& msg) {
         // Parse die empfangene Nachricht als JSON-Dokument.
         JsonDocument doc;
         const DeserializationError error = deserializeJson(doc, msg);
@@ -390,6 +394,7 @@ void setup() {
                 handleBroadcast(); // nach der manuellen Änderung sofort den neuen Systemstatus an alle Browser senden
 
             } else if (strcmp(command, "setMode") == 0) {
+                // Wandle den String in den Enum-Wert um
                 const char* modeStr = doc["mode"];
                 ControlMode mode;
                 if (strcmp(modeStr, "auto") == 0) mode = MODE_AUTO;
@@ -399,25 +404,43 @@ void setup() {
                     Serial.println("WebSocket-Fehler: 'mode' fehlerhaft.");
                     return;
                 }
-                if (strcmp(targetStr, "lamp1") == 0) { lamp1Mode = mode; }
-                else if (strcmp(targetStr, "lamp2") == 0) { lamp2Mode = mode; }
-                else if (strcmp(targetStr, "heater") == 0) { heaterMode = mode; }
-                else if (strcmp(targetStr, "fan") == 0) { fanMode = mode; }
-                else if (strcmp(targetStr, "pump") == 0) { pumpMode = mode; }
-                else if (strcmp(targetStr, "mister") == 0) { misterMode = mode; }
-                if (mode == MODE_ON) {
-                    targetRelay->on();
-                } else if (mode == MODE_OFF) {
-                    targetRelay->off();
-                }
+
+                // Setze den Modus für das richtige Relais
+                Settings& settings = settingsManager.getMutable();
+                if (strcmp(targetStr, "lamp1") == 0) { settings.lamp1Mode = mode; }
+                else if (strcmp(targetStr, "lamp2") == 0) { settings.lamp2Mode = mode; }
+                else if (strcmp(targetStr, "heater") == 0) { settings.heaterMode = mode; }
+                else if (strcmp(targetStr, "fan") == 0) { settings.fanMode = mode; }
+                else if (strcmp(targetStr, "pump") == 0) { settings.pumpMode = mode; }
+                else if (strcmp(targetStr, "mister") == 0) { settings.misterMode = mode; }
+                settingsManager.save(); // Speichere die neuen Modi persistent
+                handleControlLogic(); // Wende den neuen Zustand sofort an (Relais schalten)
                 handleBroadcast(); // Sende sofort den neuen Modus-Status
             }
 
             // Hier könnten später weitere Befehle wie "setState" hin.
 
         } else if (strcmp(type, "saveSettings") == 0) {
-            // EINSTELLUNGEN sollen gespeichert werden.
-            // ... (diese Logik implementieren wir im nächsten Schritt) ...
+            // Die Einstellungen sollen gespeichert werden.
+            Serial.println("Befehl 'saveSettings' vom Webinterface empfangen.");
+            const JsonObject payload = doc["payload"].as<JsonObject>(); // 'doc["payload"]' ist ein JsonVariant. Wir brauchen das darin enthaltene Objekt.
+            if (payload) {
+                settingsManager.deserialize(payload);
+                if (settingsManager.save()) {
+                    log("Einstellungen gespeichert!");
+                    // Sende die neuen Einstellungen als Bestätigung an ALLE Clients.
+                    // todo in eine Funktion packen: settings -> jsonString (wird weiter oben bei onClientConnect nochmal benötigt)
+                    JsonDocument responseDoc;
+                    responseDoc["type"] = "settings";
+                    const JsonObject values = responseDoc["values"].to<JsonObject>();
+                    settingsManager.serialize(values);
+                    String jsonString;
+                    serializeJson(responseDoc, jsonString);
+                    webInterface.broadcast(jsonString); // An alle senden
+                } else {
+                    log("FEHLER: Einstellungen konnten nicht gespeichert werden.");
+                }
+            }
 
         } else {
             Serial.printf("Unbekannter WebSocket-Nachrichtentyp: %s\n", type);
@@ -441,6 +464,7 @@ void setup() {
  */
 void loop() {
     ArduinoOTA.handle();
+    webInterface.cleanupClients();
 
     unsigned long currentTime = millis();
 
@@ -606,7 +630,7 @@ void handleDisplay() {
  */
 void handleControlLogic() {
     // Verweis auf die aktuellen Einstellungen holen
-    const auto& settings = settingsManager.get();
+    const Settings& settings = settingsManager.get();
 
     // Aktuelle Stunde ermitteln
     tm timeInfo{};
@@ -618,70 +642,111 @@ void handleControlLogic() {
 
     // -- Steuerung für die Lampe 1 (A1) --
 
-    if (lamp1Mode == MODE_AUTO) {
-        if (currentHour >= settings.lightOnHour && currentHour < settings.lightOffHour) { // todo je ein eigenes Zeitfenster für Lampe1 und Lampe 2 verwenden
+    if (settings.lamp1Mode == MODE_AUTO) {
+        if (currentHour >= settings.light1OnHour && currentHour < settings.light1OffHour) {
             // Tageszeit
             if (!isnan(currentLightLux)) {
-                // todo Logik einbauen
-                lamp1Relay.on();
+                if (currentLightLux < settings.light1LuxThresholdDark) {
+                    // Zu dunkel -> Lampe AN
+                    lamp1Relay.on();
+                } else if (currentLightLux > settings.light1LuxThresholdBright) {
+                    // Hell genug -> Lampe AUS
+                    lamp1Relay.off();
+                }
+                // Dazwischen (im Hysterese-Bereich): Zustand beibehalten, nichts tun!
+                // Dies verhindert das Oszillieren.
             } else {
-                lamp1Relay.off();
+                // Sensorausfall: Lampe im Zweifel AN
+                lamp1Relay.on();
             }
         } else {
             // Nachtzeit
             lamp1Relay.off();
         }
+    } else if (settings.lamp1Mode == MODE_ON) {
+        lamp1Relay.on();
+    } else {
+        lamp1Relay.off();
     }
 
     // -- Steuerung für die Lampe 2 (A2) --
 
-    if (lamp2Mode == MODE_AUTO) {
-        if (currentHour >= settings.lightOnHour && currentHour < settings.lightOffHour) { // todo je ein eigenes Zeitfenster für Lampe1 und Lampe 2 verwenden
+    if (settings.lamp2Mode == MODE_AUTO) {
+        if (currentHour >= settings.light2OnHour && currentHour < settings.light2OffHour) {
             // Tageszeit
             if (!isnan(currentLightLux)) {
-                // todo Logik einbauen
-                lamp2Relay.on();
+                if (currentLightLux < settings.light2LuxThresholdDark) {
+                    // Zu dunkel -> Lampe AN
+                    lamp2Relay.on();
+                } else if (currentLightLux > settings.light2LuxThresholdBright) {
+                    // Hell genug -> Lampe AUS
+                    lamp2Relay.off();
+                }
+                // Dazwischen (im Hysterese-Bereich): Zustand beibehalten, nichts tun!
+                // Dies verhindert das Oszillieren.
             } else {
-                lamp2Relay.off();
+                // Sensorausfall: Lampe im Zweifel AN
+                lamp2Relay.on();
             }
         } else {
             // Nachtzeit
             lamp2Relay.off();
         }
+    } else if (settings.lamp2Mode == MODE_ON) {
+        lamp2Relay.on();
+    } else {
+        lamp2Relay.off();
     }
 
     // -- Steuerung für den Heizer (A3) --
 
-    if (heaterMode == MODE_AUTO) {
+    if (settings.heaterMode == MODE_AUTO) {
         if (currentSoilTemp < settings.soilTempTarget) {
             heaterRelay.on();
         }
         else if (currentSoilTemp > settings.soilTempTarget + 0.5f) {
             heaterRelay.off();
         }
+    } else if (settings.heaterMode == MODE_ON) {
+        heaterRelay.on();
+    } else {
+        heaterRelay.off();
     }
 
     // -- Steuerung für den Lüfter (A4) --
 
-    if (fanMode == MODE_AUTO) {
+    if (settings.fanMode == MODE_AUTO) {
         if (currentAirTemp > settings.airTempThresholdHigh && !fanRelay.isOn()) {
             fanRelay.pulse(settings.fanCooldownDurationMs);
         }
+    } else if (settings.fanMode == MODE_ON) {
+        fanRelay.on();
+    } else {
+        fanRelay.off();
     }
 
     // Steuerung für die Pumpe (A5)
 
-    if (pumpMode == MODE_AUTO) {
+    if (settings.pumpMode == MODE_AUTO) {
         if (isWaterLevelOk && !pumpRelay.isOn()) {
             if (currentSoilMoisture < settings.soilMoistureTarget && currentSoilMoisture != -1) {
                 pumpRelay.pulse(settings.wateringDurationMs);
             }
         }
+    } else if (settings.pumpMode == MODE_ON) {
+        if (isWaterLevelOk) {
+            pumpRelay.on();
+        }
+        else {
+            pumpRelay.off();
+        }
+    } else {
+        pumpRelay.off();
     }
 
     // -- Steuerung für den Vernebler (A6) --
 
-    if (pumpMode == MODE_AUTO) {
+    if (settings.misterMode == MODE_AUTO) {
         if (isWaterLevelOk) {
             if (currentHumidity < settings.humidityTarget) {
                 misterRelay.on();
@@ -692,6 +757,14 @@ void handleControlLogic() {
         } else {
             misterRelay.off();
         }
+    } else if (settings.misterMode == MODE_ON) {
+        if (isWaterLevelOk) {
+            misterRelay.on();
+        } else {
+            misterRelay.off();
+        }
+    } else {
+        misterRelay.off();
     }
 }
 
@@ -706,7 +779,7 @@ void handleCamera() {
     sprintf(filename, "/img_%lu.jpg", millis());
 
     // KORREKTUR: Die neue Methode der sdCard-Klasse verwenden
-    File imgFile = MicroSDCard::openFileForWriting(filename);
+    File imgFile = sdCard.openFileForWriting(filename); // NOLINT(*-static-accessed-through-instance)
     if (!imgFile) {
         Serial.println("Konnte Datei auf SD-Karte nicht erstellen.");
         display.showFullscreenAlert("SD FEHLER", true);
@@ -750,14 +823,6 @@ void handleBroadcast() {
     values["fanOn"] = fanRelay.isOn(); // Lüfter (A4)
     values["pumpOn"] = pumpRelay.isOn(); // Pumpe (A5)
     values["misterOn"] = misterRelay.isOn(); // Vernebler (A6)
-
-    // Modus
-    values["lamp1Mode"] = lamp1Mode == MODE_AUTO ? "auto" : lamp1Mode == MODE_ON ? "on" : "off" ;
-    values["lamp2Mode"] = lamp2Mode == MODE_AUTO ? "auto" : lamp2Mode == MODE_ON ? "on" : "off";
-    values["heaterMode"] =heaterMode == MODE_AUTO ? "auto" : heaterMode == MODE_ON ? "on" : "off";
-    values["fanMode"] = fanMode == MODE_AUTO ? "auto" : fanMode == MODE_ON ? "on" : "off";
-    values["pumpMode"] = pumpMode == MODE_AUTO ? "auto" : pumpMode == MODE_ON ? "on" : "off";
-    values["misterMode"] = misterMode == MODE_AUTO ? "auto" : misterMode == MODE_ON ? "on" : "off";
 
     String jsonString;
     serializeJson(doc, jsonString);

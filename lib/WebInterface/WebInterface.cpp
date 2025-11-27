@@ -6,7 +6,7 @@ WebInterface::WebInterface(uint16_t port)
 
 bool WebInterface::begin() {
     // WebSocket-Events an unsere interne Handler-Funktion binden
-    _ws.onEvent([this](AsyncWebSocket *server, const AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) {
+    _ws.onEvent([this](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) {
         this->onWsEvent(server, client, type, arg, data, len);
     });
     _server.addHandler(&_ws);
@@ -46,13 +46,24 @@ void WebInterface::broadcast(const String& message) {
     _ws.textAll(message);
 }
 
-void WebInterface::onWsEvent(AsyncWebSocket *server, const AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) const {
+void WebInterface::cleanupClients() {
+    _ws.cleanupClients();
+}
+
+void WebInterface::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) const {
     if (type == WS_EVT_CONNECT) {
         // Client hat sich verbunden
         Serial.printf("WebSocket Client #%u verbunden von %s\n", client->id(), client->remoteIP().toString().c_str());
+        // Wenn ein Callback für die Settings existiert, rufe ihn auf
+        if (onClientConnect) {
+            onClientConnect(client);
+        }
     } else if (type == WS_EVT_DISCONNECT) {
         // Client hat die Verbindung getrennt
         Serial.printf("WebSocket Client #%u getrennt\n", client->id());
+        if (onClientDisconnect) {
+            onClientDisconnect(client->id());
+        }
     } else if (type == WS_EVT_DATA) {
         // Daten vom Client empfangen
         // Wir wandeln die empfangenen Bytes in einen String um, um sie zu vergleichen.
@@ -64,7 +75,7 @@ void WebInterface::onWsEvent(AsyncWebSocket *server, const AsyncWebSocketClient 
 
         // Wenn ein Callback registriert ist, rufe ihn mit der Nachricht auf.
         if (onMessage) {
-            onMessage(msg);
+            onMessage(client, msg);
         }
     }
 }

@@ -32,14 +32,11 @@ function initWebSocket() {
 
         // Verarbeite die Nachricht basierend auf ihrem Typ
         switch (data.type) {
-            case 'state':
+            case 'state': // Live-Daten aktualisieren nur das Dashboard.
                 updateDashboard(data.values);
                 break;
-            case 'config':
-                // updateConfigForm(data.values); // Platzhalter für Tab "Einstellungen"
-                break;
-            case 'files':
-                // updateFileList(data.files); // Platzhalter für Tab "Dateimanager"
+            case 'settings':  // Einstellungs-Daten aktualisieren nur das Einstellungs-Formular.
+                updateSettingsForm(data.values);
                 break;
             default:
                 console.log("Unbekannter Nachrichtentyp: ", data.type);
@@ -85,12 +82,6 @@ function openTab(evt, tabName) {
  * @property {boolean} fanOn - Zustand des Lüfters (A4).
  * @property {boolean} pumpOn - Zustand der Pumpe (A5).
  * @property {boolean} misterOn - Zustand des Verneblers (A6).
- * @property {string} lamp1Mode - Der Steuermodus ('auto', 'on', 'off') für die Lampe 1 (A1).
- * @property {string} lamp2Mode - Der Steuermodus ('auto', 'on', 'off') für die Lampe 2 (A2).
- * @property {string} heaterMode - Der Steuermodus ('auto', 'on', 'off') für die Heizung (A3).
- * @property {string} fanMode - Der Steuermodus ('auto', 'on', 'off') für den Lüfter (A4).
- * @property {string} pumpMode - Der Steuermodus ('auto', 'on', 'off') für die Pumpe (A5).
- * @property {string} misterMode - Der Steuermodus ('auto', 'on', 'off') für den Vernebler (A6).
  */
 
 /**
@@ -98,12 +89,9 @@ function openTab(evt, tabName) {
  * @param {SystemState} values Ein Objekt mit den Sensor- und Aktor-Zuständen vom ESP32.
  */
 function updateDashboard(values) {
-    let icon, element, radio;
+    let element;
 
     // --- Kachel für Raumklima ---
-
-    //icon = document.getElementById('iconAir');
-    //icon.src = values.fanOn ? '/icons/air_16x16.png' : '/icons/thermometer_16x16.png';
 
     element = document.getElementById('airTemp');
     element.innerText = (values.airTemp !== null) ? values.airTemp.toFixed(1) : '---';
@@ -115,13 +103,7 @@ function updateDashboard(values) {
     element.innerText = values.fanOn ? 'AN' : 'AUS';
     element.className = values.fanOn ? 'status-on' : 'status-off';
 
-    radio = document.querySelector(`input[name="fan"][value="${values.fanMode}"]`);
-    radio.checked = true;
-
     // --- Kachel für Boden ---
-
-    //icon = document.getElementById('iconSoil');
-    //icon.src = values.heaterOn ? '/icons/radiator_16x16.png' : '/icons/engine_coolant_16x16.png';
 
     element = document.getElementById('soilTemp');
     element.innerText = (values.soilTemp !== null) ? values.soilTemp.toFixed(1) : '---';
@@ -133,19 +115,7 @@ function updateDashboard(values) {
     element.innerText = values.heaterOn ? 'AN' : 'AUS';
     element.className = values.heaterOn ? 'status-on' : 'status-off';
 
-    radio = document.querySelector(`input[name="heater"][value="${values.heaterMode}"]`);
-    radio.checked = true;
-
     // --- Kachel für Beleuchtung ---
-
-    // icon = document.getElementById('iconLight');
-    // if (values.lamp1On && values.lamp2On) {
-    //     icon.src = '/icons/sun_16x16.png';
-    // } else if (values.lamp1On || values.lamp2On) {
-    //     icon.src = '/icons/sun_and_moon_16x16.png';
-    // } else {
-    //     icon.src = '/icons/moon_and_stars_16x16.png';
-    // }
 
     element = document.getElementById('lightLux');
     element.innerText = (values.lightLux !== null) ? values.lightLux.toFixed(0) : '---';
@@ -154,27 +124,11 @@ function updateDashboard(values) {
     element.innerText = values.lamp1On ? 'AN' : 'AUS';
     element.className = values.lamp1On ? 'status-on' : 'status-off';
 
-    radio = document.querySelector(`input[name="lamp1"][value="${values.lamp1Mode}"]`);
-    radio.checked = true;
-
     element = document.getElementById('lamp2On');
     element.innerText = values.lamp2On ? 'AN' : 'AUS';
     element.className = values.lamp2On ? 'status-on' : 'status-off';
 
-    radio = document.querySelector(`input[name="lamp2"][value="${values.lamp2Mode}"]`);
-    radio.checked = true;
-
     // --- Kachel für Wasser ---
-
-    // // Logik: Pumpe hat Vorrang vor Vernebler
-    // icon = document.getElementById('iconWater');
-    // if (values.pumpOn) {
-    //     icon.src = '/icons/rainy_weather_16x16.png';
-    // } else if (values.misterOn) {
-    //     icon.src = '/icons/dry_16x16.png';
-    // } else {
-    //     icon.src = '/icons/watering_can_16x16.png';
-    // }
 
     element = document.getElementById('waterLevelOk');
     element.innerText = values.waterLevelOk ? '👍' : '👎';
@@ -184,22 +138,111 @@ function updateDashboard(values) {
     element.innerText = values.pumpOn ? 'AN' : 'AUS';
     element.className = values.pumpOn ? 'status-on' : 'status-off';
 
-    radio = document.querySelector(`input[name="pump"][value="${values.pumpMode}"]`);
-    radio.checked = true;
-
     element = document.getElementById('misterOn');
     element.innerText = values.misterOn ? 'AN' : 'AUS';
     element.className = values.misterOn ? 'status-on' : 'status-off';
+}
 
-    radio = document.querySelector(`input[name="mister"][value="${values.misterMode}"]`);
-    radio.checked = true;
+/**
+ * @typedef {object} Settings
+ * @property {number} airTempThresholdHigh - Zielwert für Raumtemperatur in °C (S1)
+ * @property {number} humidityTarget - Zielwert Luftfeuchtigkeit in % (S1)
+ * @property {number} soilTempTarget - Zielwert für Bodentemperatur in °C (S2)
+ * @property {number} soilMoistureTarget - Zielwert für Bodenfeuchte in % (S3)
+ * @property {number} light1OnHour - Tageszeit für Lampe 1 (Stunde, 0-23)
+ * @property {number} light1OffHour - Nachtzeit für Lampe 1 (Stunde, 0-23)
+ * @property {number} light1LuxThresholdDark - in Lux - ist das Tageslicht dunkler, wird die Lampe 1 zur Tageszeit eingeschaltet
+ * @property {number} light1LuxThresholdBright - in Lux - ist das Tageslicht heller, wird die Lampe 1 zur Tageszeit ausgeschaltet * @property {number} light2OnHour - Tageszeit für Lampe 2 (Stunde, 0-23)
+ * @property {number} light2OffHour - Nachtzeit für Lampe 2 (Stunde, 0-23)
+ * @property {number} light2LuxThresholdDark - in Lux - ist das Tageslicht dunkler, wird die Lampe 2 zur Tageszeit eingeschaltet
+ * @property {number} light2LuxThresholdBright - in Lux - ist das Tageslicht heller, wird die Lampe 2 zur Tageszeit ausgeschaltet
+ * @property {number} fanCooldownDurationMs - Laufzeit des Lüfters in ms (A4, Default: 5 Minuten)
+ * @property {number} wateringDurationMs - Dauer der Bewässerung in ms (A5, Default: 5 Sekunden)
+ * @property {string} lamp1Mode - Der Steuermodus ('auto', 'on', 'off') für die Lampe 1 (A1).
+ * @property {string} lamp2Mode - Der Steuermodus ('auto', 'on', 'off') für die Lampe 2 (A2).
+ * @property {string} heaterMode - Der Steuermodus ('auto', 'on', 'off') für die Heizung (A3).
+ * @property {string} fanMode - Der Steuermodus ('auto', 'on', 'off') für den Lüfter (A4).
+ * @property {string} pumpMode - Der Steuermodus ('auto', 'on', 'off') für die Pumpe (A5).
+ * @property {string} misterMode - Der Steuermodus ('auto', 'on', 'off') für den Vernebler (A6).
+ */
+
+/**
+ * @brief Füllt das Einstellungs-Formular mit den Werten vom ESP32.
+ * @param {Settings} settings - Das Objekt mit allen Einstellungs- und Modus-Werten.
+ */
+function updateSettingsForm(settings) {
+    document.getElementById('airTempThresholdHigh').value = settings['airTempThresholdHigh'];
+    document.getElementById('humidityTarget').value = settings['humidityTarget'];
+    document.getElementById('soilTempTarget').value = settings['soilTempTarget'];
+    document.getElementById('soilMoistureTarget').value = settings['soilMoistureTarget'];
+    document.getElementById('light1OnHour').value = settings['light1OnHour'];
+    document.getElementById('light1OffHour').value = settings['light1OffHour'];
+    document.getElementById('light1LuxThresholdDark').value = settings['light1LuxThresholdDark'];
+    document.getElementById('light1LuxThresholdBright').value = settings['light1LuxThresholdBright'];
+    document.getElementById('light2OnHour').value = settings['light2OnHour'];
+    document.getElementById('light2OffHour').value = settings['light2OffHour'];
+    document.getElementById('light2LuxThresholdDark').value = settings['light2LuxThresholdDark'];
+    document.getElementById('light2LuxThresholdBright').value = settings['light2LuxThresholdBright'];
+    document.getElementById('fanCooldownDurationMs').value = settings['fanCooldownDurationMs'] / 1000.0;
+    document.getElementById('wateringDurationMs').value = settings['wateringDurationMs'] / 1000.0;
+    document.querySelector(`input[name="lamp1"][value="${settings.lamp1Mode}"]`).checked = true;
+    document.querySelector(`input[name="lamp2"][value="${settings.lamp2Mode}"]`).checked = true;
+    document.querySelector(`input[name="heater"][value="${settings.heaterMode}"]`).checked = true;
+    document.querySelector(`input[name="fan"][value="${settings.fanMode}"]`).checked = true;
+    document.querySelector(`input[name="pump"][value="${settings.pumpMode}"]`).checked = true;
+    document.querySelector(`input[name="mister"][value="${settings.misterMode}"]`).checked = true;
+}
+
+/**
+ * @brief Liest die Werte aus dem Formular, verpackt sie in ein JSON und sendet sie.
+ */
+function saveSettings() {
+    const statusDiv = document.getElementById('settings-status');
+    statusDiv.innerText = 'Speichere...';
+
+    const payload = {};
+    const form = document.getElementById('settingsForm');
+    // Iteriere über alle Input-Elemente im Formular
+    Array.from(form.elements).forEach(input => {
+        if (input.id === 'fanCooldownDurationMs' || input.id === 'wateringDurationMs') {
+            // Konvertiere den Wert vom Benutzer (in Sekunden) zurück in Millisekunden
+            payload[input.id] = parseInt(input.value) * 1000;
+        } else if (input.type === 'number') {
+            // Konvertiere alle anderen Zahlen-Inputs zu Fließkomma- oder Ganzzahlen
+            payload[input.id] = (input.step && input.step.includes('.')) ? parseFloat(input.value) : parseInt(input.value);
+        } else {
+            // Für andere Typen (z.B. Text) übernehme den Wert direkt
+            payload[input.id] = input.value;
+        }
+    });
+
+    const message = {
+        type: "saveSettings",
+        payload: payload
+    };
+
+    console.log("Sende Einstellungen: ", message);
+    websocket.send(JSON.stringify(message));
+
+    setTimeout(() => { statusDiv.innerText = 'Gespeichert!'; }, 1500);
+    setTimeout(() => { statusDiv.innerText = ''; }, 4000);
 }
 
 // --- Event Listener ---
 window.addEventListener('load', () => {
     initWebSocket();
-    // Standardmäßig den ersten Tab öffnen
-    document.querySelector('.tab-link').click();
+
+    // Event-Listener für die Tab-Navigation ---
+    // 1. Finde alle Elemente mit der Klasse 'tab-link'
+    document.querySelectorAll('.tab-link').forEach(button => {
+        // 2. Füge jedem einzelnen Button einen 'click'-Event-Listener hinzu
+        button.addEventListener('click', (event) => {
+            // 3. Wenn ein Button geklickt wird, hole den Tab-Namen aus seinem data-Attribut
+            const tabName = button.dataset.tabname;
+            // 4. Rufe die bestehende openTab-Funktion mit den richtigen Parametern auf
+            openTab(event, tabName);
+        });
+    });
 
     // Ereignishändler für Radio-Button auto/on/off
     document.querySelectorAll('.mode-selector').forEach(selector => {
@@ -210,11 +253,24 @@ window.addEventListener('load', () => {
             sendCommand("setMode", target, { mode: mode });
         });
     });
+
+    // Event-Listener für den "Einstellungen Speichern"-Button ---
+    const saveButton = document.getElementById('saveSettingsButton');
+    if (saveButton) {
+        saveButton.addEventListener('click', () => {
+            // Rufe die bestehende saveSettings-Funktion auf, wenn der Button geklickt wird.
+            saveSettings();
+        });
+    }
+
+    // Zeige den ersten Tab explizit an
+    openTab(null, 'Dashboard');
+    document.querySelector('.tab-link').classList.add('active');
 });
 
 /**
  * @brief Sendet einen Befehl als JSON-Objekt an den ESP32.
- * @param {string} command Der Name des Befehls (z.B. 'toggle').
+ * @param {string} command Der Name des Befehls.
  * @param {string} target Das Ziel des Befehls (z.B. der Name des Relais 'lamp1').
  * @param {object} [payload={}] - Ein optionales Objekt mit zusätzlichen Daten.
  */
@@ -227,12 +283,4 @@ function sendCommand(command, target, payload = {}) {
     };
     console.log("Sende Befehl: ", message);
     websocket.send(JSON.stringify(message));
-}
-
-// --- Platzhalter für zukünftige Funktionen ---
-function saveSettings() {
-    console.log("Funktion 'saveSettings' noch nicht implementiert.");
-}
-function uploadFiles() {
-    console.log("Funktion 'uploadFiles' noch nicht implementiert.");
 }

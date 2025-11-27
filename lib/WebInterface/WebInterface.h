@@ -32,12 +32,33 @@ public:
     void broadcast(const String& message);
 
     /**
+     * @brief Diese Funktion entfernt "tote" Clients aus der internen Liste des Servers.
+     * Sie sollte regelmäßig in der Haupt-loop() aufgerufen werden, um Speicherlecks zu vermeiden.
+     */
+    void cleanupClients();
+
+    /**
      * @property onMessage
      * @brief Callback, der aufgerufen wird, wenn eine Nachricht über WebSocket empfangen wird.
      * Die Hauptanwendung (main.cpp) muss diesen Callback definieren, um auf Befehle vom Browser zu reagieren.
-     * Format: (Nachricht als String)
+     * Format: (Zeiger auf den Client, Nachricht als String)
      */
-    std::function<void(const String& msg)> onMessage;
+    std::function<void(AsyncWebSocketClient* client, const String& msg)> onMessage;
+
+    /**
+         * @property onClientConnect
+         * @brief Callback, der aufgerufen wird, wenn sich ein neuer WebSocket-Client verbindet.
+         * Nützlich, um dem neuen Client den initialen Systemstatus zu senden.
+         * Format: (Zeiger auf den neuen Client)
+         */
+    std::function<void(AsyncWebSocketClient* client)> onClientConnect;
+
+    /**
+     * @property onClientDisconnect
+     * @brief Callback, der aufgerufen wird, wenn ein Client die Verbindung trennt.
+     * Format: (ID des getrennten Clients)
+     */
+    std::function<void(uint32_t clientId)> onClientDisconnect;
 
 private:
     /**
@@ -49,7 +70,7 @@ private:
      * @param data Empfangene Daten (Payload).
      * @param len Länge der empfangenen Daten.
      */
-    void onWsEvent(AsyncWebSocket *server, const AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) const;
+    void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) const;
 
     AsyncWebServer _server; // Die Instanz des Webservers.
     AsyncWebSocket _ws;     // Die Instanz des WebSocket-Servers am Endpunkt "/ws".

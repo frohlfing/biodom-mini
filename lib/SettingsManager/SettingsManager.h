@@ -13,7 +13,7 @@ class SettingsManager {
 public:
     /**
      * @brief Konstruktor.
-     * @param filename Der Pfad zur Konfigurationsdatei im Dateisystem.
+     * @param filename Der Pfad zur JSON-Datei im Dateisystem.
      */
     explicit SettingsManager(const char* filename = "/config.json");
 
@@ -27,43 +27,44 @@ public:
      * @brief Speichert die aktuellen Konfigurationsdaten persistent im Dateisystem.
      * @return true bei Erfolg, andernfalls false.
      */
-    bool save() const; // 'const' entfernt, da save() den Zustand nicht ändert, aber oft nach Änderungen aufgerufen wird.
+    bool save() const;
 
     /**
      * @brief Gibt eine schreibgeschützte Referenz auf die Konfigurationsdaten zurück.
      * @return Eine const-Referenz auf die ConfigData-Struktur.
      */
-    const settings& get() const;
+    const Settings& get() const;
 
     /**
      * @brief Gibt eine beschreibbare Referenz auf die Konfigurationsdaten zurück.
      * Nach der Änderung muss manuell 'save()' aufgerufen werden.
      * @return Eine Referenz auf die ConfigData-Struktur.
      */
-    settings& getMutable();
+    Settings& getMutable();
+
+    /**
+     * @brief Füllt ein JSON-Objekt mit den Werten aus der internen _settings-Struktur.
+     * @param doc Das zu füllende JsonObject.
+     */
+    void serialize(const JsonObject& doc) const;
+
+    /**
+     * @brief Füllt die interne _settings-Struktur aus einem JSON-Objekt.
+     * @param doc Das JsonObject, aus dem die Daten gelesen werden.
+     */
+    void deserialize(const JsonObject& doc);
 
 private:
-    /**
-     * @brief Füllt ein JSON-Dokument mit den Werten aus der internen _config-Struktur.
-     * @param doc Das zu füllende JsonDocument.
-     */
-    void serialize(JsonDocument& doc) const;
 
     /**
-     * @brief Füllt die interne _config-Struktur aus einem JSON-Dokument.
-     * @param doc Das JsonDocument, aus dem die Daten gelesen werden.
-     */
-    void deserialize(const JsonDocument& doc);
-
-    /**
-     * @property _config
+     * @property _settings
      * @brief Die Instanz der ConfigData-Struktur, die die Konfigurationswerte im RAM hält.
      */
-    settings _config;
+    Settings _settings;
 
     /**
      * @property _filename
-     * @brief Der Name der Konfigurationsdatei.
+     * @brief Der Name der JSON-Datei.
      */
     const char* _filename;
 };

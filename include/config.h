@@ -11,7 +11,7 @@
 // Sensoren
 constexpr int PIN_AIR_SENSOR = 13; // GPIO-Pin für den Raumtemperatur- und Luftfeuchtigkeitssensormodul AM2302 (S1)
 constexpr int PIN_SOIL_TEMPERATUR_SENSOR = 4; // GPIO-Pin für den Bodentemperatursensor DS18B20 (S2)
-constexpr int PIN_SOIL_MOISTURE_SENSOR = 34; // GPIO-Pin für den // Kapazitiver Bodenfeuchtigkeitssensor v1.2 (S3)
+constexpr int PIN_SOIL_MOISTURE_SENSOR = 34; // GPIO-Pin für den Kapazitiver Bodenfeuchtigkeitssensor v1.2 (S3)
 constexpr int PIN_WATER_LEVEL_SENSOR = 35; // GPIO-Pin für den Füllstandsensor XKC-Y25-NPN (S4)
 
 // I2C-Geräte (Kamera, Display und Lichtsensor GY-302 BH1750 (S5)
