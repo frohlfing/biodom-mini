@@ -25,10 +25,6 @@ Das SD-Kartenmodul wird über SPI angebunden. Die Standard-Hardware-SPI-Pins des
 *   **SCK:** GPIO 18
 *   **CS (Chip Select):** **Muss exklusiv sein!** Der Pin kann frei gewählt und dem Konstruktor übergeben werden (z.B. GPIO 16).
 
-### Kabellänge
-
-Verwende kurze SPI-Leitungen; bei langen Leitungen SPI-Clock reduzieren.
-
 ### 💽 Dateisystem
 
 Die Bibliothek ist für SD-Karten ausgelegt, die mit einem **FAT16**- oder **FAT32**-Dateisystem formatiert sind. Dies ist der Standard für die meisten SD-Karten.
