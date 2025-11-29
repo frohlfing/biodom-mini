@@ -1,10 +1,10 @@
-#include "WebInterface.h"
+#include "WebUI.h"
 #include <LittleFS.h>
 
-WebInterface::WebInterface(uint16_t port)
+WebUI::WebUI(uint16_t port)
     : _server(port), _ws("/ws") {}
 
-bool WebInterface::begin() {
+bool WebUI::begin() {
     // WebSocket-Events an unsere interne Handler-Funktion binden
     _ws.onEvent([this](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) {
         this->onWsEvent(server, client, type, arg, data, len);
@@ -42,15 +42,15 @@ bool WebInterface::begin() {
     return true;
 }
 
-void WebInterface::broadcast(const String& message) {
+void WebUI::broadcast(const String& message) {
     _ws.textAll(message);
 }
 
-void WebInterface::cleanupClients() {
+void WebUI::cleanupClients() {
     _ws.cleanupClients();
 }
 
-void WebInterface::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) const {
+void WebUI::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) const {
     if (type == WS_EVT_CONNECT) {
         // Client hat sich verbunden
         Serial.printf("WebSocket Client #%u verbunden von %s\n", client->id(), client->remoteIP().toString().c_str());

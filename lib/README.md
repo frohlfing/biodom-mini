@@ -6,7 +6,7 @@ Dieses Verzeichnis ist für projektspezifische (lokale) Bibliotheken vorgesehen.
 
 Die benötigten Bibliotheken sind in `platformio.ini` mit der Variable `lib_deps` aufgeführt.
 
-** Aktualisierung:**
+**Aktualisierung:**
 
 So können die Projektabhängigkeiten und benutzerdefinierten Pakete aktualisiert werden:
 

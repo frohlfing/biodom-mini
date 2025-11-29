@@ -893,7 +893,7 @@ Damit lege ich folgende Sollwerte als Voreinstellung fest (diese können per Web
   | rainy_weather  | ![rainy_weather](./assets/icons/rainy_weather_16x16.xbm.png)   | Pumpe (A5) aktiviert (überlagert Icon für Bodenfeuchte)                          |
   | dry            | ![dry](./assets/icons/dry_16x16.xbm.png)                       | Vernebler (A6) aktiviert (überlagert Icon für Bodenfeuchte)                      |
   
-  Die ursprünglichen Icons habe ich bei [Icons8](https://icons8.com/icons/all--mono--size-small--technique-line) gefunden und in `data/icons` gespeichert (wo sie für das WebInterface verfügbar sind).  
+  Die ursprünglichen Icons habe ich bei [Icons8](https://icons8.com/icons/all--mono--size-small--technique-line) gefunden und in `data/icons` gespeichert (wo sie für das Webinterface verfügbar sind).  
   Diese unterliegen der [Universal Multimedia License von Icons8](https://intercom.help/icons8-7fb7577e8170/en/articles/5534926-universal-multimedia-license-agreement-for-icons8).
   Demnach dürfen sie verwendet werden, solange das Projekt nicht-kommerziell ist. 
   

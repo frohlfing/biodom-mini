@@ -24,7 +24,7 @@
 #include "secrets.h"
 #include "settings.h"
 #include "SettingsManager.h"
-#include "WebInterface.h"
+#include "WebUI.h"
 #include "ArduCamMini2MPPlusOV2640.h"
 #include "LED.h"
 #include "MicroSDCard.h"
@@ -58,8 +58,8 @@
 // --- Einstellungen ---
 SettingsManager settingsManager;
 
-// --- WebInterface ---
-WebInterface webInterface;
+// --- Webinterface ---
+WebUI webInterface;
 
 // --- Sensoren ---
 SensorAM2302 airSensor(PIN_AIR_SENSOR); // Raumtemperatur- und Luftfeuchtigkeitssensormodul AM2302 (S1)

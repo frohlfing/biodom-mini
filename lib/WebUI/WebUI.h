@@ -11,13 +11,13 @@
  * Liefert statische Dateien (HTML, CSS, JS) aus dem LittleFS und
  * meldet empfangene WebSocket-Nachrichten über einen Callback an die Hauptanwendung.
  */
-class WebInterface {
+class WebUI {
 public:
     /**
      * @brief Konstruktor.
      * @param port Der Port, auf dem der Webserver lauschen soll (Standard 80).
      */
-    explicit WebInterface(uint16_t port = 80);
+    explicit WebUI(uint16_t port = 80);
 
     /**
      * @brief Initialisiert den Server und registriert die Routen.
