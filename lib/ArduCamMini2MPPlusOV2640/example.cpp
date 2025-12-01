@@ -121,7 +121,7 @@ void loop() {
                 break;
 
             default:
-                Serial.println("-> Unbekannter Befehl. Senden Sie 'h' für Hilfe.");
+                Serial.println("-> Unbekannter Befehl. Sende 'h' für Hilfe.");
                 break;
         }
     }

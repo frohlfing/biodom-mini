@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include <SD.h>   // Die spezifische Implementierung für SD-Karten.
+#include <SD.h> // Die spezifische Implementierung für SD-Karten.
 
 /**
  * Klasse für den MicroSD SPI Kartenleser.
@@ -50,20 +50,13 @@ public:
     static bool removeDir(const char* path);
 
     // --- Dateioperationen ---
-    
+
     /**
      * @brief Öffnet eine Datei zum Lesen und gibt das File-Objekt zurück.
      * @param path Der Pfad zur Datei.
      * @return Ein File-Objekt. Wenn die Datei nicht geöffnet werden kann, ist das Objekt "false".
      */
     static File openFileForReading(const char* path);
-
-    /**
-     * @brief Öffnet eine Datei zum Schreiben und gibt das File-Objekt zurück.
-     * @param path Der Pfad zur Datei.
-     * @return Ein File-Objekt. Wenn die Datei nicht geöffnet werden kann, ist das Objekt "false".
-     */
-    static File openFileForWriting(const char* path);
 
     /**
      * @brief Liest den Inhalt einer Datei und leitet ihn in einen Stream um.
@@ -79,6 +72,13 @@ public:
      * @return Ein String mit dem Dateiinhalt. Bei einem Fehler wird ein leerer String zurückgegeben.
      */
     static String readFile(const char* path);
+
+    /**
+     * @brief Öffnet eine Datei zum Schreiben und gibt das File-Objekt zurück.
+     * @param path Der Pfad zur Datei.
+     * @return Ein File-Objekt. Wenn die Datei nicht geöffnet werden kann, ist das Objekt "false".
+     */
+    static File openFileForWriting(const char* path);
 
     /**
      * @brief Schreibt einen Text in eine Datei.
@@ -97,6 +97,17 @@ public:
      * @return true bei Erfolg, false, wenn die Datei nicht zum Anhängen geöffnet werden konnte.
      */
     static bool appendFile(const char* path, const char* message);
+
+    /**
+     * @brief Schreibt Daten aus einem Stream in eine Datei auf SD.
+     *        Arbeitet nicht-blockierend mit Buffer und prüft optional auf ein Endezeichen.
+     * @param path Pfad zur Zieldatei.
+     * @param input Eingabe-Stream (z.B. Serial, WiFiClient).
+     * @param bufferSize Größe des Schreibpuffers (Standard: 64 Bytes).
+     * @param endMarker Optionales Endezeichen (z.B. "###END###"). Wenn nullptr, wird bis Stream-Ende geschrieben.
+     * @return true, wenn Daten geschrieben wurden, false wenn nichts verfügbar.
+     */
+    static bool processStreamChunk(const char *path, Stream &input, size_t bufferSize, const char *endMarker);
 
     /**
      * @brief Benennt eine Datei um oder verschiebt sie.

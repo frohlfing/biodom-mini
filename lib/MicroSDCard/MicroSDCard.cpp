@@ -40,19 +40,13 @@ File MicroSDCard::openFileForReading(const char* path) {
     return SD.open(path, FILE_READ);
 }
 
-File MicroSDCard::openFileForWriting(const char* path) {
-    return SD.open(path, FILE_WRITE);
-}
-
 bool MicroSDCard::readFile(const char* path, Stream &output) {
-    File file = SD.open(path);
+    File file = SD.open(path, FILE_READ);
     if (!file) {
         return false;
     }
-
     constexpr size_t bufferSize = 256;
     uint8_t buffer[bufferSize];
-
     while (file.available()) {
         const size_t bytesRead = file.read(buffer, bufferSize);
         output.write(buffer, bytesRead);
@@ -71,25 +65,74 @@ String MicroSDCard::readFile(const char* path) {
     return content;
 }
 
+File MicroSDCard::openFileForWriting(const char* path) {
+    return SD.open(path, FILE_WRITE);
+}
+
 bool MicroSDCard::writeFile(const char* path, const char* message) {
     // "w" für Write, true für Create if not exists
-    File file = SD.open(path, "w", true); 
+    File file = SD.open(path, FILE_WRITE, true);
     if (!file) {
         return false;
     }
-    bool success = file.print(message);
+    const bool success = file.print(message);
     file.close();
     return success;
 }
 
 bool MicroSDCard::appendFile(const char* path, const char* message) {
-    File file = SD.open(path, "a", true);
+    File file = SD.open(path, FILE_APPEND, true);
     if (!file) {
         return false;
     }
-    bool success = file.print(message);
+    const bool success = file.print(message);
     file.close();
     return success;
+}
+
+bool MicroSDCard::processStreamChunk(const char* path, Stream &input, size_t bufferSize = 64, const char* endMarker = nullptr)
+{
+    if (!input.available()) {
+        return false; // nichts zu tun
+    }
+
+    File file = SD.open(path, FILE_WRITE);
+    if (!file) {
+        return false;
+    }
+
+    // Buffer für effizientes Schreiben
+    char buf[bufferSize];
+    size_t count = 0;
+
+    while (input.available() && count < bufferSize) {
+        char c = input.read();
+        buf[count++] = c;
+
+        // Endezeichen prüfen (falls gesetzt)
+        if (endMarker != nullptr) {
+            static size_t matchPos = 0;
+            if (c == endMarker[matchPos]) {
+                matchPos++;
+                if (endMarker[matchPos] == '\0') {
+                    // Endmarker komplett erkannt → Datei schließen
+                    file.write((uint8_t*)buf, count);
+                    file.close();
+                    return true;
+                }
+            } else {
+                matchPos = 0; // Reset bei Fehlmatch
+            }
+        }
+    }
+
+    // Buffer schreiben
+    if (count > 0) {
+        file.write((uint8_t*)buf, count);
+    }
+
+    file.close();
+    return true;
 }
 
 bool MicroSDCard::renameFile(const char* path1, const char* path2) {

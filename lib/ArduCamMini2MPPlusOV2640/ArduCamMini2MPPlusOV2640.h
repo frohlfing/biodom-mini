@@ -86,8 +86,7 @@ public:
      * @brief Definiert die verfügbaren Spezialeffekte.
      * @note Die Namen sind mit dem Prefix 'EFFECT_' versehen, um Namenskonflikte mit der ArduCAM.h (z.B. BW) zu vermeiden.
      */
-    enum SpecialEffect { 
-        EFFECT_NORMAL,      // Normaler Modus ohne Effekt
+    enum SpecialEffect {
         EFFECT_ANTIQUE,     // Sepia/Antik-Effekt
         EFFECT_BLUISH,      // Blaustich-Effekt
         EFFECT_GREENISH,    // Grünstich-Effekt
@@ -95,7 +94,7 @@ public:
         EFFECT_BW,          // Schwarz-Weiß-Effekt
         EFFECT_NEGATIVE,    // Negativ-Effekt (Farben invertiert)
         EFFECT_BW_NEGATIVE, // Schwarz-Weiß-Negativ-Effekt
-        EFFECT_SEPIA        // Sepia-Effekt (oft ähnlich zu Antique)
+        EFFECT_NORMAL       // Normaler Modus ohne Effekt
     };
 
     /**

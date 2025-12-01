@@ -127,7 +127,7 @@ void ArduCamMini2MPPlusOV2640::setContrast(Contrast level) {
 void ArduCamMini2MPPlusOV2640::setSpecialEffect(SpecialEffect effect) {
     // Mappt unser sicheres Enum auf die (potenziell problematischen) Defines der Bibliothek
     switch (effect) {
-        case EFFECT_NORMAL:      _myCAM.OV2640_set_Special_effects(Normal);      break;
+
         case EFFECT_ANTIQUE:     _myCAM.OV2640_set_Special_effects(Antique);     break;
         case EFFECT_BLUISH:      _myCAM.OV2640_set_Special_effects(Bluish);      break;
         case EFFECT_GREENISH:    _myCAM.OV2640_set_Special_effects(Greenish);    break;
@@ -135,6 +135,7 @@ void ArduCamMini2MPPlusOV2640::setSpecialEffect(SpecialEffect effect) {
         case EFFECT_BW:          _myCAM.OV2640_set_Special_effects(BW);          break;
         case EFFECT_NEGATIVE:    _myCAM.OV2640_set_Special_effects(Negative);    break;
         case EFFECT_BW_NEGATIVE: _myCAM.OV2640_set_Special_effects(BWnegative);  break;
+        case EFFECT_NORMAL:      _myCAM.OV2640_set_Special_effects(Normal);      break;
         default:
             break;
     }
