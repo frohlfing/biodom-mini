@@ -11,18 +11,12 @@ ESP-Prog ist ein Debugging-Tool von Espressif, basierend auf dem FT2232HL-Chip.
 
 Der ESP-Prog stellt über ein einziges USB-Kabel zwei Schnittstellen bereit (per FTDI FT2232HL Chip):
 
-* Interface 0 (JTAG-Schnittstelle): für Upload und Debugging via Standard-Debugging-Tool OpenOCD
-* Interface 1 (UART-Schnittstelle): für Serielle Kommunikation (Serial Monitor/Plotter) via esptool.py
-
-**Anmerkung zur Upload-Funktion:**
-
-Das Hochladen des Codes kann auch so wie in der Arduino-IDE mittels esptool.py erfolgen (also über die UART-Schnittstelle). 
-Dazu muss in der platformio.ini "upload_protocol = esptool" eingetragen werden (oder ausklammern, da das der Standardwert ist).
-Aber diese Möglichkeit ziehe ich nicht weiter in Betracht.
+* Interface 0 (JTAG-Schnittstelle): für Debugging und Upload via Standard-Debugging-Tool OpenOCD
+* Interface 1 (UART-Schnittstelle): für Serielle Kommunikation (Serial Monitor/Plotter) und Upload via esptool.py
 
 **Kommunikationswege:**
 
-* Upload und Debug: PC -> USB -> ESP-Prog -> Interface 0 (JTAG) -> ESP32
+* Debug: PC -> USB -> ESP-Prog -> Interface 0 (JTAG) -> ESP32
 * Serieller Monitor: ESP32 -> Interface 1 (UART) -> ESP-Prog -> USB -> PC
 
 ## Treiber
@@ -86,11 +80,11 @@ Die Klemmen kann man mittels Schraubstock zusammenpressen.
 ## Stromversorgung
 
 Der ESP-Prog wird über das USB-Kabel versorgt. Er kann den ESP32 mitversorgen, indem der 3.3V-Pin verbunden wird. 
-Wenn aber eine andere Stromquelle für den ESP32 angeschlossen ist, darf der 3.3V-Pin nicht verbunden werden!
+Wenn aber eine andere Stromquelle für den ESP32 angeschlossen ist, **darf der 3.3V-Pin nicht verbunden werden!**
 
-**Der PWR-SEL-Jumper muss auf 3.3V gesetzt sein!**
+**Die PWR-SEL-Jumper müssen auf 3.3V gesetzt sein!**
 
-Auf 5V darf der Jumper nicht gesteckt werden, da sonst an einigen Pins mehr als 3.3 V liegen und der ESP32 darauf verschnupft reagieren könnte.
+Auf 5V dürfen keine der Jumper gesteckt werden, da sonst an einigen Pins mehr als 3.3 V liegen und der ESP32 darauf verschnupft reagieren könnte.
 
 **Konfiguration:**
 
