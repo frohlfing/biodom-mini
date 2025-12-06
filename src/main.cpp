@@ -6,8 +6,8 @@
  * Sie initialisiert alle Sensoren und Aktoren, liest periodisch Messwerte aus,
  * wendet die Steuerungslogik an und aktualisiert die Anzeige.
  * 
- * @version 1.0.5
- * @date 26.11.2025
+ * @version 1.0.6
+ * @date 04.12.2025
  * @author Frank Rohlfing
  */
 
@@ -25,7 +25,7 @@
 #include "settings.h"
 #include "SettingsManager.h"
 #include "WebUI.h"
-#include "ArduCamMini2MPPlusOV2640.h"
+#include "ArduCamOV2640.h"
 #include "LED.h"
 #include "MicroSDCard.h"
 #include "OLEDDisplaySH1106.h"
@@ -80,7 +80,7 @@ Relay misterRelay(PIN_MISTER_RELAY);  // Vernebler (A6)
 // --- Sonstige Peripherie ---
 OLEDDisplaySH1106 display;            // 1.3 Zoll OLED Display, SSH1106 (Z1)
 MicroSDCard sdCard(PIN_SPI_SD_CS);    // MicroSD SPI Kartenleser (Z2)
-ArduCamMini2MPPlusOV2640 camera(PIN_SPI_CAMERA_CS); // ArduCAM Mini 2MP Plus, OV2640 (Z3)
+ArduCamOV2640 camera(PIN_SPI_CAMERA_CS); // ArduCAM OV2640 Mini 2MP Plus (Z3)
 LED debugLed(PIN_DEBUG_LED);          // LED (Z4)
 
 // === Globale Variablen zur Zustandsspeicherung ===
@@ -180,6 +180,13 @@ void setup() {
     // I2C-Bus initialisieren
     // Für den ESP32 ist es eine gute Praxis, die SDA- und SCL-Pins explizit anzugeben.
     Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
+
+    // Alle CS-Pins auf HIGH setzen und SPI-Bus initialisieren
+    pinMode(PIN_SPI_SD_CS, OUTPUT);
+    digitalWrite(PIN_SPI_SD_CS, HIGH);
+    pinMode(PIN_SPI_CAMERA_CS, OUTPUT);
+    digitalWrite(PIN_SPI_CAMERA_CS, HIGH);
+    SPI.begin();
 
     // Display (Z1) initialisieren
     if (!display.begin()) {  
@@ -778,17 +785,7 @@ void handleCamera() {
     char filename[30];
     sprintf(filename, "/img_%lu.jpg", millis());
 
-    // KORREKTUR: Die neue Methode der sdCard-Klasse verwenden
-    File imgFile = sdCard.openFileForWriting(filename); // NOLINT(*-static-accessed-through-instance)
-    if (!imgFile) {
-        Serial.println("Konnte Datei auf SD-Karte nicht erstellen.");
-        display.showFullscreenAlert("SD FEHLER", true);
-        delay(2000);
-        return;
-    }
-
-    // Bild aufnehmen und direkt in die Datei streamen
-    if (camera.captureAndStreamTo(ArduCamMini2MPPlusOV2640::S_1600x1200, imgFile)) {
+    if (camera.capture(filename)) {
         Serial.printf("Bild erfolgreich gespeichert: %s\n", filename);
         display.showFullscreenAlert("FOTO OK", false);
     } else {
@@ -796,7 +793,6 @@ void handleCamera() {
         display.showFullscreenAlert("KAMERA FEHLER", true);
     }
 
-    imgFile.close();
     delay(2000);
 }
 

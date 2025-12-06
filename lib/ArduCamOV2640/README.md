@@ -1,13 +1,12 @@
 # 📌 ArduCamMini2MPPlusOV2640
 
-Diese Bibliothek kapselt die Nutzung der ArduCAM Mini 2MP Plus (mit OV2640-Chip).
+Diese Bibliothek kapselt die Nutzung der ArduCAM OV2640 Mini 2MP Plus.
 
 **Funktionsumfang:**
 
 *   Einfache Initialisierung der Kamera mit `begin()`.
 *   Aufnahme von JPEG-Bildern in verschiedenen Auflösungen (von 160x120 bis 1600x1200).
-*   Streaming der Bilddaten direkt an ein beliebiges `Stream`-Objekt (z.B. `Serial` für die PC-Übertragung oder ein `File`-Objekt zum Speichern auf einer SD-Karte).
-*   Einfache Methoden zum Setzen von Bildeffekten wie Weißabgleich, Helligkeit, Kontrast, Sättigung und Spezialeffekten (z.B. Sepia, Schwarz-Weiß).
+*   Streaming der Bilddaten über `Serial` oder Speichern auf einer SD-Karte.
 
 ## 📦 Installation & Abhängigkeiten
 

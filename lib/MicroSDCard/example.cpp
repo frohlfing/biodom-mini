@@ -20,6 +20,11 @@ void setup() {
     Serial.begin(115200);
     Serial.println("Starte MicroSDCard-Beispiel...");
 
+    // CS-Pin auf HIGH setzen und SPI-Bus initialisieren
+    pinMode(SD_CS_PIN, OUTPUT);
+    digitalWrite(SD_CS_PIN, HIGH);
+    SPI.begin();
+
     // SD-Karte initialisieren
     if (!sdCard.begin()) {
         Serial.println("Initialisierung fehlgeschlagen! Programm wird angehalten.");

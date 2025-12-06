@@ -3,6 +3,8 @@
 MicroSDCard::MicroSDCard(const uint8_t csPin) : _csPin(csPin) {}
 
 bool MicroSDCard::begin() const {
+    pinMode(_csPin, OUTPUT);
+    digitalWrite(_csPin, HIGH);
     return SD.begin(_csPin);
 }
 
@@ -116,7 +118,7 @@ bool MicroSDCard::processStreamChunk(const char* path, Stream &input, size_t buf
                 matchPos++;
                 if (endMarker[matchPos] == '\0') {
                     // Endmarker komplett erkannt → Datei schließen
-                    file.write((uint8_t*)buf, count);
+                    file.write(reinterpret_cast<uint8_t *>(buf), count);
                     file.close();
                     return true;
                 }
@@ -128,7 +130,7 @@ bool MicroSDCard::processStreamChunk(const char* path, Stream &input, size_t buf
 
     // Buffer schreiben
     if (count > 0) {
-        file.write((uint8_t*)buf, count);
+        file.write(reinterpret_cast<uint8_t *>(buf), count);
     }
 
     file.close();

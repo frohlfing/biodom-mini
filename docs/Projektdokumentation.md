@@ -610,7 +610,7 @@ Kabeladern:
 |--------|----------------|--------------------------------|------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Z1     | Display        | 1.3 Zoll OLED Display, SSH1106 | (I2C)      | [Amazon](https://www.amazon.de/dp/B078J78R45) 8,49 €                                                                                                                       |
 | Z2     | SD-Kartenleser | MicroSD SPI Kartenleser        | CS: GPIO16 | [Amazon](https://www.amazon.de/gp/product/B0DQZFBCST) 4,29 € (3 Stück); Einzelpreis: 1,43 €                                                                                |
-| Z3     | Kamera         | ArduCAM Mini 2MP Plus, OV2640  | CS: GPIO17 | [BotLand](https://botland.de/kameras-fur-arduino-und-raspberry-pi/6556-arducam-mini-ov2640-2mpx-1600x1200px-60fps-spi-kameramodul-fur-arduino--5904422358242.html) 28,86 € |
+| Z3     | Kamera         | ArduCAM OV2640 Mini 2MP Plus   | CS: GPIO17 | [BotLand](https://botland.de/kameras-fur-arduino-und-raspberry-pi/6556-arducam-mini-ov2640-2mpx-1600x1200px-60fps-spi-kameramodul-fur-arduino--5904422358242.html) 28,86 € |
 | Z4     | LED            | LED 3mm, rot                   | GPIO5      |                                                                                                                                                                            |
 
 ### Z1: Display
@@ -678,9 +678,9 @@ Der gesamte Vorgang (Auslesen von der Kamera + Schreiben auf die Karte) wird ver
 <pre>
 ┌────────────────┐
 │ ArduCAM    SCL ├─◄───(orange)─O─── GPIO22
-│ Mini 2MP   SDA ├◄─►────(gelb)─O─── GPIO21
-│ Plus,      VCC ├───────(grün)─O─── +3.3V
-│ OV2640     GND ├───────(blau)─O─── GND
+│ OV2640     SDA ├◄─►────(gelb)─O─── GPIO21
+│ Mini       VCC ├───────(grün)─O─── +3.3V
+│ 2MP Plus   GND ├───────(blau)─O─── GND
 │            SCK ├─◄─────(lila)─O─── GPIO18
 │           MISO ├─►─────(grau)─O─── GPIO19
 │           MOSI ├─◄─────(weiß)─O─►─ GPIO23
