@@ -45,10 +45,15 @@ bool ArduCamOV2640::begin() {
 }
 
 void ArduCamOV2640::setResolution(uint8_t resolution) {
+    // FIFO in einen sauberen Zustand versetzen
     _myCAM.flush_fifo();
     _myCAM.clear_fifo_flag();
+
+    // Befehl an den Sensor senden
     _myCAM.OV2640_set_JPEG_size(resolution);
-    delay(100); // Dem Sensor Zeit geben, sich auf die neue Geometrie einzustellen
+
+    // Warten, bis der Sensor sich stabilisiert hat
+    delay(100);
 }
 
 bool ArduCamOV2640::capture(const char *filename) {
