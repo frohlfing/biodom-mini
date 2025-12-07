@@ -85,6 +85,15 @@ void SettingsManager::serialize(const JsonObject& doc) const {
     doc["fanCooldownDurationMs"] = _settings.fanCooldownDurationMs;
     doc["wateringDurationMs"] = _settings.wateringDurationMs;
 
+    // Kamera-Einstellungen
+    doc["cameraCapturesPerDay"] = _settings.cameraCapturesPerDay;
+    doc["cameraResolution"] = _settings.cameraResolution;
+    doc["cameraLightMode"] = _settings.cameraLightMode;
+    doc["cameraSaturation"] = _settings.cameraSaturation;
+    doc["cameraBrightness"] = _settings.cameraBrightness;
+    doc["cameraContrast"] = _settings.cameraContrast;
+    doc["cameraSpecialEffect"] = _settings.cameraSpecialEffect;
+
     // Konvertiere die ControlMode-Enums in Strings für JSON
     auto modeToString = [](const ControlMode mode) {
         if (mode == MODE_ON) return "on";
@@ -117,6 +126,15 @@ void SettingsManager::deserialize(const JsonObject& doc) {
 
     _settings.fanCooldownDurationMs = doc["fanCooldownDurationMs"] | _settings.fanCooldownDurationMs;
     _settings.wateringDurationMs = doc["wateringDurationMs"] | _settings.wateringDurationMs;
+
+    // Kamera-Einstellungen
+    _settings.cameraCapturesPerDay = doc["cameraCapturesPerDay"] | _settings.cameraCapturesPerDay;
+    _settings.cameraResolution = doc["cameraResolution"] | _settings.cameraResolution;
+    _settings.cameraLightMode = doc["cameraLightMode"] | _settings.cameraLightMode;
+    _settings.cameraSaturation = doc["cameraSaturation"] | _settings.cameraSaturation;
+    _settings.cameraBrightness = doc["cameraBrightness"] | _settings.cameraBrightness;
+    _settings.cameraContrast = doc["cameraContrast"] | _settings.cameraContrast;
+    _settings.cameraSpecialEffect = doc["cameraSpecialEffect"] | _settings.cameraSpecialEffect;
 
     // Konvertiere die Strings aus JSON zurück in die ControlMode-Enums
     auto stringToMode = [](const char* str, const ControlMode defaultMode) {

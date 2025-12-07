@@ -5,7 +5,7 @@
 #include <SD.h>
 
 ArduCamOV2640::ArduCamOV2640(const uint8_t csPin)
-    : _csPin(csPin), _myCAM(OV2640, csPin) {}
+    : _csPin(csPin), _myCAM(OV2640, csPin), _lastError(0) {}
 
 bool ArduCamOV2640::begin() {
     // CS-Pin konfigurieren
@@ -21,7 +21,8 @@ bool ArduCamOV2640::begin() {
     // 2. SPI-Verbindung zur ArduCAM testen
     _myCAM.write_reg(ARDUCHIP_TEST1, 0x55);
     if (_myCAM.read_reg(ARDUCHIP_TEST1) != 0x55) {
-        return false; // SPI-Fehler
+        _lastError = 1;  // SPI-Fehler
+        return false;
     }
 
     // 3. Kamerasensor prüfen
@@ -30,7 +31,8 @@ bool ArduCamOV2640::begin() {
     _myCAM.rdSensorReg8_8(OV2640_CHIPID_HIGH, &vid);
     _myCAM.rdSensorReg8_8(OV2640_CHIPID_LOW, &pid);
     if (vid != 0x26 || (pid != 0x41 && pid != 0x42)) {
-        return false; // Falscher Kamerasensor oder I2C Fehler
+        _lastError = 2; // Falscher Kamerasensor
+        return false;
     }
 
     // 4. Kamera konfigurieren
@@ -44,7 +46,7 @@ bool ArduCamOV2640::begin() {
     return true;
 }
 
-void ArduCamOV2640::setResolution(uint8_t resolution) {
+void ArduCamOV2640::setResolution(const uint8_t resolution) {
     // FIFO in einen sauberen Zustand versetzen
     _myCAM.flush_fifo();
     _myCAM.clear_fifo_flag();
@@ -56,23 +58,48 @@ void ArduCamOV2640::setResolution(uint8_t resolution) {
     delay(100);
 }
 
-bool ArduCamOV2640::capture(const char *filename) {
+void ArduCamOV2640::setLightMode(const uint8_t mode) {
+    _myCAM.OV2640_set_Light_Mode(mode);
+}
+
+void ArduCamOV2640::setColorSaturation(const uint8_t saturation) {
+    _myCAM.OV2640_set_Color_Saturation(saturation);
+}
+
+void ArduCamOV2640::setBrightness(const uint8_t brightness) {
+    _myCAM.OV2640_set_Brightness(brightness);
+}
+
+void ArduCamOV2640::setContrast(const uint8_t contrast) {
+    _myCAM.OV2640_set_Contrast(contrast);
+}
+
+void ArduCamOV2640::setSpecialEffect(const uint8_t effect) {
+    _myCAM.OV2640_set_Special_effects(effect);
+}
+
+bool ArduCamOV2640::saveToSD(const char *filename) {
+    _lastError = 0;
+
     // Bild aufzeichnen
-    captureToFifo();
+    takePicture();
 
     // Bild speichern
     File file = SD.open(filename, FILE_WRITE);
     if (!file) {
-        return false; // Failed to open file for writing
+        _lastError = 3; // Failed to open file for writing
+        return false;
     }
     const bool success = writeFifoToStream(file);
     file.close();
     return success;
 }
 
-bool ArduCamOV2640::print() {
+bool ArduCamOV2640::sendToSerialHost() {
+    _lastError = 0;
+
     // Bild aufzeichnen
-    captureToFifo();
+    takePicture();
 
     // Protokoll-Start-Marker für Host-Software
     Serial.write(0xFF);
@@ -87,7 +114,7 @@ bool ArduCamOV2640::print() {
     return success;
 }
 
-void ArduCamOV2640::captureToFifo() {
+void ArduCamOV2640::takePicture() {
     // Bild aufzeichnen
     _myCAM.flush_fifo(); // Puffer leeren
     _myCAM.clear_fifo_flag(); // Status-Register zurücksetzen (bereit für die erste Aufnahme)
@@ -107,7 +134,8 @@ bool ArduCamOV2640::writeFifoToStream(Stream &stream)
         // Fehlerfall: Wir schreiben eine kurze Fehlermeldung in den Stream,
         // falls es Serial ist, sieht man es im Terminal.
         // Auf SD würde das File leer bleiben oder Text enthalten.
-        return false; // FIFO Error (Oversize or size is 0
+        _lastError = 4; // FIFO-Länge 0 oder Max
+        return false;
     }
 
     // Puffer für blockweises Schreiben (schneller als Byte-by-Byte)
@@ -163,5 +191,25 @@ bool ArduCamOV2640::writeFifoToStream(Stream &stream)
     }
 
     _myCAM.CS_HIGH();
+
+    if (!success) {
+        _lastError = 5; // JPEG-Ende (0xFF,0xD9) nicht gefunden
+    }
     return success;
+}
+
+int ArduCamOV2640::getLastError() const {
+    return _lastError;
+}
+
+const char* ArduCamOV2640::getErrorMessage() const {
+    switch(_lastError) {
+        case 0: return "OK";
+        case 1: return "SPI-Fehler";
+        case 2: return "Falscher Kamerasensor";
+        case 3: return "Schreibfehler";
+        case 4: return "FIFO-Länge 0 oder Max";
+        case 5: return "Kein JPEG-Ende";
+        default: return "Unbekannter Fehler";
+    }
 }

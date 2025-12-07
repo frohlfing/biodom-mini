@@ -64,7 +64,94 @@ function openTab(evt, tabName) {
 
     // Zeige den aktuellen Tab an und setze den Button auf "active"
     document.getElementById(tabName).style.display = "block";
-    evt.currentTarget.className += " active";
+    if (evt && evt.currentTarget) {
+        evt.currentTarget.className += " active";
+    }
+
+    if (tabName === 'Camera') {
+        loadImages();
+    }
+}
+
+// Globale Variable, um die Bildpfade zu speichern
+let imagePaths = [];
+
+/**
+ * TODO: Beschreibung hinzufügen
+ */
+function loadImages() {
+    fetch('/api/images')
+        .then(response => response.json())
+        .then(images => {
+            // Leere das UI
+            const select = document.getElementById('image-select');
+            select.innerHTML = '';
+
+            // Prüfe, ob überhaupt Bilder vorhanden sind
+            if (!images || images.length === 0) {
+                document.getElementById('current-image').src = '';
+                document.getElementById('image-timestamp').innerText = 'Keine Bilder auf der SD-Karte gefunden.';
+                imagePaths = []; // Stelle sicher, dass die globale Liste auch leer ist
+                return;
+            }
+
+            // 1. Daten verarbeiten: Sortieren und Pfade extrahieren
+            // noinspection JSUnresolvedReference
+            images.sort((a, b) => b.path.localeCompare(a.path));
+            // noinspection JSUnresolvedReference
+            imagePaths = images.map(img => img.path);
+
+            // 2. UI füllen: Das Dropdown-Menü erstellen
+            imagePaths.forEach(path => {
+                const option = document.createElement('option');
+                // noinspection JSValidateTypes
+                option.value = path;
+                option.innerText = path.replace('/', '');
+                select.appendChild(option);
+            });
+
+            // 3. Initialen Zustand herstellen: Das erste (neueste) Bild anzeigen
+            showImage(imagePaths[0]);
+
+            // 4. Event-Listener für zukünftige Interaktionen setzen
+            select.onchange = () => showImage(select.value);
+        });
+}
+
+/**
+ * TODO: Beschreibung hinzufügen
+ * @param path
+ */
+function showImage(path) {
+    document.getElementById('current-image').src = `/img?path=${path}`;
+    document.getElementById('image-timestamp').innerText = path.replace('/', '');
+}
+
+/**
+ * TODO: Beschreibung hinzufügen
+ */
+function captureNow() {
+    sendCommand("captureNow", "camera");
+    // Warte kurz, damit das Bild gespeichert werden kann, dann lade die Liste neu
+    setTimeout(loadImages, 2500);
+}
+
+let timelapseInterval;
+function playTimelapse() {
+    if (imagePaths.length === 0) return;
+
+    // Stoppe einen eventuell laufenden Zeitraffer
+    clearInterval(timelapseInterval);
+
+    let currentIndex = 0;
+
+    // Starte den neuen Zeitraffer
+    timelapseInterval = setInterval(() => {
+        // Gehe zum nächsten Bild, beginne von vorn, wenn das Ende erreicht ist
+        currentIndex = (currentIndex + 1) % imagePaths.length;
+        // Lade und zeige das nächste Bild an
+        showImage(imagePaths[currentIndex]);
+    }, 500); // Geschwindigkeit: 2 Bilder pro Sekunde
 }
 
 /**
@@ -263,10 +350,47 @@ window.addEventListener('load', () => {
         });
     }
 
+    // --- NEU: Event-Listener für Kamera-Buttons ---
+    const captureBtn = document.getElementById('captureNowButton');
+    captureBtn.addEventListener('click', captureNow);
+
+    const timelapseBtn = document.getElementById('playTimelapseButton');
+    timelapseBtn.addEventListener('click', playTimelapse);
+
+    const deleteBtn = document.getElementById('deleteImagesButton');
+    deleteBtn.addEventListener('click', deleteAllImages);
+
     // Zeige den ersten Tab explizit an
     openTab(null, 'Dashboard');
     document.querySelector('.tab-link').classList.add('active');
 });
+
+/**
+ * Löscht alle Bilder
+ */
+function deleteAllImages() {
+    // Stoppe den Zeitraffer, falls er läuft
+    clearInterval(timelapseInterval);
+
+    // Sicherheitsabfrage mit Passwort
+    const password = prompt("Bitte gib das Admin-Passwort ein, um alle Bilder zu löschen:");
+    if (password) {
+        // Sende den Befehl mit dem Passwort an den Server
+        sendCommand("deleteAllImages", "camera", { password: password });
+
+        // UI sofort leeren und dann neu laden
+        document.getElementById('image-select').innerHTML = '';
+        document.getElementById('current-image').src = '';
+
+        const timestampEl = document.getElementById('image-timestamp');
+        timestampEl.innerText = 'Lösche alle Bilder...';
+
+        // Warte, bis der Löschvorgang wahrscheinlich abgeschlossen ist,
+        // und lade dann die (jetzt leere) Liste vom Server,
+        // was dann zu "Keine Bilder..." führt.
+        setTimeout(loadImages, 1500);
+    }
+}
 
 /**
  * @brief Sendet einen Befehl als JSON-Objekt an den ESP32.

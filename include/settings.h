@@ -31,6 +31,15 @@ struct Settings {
     unsigned long fanCooldownDurationMs = 300000; // Laufzeit des Lüfters in ms (A4, Default: 5 Minuten)
     unsigned long wateringDurationMs = 5000; // Dauer der Bewässerung in ms (A5, Default: 5 Sekunden)
 
+    // Kamera-Einstellungen
+    int cameraCapturesPerDay = 1; // Bilder pro Tag (0 = aus, 1-24)
+    uint8_t cameraResolution = 2; // 0=160x120, 1=176x144, 2=320x240, 3=352x288, 4=640x480, 5=800x600, 6=1024x768, 7=1280x1024, 8=1600x1200
+    uint8_t cameraLightMode = 0; // 0 = Auto
+    uint8_t cameraSaturation = 0; // 0 = Normal
+    uint8_t cameraBrightness = 0; // 0 = Normal
+    uint8_t cameraContrast = 0; // 0 = Normal
+    uint8_t cameraSpecialEffect = 0; // 0 = Normal
+
     // Modus für die Steuerung der Aktoren (automatisch, immer an, immer aus)
     ControlMode lamp1Mode = MODE_AUTO; // Modus für Lampe 1 (A1)
     ControlMode lamp2Mode = MODE_AUTO; // Modus für Lampe 2 (A2)

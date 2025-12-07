@@ -23,7 +23,12 @@ public:
      * Muss im setup() des Hauptprogramms aufgerufen werden.
      * @return true bei erfolgreicher Initialisierung, andernfalls false.
      */
-    bool begin() const;
+    bool begin();
+
+    /**
+     * @return true, wenn die SD-Karte bereit ist
+     */
+    bool isReady() const;
 
     // --- Verzeichnisoperationen ---
 
@@ -34,6 +39,14 @@ public:
      * @return true, wenn das Verzeichnis erfolgreich geöffnet wurde, andernfalls false.
      */
     static bool listDir(const char* dirname, Stream &output);
+
+    /**
+     * Version von listDir mit Callback
+     * @param dirname Der Pfad des Verzeichnisses, das aufgelistet werden soll (z.B. "/data").
+     * @param callback
+     * @return true, wenn das Verzeichnis erfolgreich geöffnet wurde, andernfalls false.
+     */
+    bool listDir(const char* dirname, const std::function<void(const String& filename, size_t size)> &callback) const;
 
     /**
      * @brief Erstellt ein neues Verzeichnis.
@@ -48,6 +61,13 @@ public:
      * @return true bei Erfolg, false bei einem Fehler (z.B. Verzeichnis nicht gefunden oder nicht leer).
      */
     static bool removeDir(const char* path);
+
+    /**
+     * @brief Löscht alle Dateien (keine Ordner) in einem gegebenen Verzeichnis.
+     * @param dirname Der Pfad des Verzeichnisses, das geleert werden soll (z.B. "/").
+     * @return true, wenn alle Löschvorgänge erfolgreich waren, sonst false.
+     */
+    bool deleteAllFilesInDir(const char* dirname) const;
 
     // --- Dateioperationen ---
 
@@ -152,4 +172,5 @@ public:
 
 private:
     uint8_t _csPin; // Speicher für den Chip Select Pin
+    bool _isReady;
 };

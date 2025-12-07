@@ -50,7 +50,7 @@ void setup() {
     // TEST 1: Kleines Bild speichern
     Serial.println("Mache Testbild (320x240)...");
     camera.setResolution(OV2640_320x240);
-    if (camera.capture("/small.jpg")) {
+    if (camera.saveToSD("/small.jpg")) {
         Serial.println("Gespeichert: /small.jpg");
     } else {
         Serial.println("Fehler beim Speichern!");
@@ -60,7 +60,7 @@ void setup() {
     Serial.println("Mache HD Bild (1600x1200)...");
     camera.setResolution(OV2640_1600x1200);
     const unsigned long start = millis(); // Bei hoher Auflösung dauert das Speichern deutlich länger
-    if (camera.capture("/hd.jpg")) {
+    if (camera.saveToSD("/hd.jpg")) {
         Serial.print("Gespeichert: /hd.jpg in ");
         Serial.print(millis() - start);
         Serial.println(" ms");

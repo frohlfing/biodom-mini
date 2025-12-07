@@ -1,11 +1,16 @@
 #include "MicroSDCard.h"
 
-MicroSDCard::MicroSDCard(const uint8_t csPin) : _csPin(csPin) {}
+MicroSDCard::MicroSDCard(const uint8_t csPin) : _csPin(csPin), _isReady(false) {}
 
-bool MicroSDCard::begin() const {
+bool MicroSDCard::begin() {
     pinMode(_csPin, OUTPUT);
     digitalWrite(_csPin, HIGH);
-    return SD.begin(_csPin);
+    _isReady = SD.begin(_csPin);
+    return _isReady;
+}
+
+bool MicroSDCard::isReady() const {
+    return _isReady;
 }
 
 bool MicroSDCard::listDir(const char* dirname, Stream &output) {
@@ -30,12 +35,65 @@ bool MicroSDCard::listDir(const char* dirname, Stream &output) {
     return true;
 }
 
+// NEUE Funktion:
+bool MicroSDCard::listDir(const char* dirname, const std::function<void(const String&, size_t)> &callback) const {
+    if (!_isReady) return false;
+    File root = SD.open(dirname);
+    if (!root || !root.isDirectory()) return false;
+
+    File file = root.openNextFile();
+    while (file) {
+        if (!file.isDirectory()) {
+            // Rufe den Callback für jede gefundene Datei auf
+            callback(String(file.name()), file.size());
+        }
+        file = root.openNextFile();
+    }
+    return true;
+}
+
 bool MicroSDCard::createDir(const char* path) {
     return SD.mkdir(path);
 }
 
 bool MicroSDCard::removeDir(const char* path) {
     return SD.rmdir(path);
+}
+
+bool MicroSDCard::deleteAllFilesInDir(const char* dirname) const {
+    if (!_isReady) {
+        Serial.println("SD-Fehler: Karte nicht bereit zum Löschen.");
+        return false;
+    }
+    File root = SD.open(dirname);
+    if (!root) {
+        Serial.printf("SD-Fehler: Konnte Verzeichnis '%s' nicht öffnen.\n", dirname);
+        return false;
+    }
+    if (!root.isDirectory()) {
+        Serial.printf("SD-Fehler: '%s' ist kein Verzeichnis.\n", dirname);
+        return false;
+    }
+
+    bool allSuccess = true;
+    File file = root.openNextFile();
+    while (file) {
+        // Lösche nur Dateien, keine Unterverzeichnisse
+        if (!file.isDirectory()) {
+            String filename = String(file.name()); // Wichtig: den vollen Namen holen
+            Serial.printf("Lösche Datei: %s ... ", filename.c_str());
+            if (SD.remove(filename)) {
+                Serial.println("OK");
+            } else {
+                Serial.println("FEHLGESCHLAGEN");
+                allSuccess = false; // Merke, dass mindestens ein Fehler aufgetreten ist
+            }
+        }
+        file.close(); // Wichtig: Datei schließen, bevor die nächste geöffnet wird
+        file = root.openNextFile();
+    }
+    root.close();
+    return allSuccess;
 }
 
 File MicroSDCard::openFileForReading(const char* path) {

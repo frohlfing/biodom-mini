@@ -30,7 +30,6 @@
                 <!-- Kachel: Raumklima -->
                 <div class="card">
                     <div class="card-header">
-<!--                        <img id="iconAir" src="/icons/thermometer_16x16.png" class="icon">-->
                         <h3>Raumklima</h3>
                     </div>
                     <p>Temperatur: <span id="airTemp" class="value">--.-</span> °C</p>
@@ -50,7 +49,6 @@
                 <!-- Kachel: Boden -->
                 <div class="card">
                     <div class="card-header">
-<!--                        <img id="iconSoil" src="/icons/engine_coolant_16x16.png" class="icon">-->
                         <h3>Boden</h3>
                     </div>
                     <p>Temperatur: <span id="soilTemp" class="value">--.-</span> °C</p>
@@ -70,7 +68,6 @@
                 <!-- Kachel: Beleuchtung -->
                 <div class="card">
                     <div class="card-header">
-<!--                        <img id="iconLight" src="/icons/sun_16x16.png" class="icon">-->
                         <h3>Beleuchtung</h3>
                     </div>
                     <p>Tageslicht: <span id="lightLux" class="value">----</span> Lux</p>
@@ -99,7 +96,6 @@
                 <!-- Kachel: Wasser & Bewässerung -->
                 <div class="card">
                     <div class="card-header">
-<!--                        <img id="iconWater" src="/icons/watering_can_16x16.png" class="icon">-->
                         <h3>Wasser</h3>
                     </div>
                     <p>Tank-Füllstand: <span id="waterLevelOk" class="water-level-empty">👎</span></p>
@@ -148,6 +144,8 @@
                     <label for="soilMoistureTarget">Zielwert für Bodenfeuchte in %</label>
                     <input type="number" step="1" id="soilMoistureTarget">
                 </div>
+
+                <!-- Lampe 1 -->
                 <div class="form-group">
                     <label for="light1OnHour">Lampe 1 an (ab Stunde)</label>
                     <input type="number" min="0" max="23" id="light1OnHour">
@@ -157,13 +155,15 @@
                     <input type="number" min="0" max="23" id="light1OffHour">
                 </div>
                 <div class="form-group">
-                    <label for="light1LuxThresholdDark">Lampe 1 aus (ab Stunde)</label>
-                    <input type="number" min="0" max="23" id="light1LuxThresholdDark">
+                    <label for="light1LuxThresholdDark">Lampe 1 EIN-Schwelle in Lux</label>
+                    <input type="number" step="100" id="light1LuxThresholdDark">
                 </div>
                 <div class="form-group">
-                    <label for="light1LuxThresholdBright">Lampe 1 aus (ab Stunde)</label>
-                    <input type="number" min="0" max="23" id="light1LuxThresholdBright">
+                    <label for="light1LuxThresholdBright">Lampe 1 AUS-Schwelle in Lux</label>
+                    <input type="number" step="100" id="light1LuxThresholdBright">
                 </div>
+
+                <!-- Lampe 2 -->
                 <div class="form-group">
                     <label for="light2OnHour">Lampe 2 an (ab Stunde)</label>
                     <input type="number" min="0" max="23" id="light2OnHour">
@@ -173,13 +173,14 @@
                     <input type="number" min="0" max="23" id="light2OffHour">
                 </div>
                 <div class="form-group">
-                    <label for="light2LuxThresholdDark">Lampe 1 aus (ab Stunde)</label>
-                    <input type="number" min="0" max="23" id="light2LuxThresholdDark">
+                    <label for="light2LuxThresholdDark">Lampe 2 EIN-Schwelle in Lux</label>
+                    <input type="number" step="100" id="light2LuxThresholdDark">
                 </div>
                 <div class="form-group">
-                    <label for="light2LuxThresholdBright">Lampe 1 aus (ab Stunde)</label>
-                    <input type="number" min="0" max="23" id="light2LuxThresholdBright">
+                    <label for="light2LuxThresholdBright">Lampe 2 AUS-Schwelle in Lux</label>
+                    <input type="number" step="100" id="light2LuxThresholdBright">
                 </div>
+
                 <div class="form-group">
                     <label for="fanCooldownDurationMs">Laufzeit des Lüfters in Sekunden</label>
                     <input type="number" step="1" id="fanCooldownDurationMs">
@@ -196,8 +197,20 @@
         <!-- Inhalt für den "Kamera"-Tab -->
         <div id="Camera" class="tab-content">
             <h2>Kameragalerie</h2>
-            <div id="camera-gallery">
-                <!-- Bildergalerie wird hier dynamisch per JS eingefügt -->
+            <div class="camera-controls">
+                <button id="captureNowButton" class="action-button">Bild jetzt aufnehmen</button>
+                <button id="playTimelapseButton" class="action-button">Zeitraffer abspielen</button>
+                <button id="deleteImagesButton" class="action-button danger">Alle Bilder löschen</button>
+            </div>
+            <!-- Haupt-Bildanzeige -->
+            <div id="image-viewer">
+                <img id="current-image" src="" alt="Kamerabild">
+                <p id="image-timestamp"></p>
+            </div>
+            <!-- Dropdown-Liste zur Bildauswahl -->
+            <div class="image-selector">
+                <label for="image-select">Bild auswählen:</label>
+                <select id="image-select"></select>
             </div>
         </div>
 

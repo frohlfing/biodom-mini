@@ -225,27 +225,62 @@ h1, h2 {
     margin-left: auto; /* Schiebt das Element ganz nach rechts */
 }
 
-/*!* Tab für Steuerung *!*/
+/* Bildergalerie */
 
-/*.control-card {*/
-/*    background-color: #252526;*/
-/*    border: 1px solid #3c3c3c;*/
-/*    border-radius: 8px;*/
-/*    padding: 20px;*/
-/*    display: flex;*/
-/*    flex-direction: column;*/
-/*    gap: 10px;*/
-/*}*/
+#image-list {
+    display: grid;
+    /* Erstellt Spalten, die zwischen 100px und 1fr breit sind -> responsive */
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+}
 
-/*.control-card h3 {*/
-/*    margin-top: 0;*/
-/*    color: #4e9ad4;*/
-/*}*/
+.thumbnail {
+    width: 100%;             /* Fülle die verfügbare Breite der Grid-Zelle */
+    height: 75px;            /* Gib eine feste Höhe, um die Proportionen zu halten */
+    object-fit: cover;       /* Schneidet das Bild passend zu, ohne es zu verzerren */
+    cursor: pointer;
+    border: 2px solid #3c3c3c;
+    border-radius: 4px;
+    transition: border-color 0.3s;
+    transform: rotate(180deg); /* Rotation */
+}
 
-/*.notice {*/
-/*    font-style: italic;*/
-/*    color: #dcdcaa;*/
-/*    background-color: #3e3e42;*/
-/*    padding: 10px;*/
-/*    border-radius: 5px;*/
-/*}*/
+#current-image {
+    max-width: 100%; /* Sorgt dafür, dass das Bild nicht über den Rand hinausragt */
+    border: 2px solid #3c3c3c;
+    border-radius: 8px;
+    transform: rotate(180deg); /* Deine Rotation */
+}
+
+.thumbnail:hover {
+    border-color: #4e9ad4;
+}
+
+.action-button.danger {
+    background-color: #e74c3c; /* Rot */
+}
+
+#image-viewer {
+    margin-top: 20px;
+    text-align: center;
+}
+#current-image {
+    max-width: 100%;
+    border: 2px solid #3c3c3c;
+    border-radius: 8px;
+    transform: rotate(180deg);
+}
+#image-timestamp {
+    color: #98c379;
+    font-style: italic;
+}
+.image-selector {
+    margin-top: 20px;
+}
+#image-select {
+    padding: 8px;
+    background-color: #252526;
+    color: #d4d4d4;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+}

@@ -29,6 +29,7 @@
 #include "LED.h"
 #include "MicroSDCard.h"
 #include "OLEDDisplaySH1106.h"
+//#include "OTA.h" // todo
 #include "Relay.h"
 #include "SensorAM2302.h"
 #include "SensorBH1750.h"
@@ -60,6 +61,8 @@ SettingsManager settingsManager;
 
 // --- Webinterface ---
 WebUI webInterface;
+
+//OTA ota(HOSTNAME, OTA_PASSWORD); // todo
 
 // --- Sensoren ---
 SensorAM2302 airSensor(PIN_AIR_SENSOR); // Raumtemperatur- und Luftfeuchtigkeitssensormodul AM2302 (S1)
@@ -151,6 +154,20 @@ void log(const char* message) {
 }
 
 /**
+ * @brief Wendet die in den Settings gespeicherten Kamera-Parameter auf die Hardware an.
+ */
+void applyCameraSettings() {
+    const auto& settings = settingsManager.get();
+    camera.setResolution(settings.cameraResolution);
+    camera.setLightMode(settings.cameraLightMode);
+    camera.setColorSaturation(settings.cameraSaturation);
+    camera.setBrightness(settings.cameraBrightness);
+    camera.setContrast(settings.cameraContrast);
+    camera.setSpecialEffect(settings.cameraSpecialEffect);
+    log("Kamera-Einstellungen angewendet.");
+}
+
+/**
  * @brief Initialisierungsroutine, wird einmal beim Start ausgeführt.
  */
 void setup() {
@@ -182,10 +199,10 @@ void setup() {
     Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
 
     // Alle CS-Pins auf HIGH setzen und SPI-Bus initialisieren
-    pinMode(PIN_SPI_SD_CS, OUTPUT);
-    digitalWrite(PIN_SPI_SD_CS, HIGH);
-    pinMode(PIN_SPI_CAMERA_CS, OUTPUT);
-    digitalWrite(PIN_SPI_CAMERA_CS, HIGH);
+    // pinMode(PIN_SPI_SD_CS, OUTPUT);
+    // digitalWrite(PIN_SPI_SD_CS, HIGH);
+    // pinMode(PIN_SPI_CAMERA_CS, OUTPUT);
+    // digitalWrite(PIN_SPI_CAMERA_CS, HIGH);
     SPI.begin();
 
     // Display (Z1) initialisieren
@@ -250,6 +267,9 @@ void setup() {
     log(hostMessage.c_str());
 
     // OTA-Dienst starten
+    // if (!ota.begin()) { // todo
+    //     halt("OTA FEHLER");
+    // }
     ArduinoOTA.setHostname(HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);
     ArduinoOTA.begin();
@@ -319,7 +339,8 @@ void setup() {
     if (!camera.begin()) { 
         halt("Kamera FEHLER"); 
     } 
-    log("Kamera OK"); 
+    log("Kamera OK");
+    applyCameraSettings();
 
     // Relais initialisieren
     lamp1Relay.begin();  // A1
@@ -332,7 +353,7 @@ void setup() {
 
     // --- Webinterface initialisieren ---
 
-    if (!webInterface.begin()) {
+    if (!webInterface.begin(&LittleFS, &SD)) {
         halt("WebServer FEHLER", "WebServer nicht ok");
     }
 
@@ -424,9 +445,28 @@ void setup() {
                 handleControlLogic(); // Wende den neuen Zustand sofort an (Relais schalten)
                 handleBroadcast(); // Sende sofort den neuen Modus-Status
             }
-
-            // Hier könnten später weitere Befehle wie "setState" hin.
-
+            else if (strcmp(command, "captureNow") == 0) {
+                log("Manuelle Kamera-Aufnahme ausgelöst...");
+                handleCamera(); // Rufe die Kamera-Funktion sofort auf
+                handleBroadcast(); // Sende sofort ein Update
+            }
+            else if (strcmp(command, "deleteAllImages") == 0) {
+                const char* password = doc["password"];
+                // Vergleiche das empfangene Passwort mit dem OTA-Passwort (oder einem eigenen)
+                if (password && strcmp(password, OTA_PASSWORD) == 0) {
+                    log("Befehl 'deleteAllImages' erhalten und autorisiert.");
+                    // Annahme: Wir fügen eine deleteAllFilesInDir-Methode zu MicroSDCard hinzu
+                    if (sdCard.deleteAllFilesInDir("/")) {
+                        log("Alle Bilder gelöscht.");
+                    } else {
+                        log("Fehler beim Löschen der Bilder.");
+                    }
+                } else {
+                    Serial.println("Fehler: Falsches Passwort für 'deleteAllImages'.");
+                }
+                // Sende ein leeres "state", um das UI zu aktualisieren (Bildliste wird neu geladen)
+                handleBroadcast();
+            }
         } else if (strcmp(type, "saveSettings") == 0) {
             // Die Einstellungen sollen gespeichert werden.
             Serial.println("Befehl 'saveSettings' vom Webinterface empfangen.");
@@ -454,6 +494,42 @@ void setup() {
         }
     };
 
+    // Callback für die Liste der Bilder
+    webInterface.onImageListRequest = [](AsyncWebServerRequest* request) {
+        // Prüfe, ob die SD-Karte überhaupt bereit ist.
+        // Annahme: Wir fügen eine isReady()-Methode zu MicroSDCard hinzu.
+        if (!sdCard.isReady()) {
+            request->send(500, "application/json", R"({"error":"SD-Karte nicht bereit"})");
+            return;
+        }
+
+        // Erstelle ein JSON-Dokument, das ein Array sein wird.
+        JsonDocument doc;
+        JsonArray files = doc.to<JsonArray>();
+
+        // Der Ordner, in dem wir nach Bildern suchen
+        const char* imageDir = "/";
+
+        // Rufe die listDir-Methode der sdCard auf und fülle das JSON-Array.
+        // Annahme: Wir erweitern listDir, damit es einen Lambda-Callback akzeptiert.
+        sdCard.listDir("/", [&files, imageDir](const String& filename, size_t size) {
+            // Füge nur .jpg Dateien hinzu, um andere Dateien auszuschließen.
+            if (filename.endsWith(".jpg")) {
+                const String fullPath = String(imageDir) + filename;
+                const JsonObject _file = files.add<JsonObject>();
+                _file["path"] = fullPath; // z.B. "/img_20251205_103000.jpg"
+                _file["size"] = size;
+            }
+        });
+
+        // Serialisiere das JSON-Array in einen String.
+        String response;
+        serializeJson(doc, response);
+
+        // Sende den JSON-String als Antwort.
+        request->send(200, "application/json", response);
+    };
+
     // --- Initialisierung erfolgreich ---
 
     Serial.println("System gestartet.");
@@ -472,8 +548,7 @@ void setup() {
 void loop() {
     ArduinoOTA.handle();
     webInterface.cleanupClients();
-
-    unsigned long currentTime = millis();
+    const unsigned long currentTime = millis();
 
     // Nicht-blockierende Handler aufrufen
 
@@ -500,6 +575,28 @@ void loop() {
 
     // Steuerungslogik in jedem Zyklus ausführen, um schnell reagieren zu können
     handleControlLogic();
+
+    // Kamera-Logik
+    static uint32_t lastCaptureDay = 0;
+    static int capturesToday = 0;
+    tm timeInfo{};
+    if (getLocalTime(&timeInfo)) {
+        // Prüfe, ob ein neuer Tag begonnen hat
+        if (timeInfo.tm_yday != lastCaptureDay) {
+            lastCaptureDay = timeInfo.tm_yday;
+            capturesToday = 0;
+        }
+
+        const auto& settings = settingsManager.get();
+        if (settings.cameraCapturesPerDay > 0 && capturesToday < settings.cameraCapturesPerDay) {
+            // Berechne das Intervall für heute
+            uint32_t intervalSeconds = 86400 / settings.cameraCapturesPerDay;
+            if (timeInfo.tm_hour * 3600 + timeInfo.tm_min * 60 >= capturesToday * intervalSeconds) {
+                handleCamera();
+                capturesToday++;
+            }
+        }
+    }
 
     // Update-Funktionen für zeitgesteuerte Komponenten aufrufen
     debugLed.update();
@@ -785,7 +882,18 @@ void handleCamera() {
     char filename[30];
     sprintf(filename, "/img_%lu.jpg", millis());
 
-    if (camera.capture(filename)) {
+    tm timeInfo{};
+    if (getLocalTime(&timeInfo)) {
+        // Erzeuge einen Namen mit Zeitstempel (z.B. "/img_20251205_103000.jpg")
+        sprintf(filename, "/img_%04d%02d%02d_%02d%02d%02d.jpg",
+            timeInfo.tm_year + 1900, timeInfo.tm_mon + 1, timeInfo.tm_mday,
+            timeInfo.tm_hour, timeInfo.tm_min, timeInfo.tm_sec);
+    } else {
+        // Fallback, wenn Zeit nicht verfügbar
+        sprintf(filename, "/img_%lu.jpg", millis());
+    }
+
+    if (camera.saveToSD(filename)) {
         Serial.printf("Bild erfolgreich gespeichert: %s\n", filename);
         display.showFullscreenAlert("FOTO OK", false);
     } else {

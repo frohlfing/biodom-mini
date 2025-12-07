@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
 #include <functional> // Notwendig für Callbacks
+#include <FS.h> // Notwendig für den FS-Pointer
 
 /**
  * Stellt ein Webinterface zur Steuerung via WebSocket bereit.
@@ -21,9 +22,11 @@ public:
 
     /**
      * @brief Initialisiert den Server und registriert die Routen.
+     * @param fs Ein Pointer auf das Dateisystem für die Webseiten-Dateien (z.B. &LittleFS).
+     * @param sd Ein Pointer auf das SD-Karten-Dateisystem (optional, für SD-Funktionen).
      * @return true bei Erfolg.
      */
-    bool begin();
+    bool begin(FS* fs, FS* sd = nullptr);
 
     /**
      * @brief Sendet eine Nachricht an alle verbundenen WebSocket-Clients (Broadcast).
@@ -60,6 +63,16 @@ public:
      */
     std::function<void(uint32_t clientId)> onClientDisconnect;
 
+    /**
+     * @brief Callback, der aufgerufen wird, wenn die Bildliste von der SD-Karte angefordert wird.
+     */
+    std::function<void(AsyncWebServerRequest* request)> onImageListRequest;
+
+    // Dieser Callback wird von onMessage ausgelöst, wenn ein "captureNow" Befehl kommt
+    /**
+     * @brief Callback, der aufgerufen wird, um eine sofortige Kameraaufnahme auszulösen.
+     */
+    //std::function<void()> onCameraCaptureRequest;
 private:
     /**
      * @brief Interner Handler, der WebSocket-Events verarbeitet.
@@ -70,8 +83,17 @@ private:
      * @param data Empfangene Daten (Payload).
      * @param len Länge der empfangenen Daten.
      */
-    void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) const;
+    void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len);
+    //void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) const;
+
+    /**
+     * @brief Registriert alle Routen
+     */
+    void registerRoutes();
 
     AsyncWebServer _server; // Die Instanz des Webservers.
-    AsyncWebSocket _ws;     // Die Instanz des WebSocket-Servers am Endpunkt "/ws".
+    AsyncWebSocket _ws; // Die Instanz des WebSocket-Servers am Endpunkt "/ws".
+    FS* _fs = nullptr; // Pointer auf das Dateisystem (LittleFS) für die Webseiten-Dateien
+    FS* _sd = nullptr; // Pointer auf die SD-Karte, wenn vorhanden
+    //String _lastStateJson;
 };
