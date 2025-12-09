@@ -199,18 +199,34 @@
             <h2>Kameragalerie</h2>
             <div class="camera-controls">
                 <button id="captureNowButton" class="action-button">Bild jetzt aufnehmen</button>
-                <button id="playTimelapseButton" class="action-button">Zeitraffer abspielen</button>
-                <button id="deleteImagesButton" class="action-button danger">Alle Bilder löschen</button>
             </div>
             <!-- Haupt-Bildanzeige -->
             <div id="image-viewer">
-                <img id="current-image" src="" alt="Kamerabild">
+                <div class="image-wrapper"> <!-- Wrapper hilft beim Zentrieren und der Größe -->
+                    <img id="current-image" src="" alt="Kamerabild">
+                </div>
                 <p id="image-timestamp"></p>
+                <!-- Player Controls -->
+                <div class="player-controls">
+                    <button id="btnPrev" class="player-btn" title="Vorheriges Bild">⏮</button>
+                    <button id="btnPlayPause" class="player-btn play-btn" title="Zeitraffer Start/Pause">▶</button>
+                    <button id="btnNext" class="player-btn" title="Nächstes Bild">⏭</button>
+                </div>
+                <!-- Slider für Geschwindigkeit -->
+                <div class="player-settings">
+                     <label for="timelapseSpeed">Geschwindigkeit:</label>
+                     <input type="range" id="timelapseSpeed" min="50" max="1000" value="500" step="50">
+                     <span id="speedDisplay">500ms</span>
+                </div>
             </div>
-            <!-- Dropdown-Liste zur Bildauswahl -->
-            <div class="image-selector">
-                <label for="image-select">Bild auswählen:</label>
-                <select id="image-select"></select>
+            <hr style="border-color: #3c3c3c; margin: 20px 0;">
+            <!-- Dropdown und Löschen -->
+            <div class="image-management">
+                <div class="image-selector">
+                    <label for="image-select">Bild auswählen:</label>
+                    <select id="image-select"></select>
+                </div>
+                <button id="deleteImagesButton" class="action-button danger">Alle Bilder löschen</button>
             </div>
         </div>
 

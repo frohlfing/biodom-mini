@@ -32,7 +32,10 @@ public:
      * @brief Sendet eine Nachricht an alle verbundenen WebSocket-Clients (Broadcast).
      * @param message Der zu sendende String.
      */
-    void broadcast(const String& message);
+    void broadcast(const String& message); // todo 1: ersetzen mit broadcast(const JsonDocument& data); (string als Parameter sollte nicht erlaubt sein)
+
+    // todo 2: broadcast(type, payload) hinzufügen oder überall nutzen, wo es sich anbietet
+    //  (ist statt payload eher data oder message oder ein anderer Begriff besser?)
 
     /**
      * @brief Diese Funktion entfernt "tote" Clients aus der internen Liste des Servers.
@@ -63,16 +66,12 @@ public:
      */
     std::function<void(uint32_t clientId)> onClientDisconnect;
 
+    // todo 3: onImageListRequest muss raus, statt dessen in onMessage in Form einer REST-Anfrage verarbeitet werden
     /**
      * @brief Callback, der aufgerufen wird, wenn die Bildliste von der SD-Karte angefordert wird.
      */
     std::function<void(AsyncWebServerRequest* request)> onImageListRequest;
 
-    // Dieser Callback wird von onMessage ausgelöst, wenn ein "captureNow" Befehl kommt
-    /**
-     * @brief Callback, der aufgerufen wird, um eine sofortige Kameraaufnahme auszulösen.
-     */
-    //std::function<void()> onCameraCaptureRequest;
 private:
     /**
      * @brief Interner Handler, der WebSocket-Events verarbeitet.

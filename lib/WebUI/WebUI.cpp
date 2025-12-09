@@ -48,6 +48,10 @@ void WebUI::registerRoutes() {
     // Dieser eine Befehl kümmert sich um "/", "/style.css", "/script.js" UND alle Anfragen an "/icons/...".
     _server.serveStatic("/", *_fs, "/").setDefaultFile("index.html");
 
+    // todo 1: Handler registrieren, der alle Dateien aus SD-Karte im Verzeichnis /pub ausliefert (/pub/images/foo.bar ist gemappt als images/foo.bar)
+    // Explizite Handler für /api/imaages oder /img werden nicht mehr benötigt
+
+    // todo 2: REST-Routen verwenden!
     // Handler zum Auflisten der Bilder auf der SD-Karte
     _server.on("/api/images", HTTP_GET, [this](AsyncWebServerRequest* request) {
         if (onImageListRequest) {
@@ -57,6 +61,7 @@ void WebUI::registerRoutes() {
         }
     });
 
+    // todo 3: REST-Routen verwenden!
     // Handler zur Anzeige eines einzelnen Bildes von der SD-Karte
     _server.on("/img", HTTP_GET, [this](AsyncWebServerRequest* request) {
         if (request->hasParam("path") && _sd) {

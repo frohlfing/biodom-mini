@@ -225,62 +225,126 @@ h1, h2 {
     margin-left: auto; /* Schiebt das Element ganz nach rechts */
 }
 
-/* Bildergalerie */
+/* --- Bildergalerie & Player Controls --- */
 
-#image-list {
-    display: grid;
-    /* Erstellt Spalten, die zwischen 100px und 1fr breit sind -> responsive */
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-}
-
-.thumbnail {
-    width: 100%;             /* Fülle die verfügbare Breite der Grid-Zelle */
-    height: 75px;            /* Gib eine feste Höhe, um die Proportionen zu halten */
-    object-fit: cover;       /* Schneidet das Bild passend zu, ohne es zu verzerren */
-    cursor: pointer;
-    border: 2px solid #3c3c3c;
-    border-radius: 4px;
-    transition: border-color 0.3s;
-    transform: rotate(180deg); /* Rotation */
-}
-
-#current-image {
-    max-width: 100%; /* Sorgt dafür, dass das Bild nicht über den Rand hinausragt */
-    border: 2px solid #3c3c3c;
-    border-radius: 8px;
-    transform: rotate(180deg); /* Deine Rotation */
-}
-
-.thumbnail:hover {
-    border-color: #4e9ad4;
-}
-
-.action-button.danger {
-    background-color: #e74c3c; /* Rot */
-}
-
+/* Container für das Bild und die Steuerelemente */
 #image-viewer {
     margin-top: 20px;
     text-align: center;
+    background-color: #252526; /* Hintergrund passend zu den Kacheln */
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #3c3c3c;
 }
+
+/* Wrapper um das Bild, um Springen beim Laden zu verhindern */
+.image-wrapper {
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
 #current-image {
     max-width: 100%;
+    max-height: 60vh; /* Bild darf maximal 60% der Bildschirmhöhe einnehmen */
     border: 2px solid #3c3c3c;
-    border-radius: 8px;
-    transform: rotate(180deg);
+    border-radius: 4px;
+    transform: rotate(180deg); /* Korrektur, da Kamera kopfüber montiert ist */
+    display: block;
 }
+
 #image-timestamp {
-    color: #98c379;
-    font-style: italic;
+    color: #98c379; /* Grünliche Farbe für den Zeitstempel */
+    font-family: monospace;
+    font-size: 1.1em;
+    margin: 5px 0 15px 0;
 }
-.image-selector {
+
+/* --- Player Leiste (Prev, Play/Pause, Next) --- */
+.player-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.player-btn {
+    background-color: #3c3c3c;
+    color: #ffffff;
+    border: 1px solid #555;
+    border-radius: 50%; /* Runde Buttons */
+    width: 45px;
+    height: 45px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 3px; /* Optische Korrektur für die Zentrierung der Icons */
+}
+
+.player-btn:hover {
+    background-color: #4e9ad4; /* Blau beim Hover */
+    border-color: #4e9ad4;
+}
+
+.player-btn:active {
+    transform: scale(0.95); /* Leichter Klick-Effekt */
+}
+
+/* Der Play-Button ist etwas größer und hervorgehoben */
+.play-btn {
+    width: 55px;
+    height: 55px;
+    font-size: 24px;
+    background-color: #4e9ad4;
+    border-color: #4e9ad4;
+}
+
+/* --- Slider für Geschwindigkeit --- */
+.player-settings {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #888;
+}
+
+/* --- Bildverwaltung (Dropdown und Löschen) --- */
+.image-management {
     margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap; /* Umbruch bei kleinen Bildschirmen erlauben */
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 15px;
 }
+
+.image-selector {
+    flex-grow: 1; /* Dropdown nimmt den verfügbaren Platz ein */
+}
+
 #image-select {
+    width: 100%;
     padding: 8px;
-    background-color: #252526;
+    background-color: #1e1e1e;
     color: #d4d4d4;
     border: 1px solid #3c3c3c;
-    border-radius: 4px;
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+/* Spezieller Stil für den Löschen-Button (rot) */
+.action-button.danger {
+    background-color: #e74c3c;
+    margin-top: 0; /* Margin Reset, da Flexbox das Layout regelt */
+}
+
+.action-button.danger:hover {
+    background-color: #c0392b;
 }

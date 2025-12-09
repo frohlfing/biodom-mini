@@ -6,8 +6,8 @@
  * Sie initialisiert alle Sensoren und Aktoren, liest periodisch Messwerte aus,
  * wendet die Steuerungslogik an und aktualisiert die Anzeige.
  * 
- * @version 1.0.6
- * @date 04.12.2025
+ * @version 1.1.1
+ * @date 08.12.2025
  * @author Frank Rohlfing
  */
 
@@ -29,7 +29,7 @@
 #include "LED.h"
 #include "MicroSDCard.h"
 #include "OLEDDisplaySH1106.h"
-//#include "OTA.h" // todo
+//#include "OTA.h" // todo (dieses TODO erstmal ignorieren, machen wir später)
 #include "Relay.h"
 #include "SensorAM2302.h"
 #include "SensorBH1750.h"
@@ -53,8 +53,6 @@
 #include "xbm/dry_16x16_xbm.h"           // Vernebler (A6) aktiviert (überlagert Icon für Luftfeuchtigkeit)
 
 // === Globale Objektinstanzen ===
-// Hier werden für alle Hardware-Komponenten Objekte erstellt.
-// Die Pin-Konfiguration wird aus der config.h geladen.
 
 // --- Einstellungen ---
 SettingsManager settingsManager;
@@ -62,7 +60,7 @@ SettingsManager settingsManager;
 // --- Webinterface ---
 WebUI webInterface;
 
-//OTA ota(HOSTNAME, OTA_PASSWORD); // todo
+//OTA ota(HOSTNAME, OTA_PASSWORD); // todo (dieses TODO erstmal ignorieren, machen wir später)
 
 // --- Sensoren ---
 SensorAM2302 airSensor(PIN_AIR_SENSOR); // Raumtemperatur- und Luftfeuchtigkeitssensormodul AM2302 (S1)
@@ -112,7 +110,9 @@ void handleSensors();
 void handleControlLogic();
 void handleDisplay();
 void handleCamera();
-void handleBroadcast();
+void broadcastState();
+void broadcastSettings();
+void recoverI2C();
 
 /**
  * Hält das Programm an.
@@ -153,6 +153,39 @@ void log(const char* message) {
     delay(LOG_DELAY);
 }
 
+// todo 1: aus consoleLog und consolePrint eine Funktion machen und nach WebUI verlagern
+/**
+ * @brief Sendet eine Nachricht direkt an die Browser-Konsole aller verbundenen Clients.
+ * @param msg Die Nachricht als String.
+ */
+void consoleLog(const String& msg) {
+    // 1. JSON erstellen
+    JsonDocument doc;
+    doc["type"] = "log";
+    doc["message"] = msg;
+
+    // 2. Serialisieren
+    String jsonString;
+    serializeJson(doc, jsonString);
+
+    // 3. Senden (nur wenn Clients verbunden sind, um Ressourcen zu sparen)
+    // Die WebUI-Klasse kümmert sich um die Verteilung
+    webInterface.broadcast(jsonString);
+}
+
+/**
+ * Überladung für printf-ähnliche Formatierung (optional, aber sehr praktisch!)
+ * Beispiel: consolePrint("Temperatur: %.2f", currentAirTemp);
+ */
+void consolePrint(const char *format, ...) {
+    char buffer[256];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    consoleLog(String(buffer));
+}
+
 /**
  * @brief Wendet die in den Settings gespeicherten Kamera-Parameter auf die Hardware an.
  */
@@ -167,10 +200,76 @@ void applyCameraSettings() {
     log("Kamera-Einstellungen angewendet.");
 }
 
+/*
+Symptom:
+Nach einem "Soft Reset" (Software-Upload, OTA oder Reset-Knopf) bleibt die Bootsequenz bei "SD-Karte ok" hängen.
+Wenn die Stromversorgung kurz aus und wieder eingeschaltet wird, startet der ESP ohne Probleme.
+
+Die Ursache:
+Wenn du einen "Soft Reset" machst (Software-Upload, OTA oder Reset-Knopf), wird die Stromversorgung nicht unterbrochen.
+
+- I2C-Problem:
+Ein I2C-Slave (z.B. der Kamerasensor oder das Display) könnte gerade ein Bit gesendet haben (SDA auf LOW ziehen), als
+der Reset kam. Der ESP32 startet neu, sieht, dass die Datenleitung (SDA) blockiert ist ("Low"), und die Wire-Bibliothek
+bleibt in einer Endlosschleife hängen, weil sie darauf wartet, dass der Bus frei wird.
+
+- SPI-Konflikt:
+Die SD-Bibliothek initialisiert den SPI-Bus oft mit sehr hohen Geschwindigkeiten. Wenn danach die camera.begin()
+aufgerufen wird, ist der SPI-Bus vielleicht noch in einem Zustand oder Modus, den die ArduCAM-Bibliothek nicht erwartet
+(oder die SD-Karte "hält" noch die MISO-Leitung).
+
+Die Lösung:
+Wir müssen in der setup() zwei Dinge tun:
+1) I2C-Bus "freischaufeln": Bevor wir Wire.begin() aufrufen, wackeln wir manuell am Takt-Pin (SCL), bis alle Slaves die
+Datenleitung (SDA) loslassen.
+2) SPI-Bus beruhigen: Zwischen der Initialisierung der SD-Karte und der Kamera fügen wir eine Zwangspause ein und
+stellen sicher, dass der Chip-Select (CS) der SD-Karte deaktiviert ist.
+*/
+
 /**
- * @brief Initialisierungsroutine, wird einmal beim Start ausgeführt.
+ * @brief Versucht einen blockierten I2C-Bus zu befreien.
+ * Dies passiert oft nach einem Soft-Reset, wenn ein Slave noch SDA auf LOW hält.
+ */
+void recoverI2C() {  // todo bringt das was? (dieses TODO erstmal ignorieren, machen wir später)
+    // Sicherheitsverzögerung für Spannungsausgleich nach Reset
+    delay(100);
+
+    // Pins als normale GPIOs definieren
+    pinMode(PIN_I2C_SCL, OUTPUT);
+    pinMode(PIN_I2C_SDA, INPUT); // Wir hören nur, ob der Slave loslässt
+
+    // Generiere bis zu 9 Taktimpulse, um verklemmte Slaves freizuschaufeln
+    for (int i = 0; i < 9; i++) {
+        digitalWrite(PIN_I2C_SCL, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(PIN_I2C_SCL, LOW);
+        delayMicroseconds(10);
+
+        // Wenn SDA HIGH ist, hat der Slave losgelassen
+        if (digitalRead(PIN_I2C_SDA)) {
+            break;
+        }
+    }
+
+    // Stop-Condition senden
+    digitalWrite(PIN_I2C_SCL, LOW);
+    delayMicroseconds(10);
+    pinMode(PIN_I2C_SDA, OUTPUT);
+    digitalWrite(PIN_I2C_SDA, LOW);
+    delayMicroseconds(10);
+    digitalWrite(PIN_I2C_SCL, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(PIN_I2C_SDA, HIGH);
+    delayMicroseconds(10);
+}
+
+/**
+ * @brief Initialisierungsroutine
  */
 void setup() {
+    // I2C-Bus vor der Initialisierung "retten", falls verklemmt
+    recoverI2C();
+
     // Zufallsgenerator mit einem unvorhersehbaren Wert von einem offenen Analog-Pin initialisieren 
     randomSeed(analogRead(36)); // der GPIO36 ist ungenutzt
 
@@ -199,10 +298,10 @@ void setup() {
     Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
 
     // Alle CS-Pins auf HIGH setzen und SPI-Bus initialisieren
-    // pinMode(PIN_SPI_SD_CS, OUTPUT);
-    // digitalWrite(PIN_SPI_SD_CS, HIGH);
-    // pinMode(PIN_SPI_CAMERA_CS, OUTPUT);
-    // digitalWrite(PIN_SPI_CAMERA_CS, HIGH);
+    pinMode(PIN_SPI_SD_CS, OUTPUT);
+    digitalWrite(PIN_SPI_SD_CS, HIGH);
+    pinMode(PIN_SPI_CAMERA_CS, OUTPUT);
+    digitalWrite(PIN_SPI_CAMERA_CS, HIGH);
     SPI.begin();
 
     // Display (Z1) initialisieren
@@ -267,7 +366,7 @@ void setup() {
     log(hostMessage.c_str());
 
     // OTA-Dienst starten
-    // if (!ota.begin()) { // todo
+    // if (!ota.begin()) { // todo (dieses TODO erstmal ignorieren, machen wir später)
     //     halt("OTA FEHLER");
     // }
     ArduinoOTA.setHostname(HOSTNAME);
@@ -329,16 +428,26 @@ void setup() {
 
     // Sonstige Peripheriegeräte
 
+    // Aber wir stellen sicher, dass Kamera CS HIGH ist.
+    // todo bringt das was? (dieses TODO erstmal ignorieren, machen wir später)
+    //digitalWrite(PIN_SPI_CAMERA_CS, HIGH);
+    //delay(100); // Bus beruhigen
+
     // Z2
     if (!sdCard.begin()) { 
         halt("SD-Karte FEHLER"); 
     } 
-    log("SD-Karte OK"); 
+    log("SD-Karte OK");
+
+    // Wichtig: SD CS wieder auf HIGH zwingen
+    // todo bringt das was? (dieses TODO erstmal ignorieren, machen wir später)
+    //digitalWrite(PIN_SPI_SD_CS, HIGH);
+    //delay(100); // Bus beruhigen
 
     // Z3 (I2C-Gerät)
-    if (!camera.begin()) { 
-        halt("Kamera FEHLER"); 
-    } 
+    if (!camera.begin()) {
+        halt("Kamera FEHLER");
+    }
     log("Kamera OK");
     applyCameraSettings();
 
@@ -360,7 +469,7 @@ void setup() {
     // Callback für neue Client-Verbindungen
     webInterface.onClientConnect = [](AsyncWebSocketClient* client) {
         // 1. Sende dem neuen Client sofort den letzten bekannten Live-Status
-        handleBroadcast(); // todo sauber wäre es, den Live-Status nur an den neuen Client zu senden!
+        broadcastState();
 
         // 2. Sende dem neuen Client danach die aktuellen Einstellungen
         JsonDocument doc;
@@ -392,9 +501,9 @@ void setup() {
             return;
         }
 
-        // --- Verarbeite die Nachricht basierend auf ihrem Typ ---
+        // --- Aktor schalten ---
 
-        if (strcmp(type, "command") == 0) {
+        if (strcmp(type, "command") == 0) { // todo 2: "command" umbenennen
             // Ein Befehl zur Steuerung von Aktoren wurde empfangen.
             const char* command = doc["command"];
             if (!command) {
@@ -402,6 +511,7 @@ void setup() {
                 return;
             }
             //Serial.printf("Befehl empfangen: %s\n", command);
+            consolePrint("Command: %s", command);
 
             // Das zugehörige Relais ermitteln
             Relay* targetRelay = nullptr;
@@ -417,9 +527,9 @@ void setup() {
                 return;
             }
 
-            if (strcmp(command, "toggle") == 0) {
+            if (strcmp(command, "toggle") == 0) { // todo 3: wann wird dieser Befehl verwendet?
                 targetRelay->toggle();
-                handleBroadcast(); // nach der manuellen Änderung sofort den neuen Systemstatus an alle Browser senden
+                broadcastState(); // nach der manuellen Änderung sofort den neuen Systemstatus an alle Browser senden
 
             } else if (strcmp(command, "setMode") == 0) {
                 // Wandle den String in den Enum-Wert um
@@ -443,31 +553,15 @@ void setup() {
                 else if (strcmp(targetStr, "mister") == 0) { settings.misterMode = mode; }
                 settingsManager.save(); // Speichere die neuen Modi persistent
                 handleControlLogic(); // Wende den neuen Zustand sofort an (Relais schalten)
-                handleBroadcast(); // Sende sofort den neuen Modus-Status
+
+                broadcastSettings();
+                broadcastState();
             }
-            else if (strcmp(command, "captureNow") == 0) {
-                log("Manuelle Kamera-Aufnahme ausgelöst...");
-                handleCamera(); // Rufe die Kamera-Funktion sofort auf
-                handleBroadcast(); // Sende sofort ein Update
-            }
-            else if (strcmp(command, "deleteAllImages") == 0) {
-                const char* password = doc["password"];
-                // Vergleiche das empfangene Passwort mit dem OTA-Passwort (oder einem eigenen)
-                if (password && strcmp(password, OTA_PASSWORD) == 0) {
-                    log("Befehl 'deleteAllImages' erhalten und autorisiert.");
-                    // Annahme: Wir fügen eine deleteAllFilesInDir-Methode zu MicroSDCard hinzu
-                    if (sdCard.deleteAllFilesInDir("/")) {
-                        log("Alle Bilder gelöscht.");
-                    } else {
-                        log("Fehler beim Löschen der Bilder.");
-                    }
-                } else {
-                    Serial.println("Fehler: Falsches Passwort für 'deleteAllImages'.");
-                }
-                // Sende ein leeres "state", um das UI zu aktualisieren (Bildliste wird neu geladen)
-                handleBroadcast();
-            }
-        } else if (strcmp(type, "saveSettings") == 0) {
+        }
+
+        // --- Einstellungen speichern ---
+
+        else if (strcmp(type, "saveSettings") == 0) {
             // Die Einstellungen sollen gespeichert werden.
             Serial.println("Befehl 'saveSettings' vom Webinterface empfangen.");
             const JsonObject payload = doc["payload"].as<JsonObject>(); // 'doc["payload"]' ist ein JsonVariant. Wir brauchen das darin enthaltene Objekt.
@@ -476,24 +570,47 @@ void setup() {
                 if (settingsManager.save()) {
                     log("Einstellungen gespeichert!");
                     // Sende die neuen Einstellungen als Bestätigung an ALLE Clients.
-                    // todo in eine Funktion packen: settings -> jsonString (wird weiter oben bei onClientConnect nochmal benötigt)
-                    JsonDocument responseDoc;
-                    responseDoc["type"] = "settings";
-                    const JsonObject values = responseDoc["values"].to<JsonObject>();
-                    settingsManager.serialize(values);
-                    String jsonString;
-                    serializeJson(responseDoc, jsonString);
-                    webInterface.broadcast(jsonString); // An alle senden
+                    broadcastSettings();
                 } else {
                     log("FEHLER: Einstellungen konnten nicht gespeichert werden.");
                 }
             }
+        }
 
-        } else {
+        // --- Bild aufnehmen ---
+
+        else if (strcmp(type, "captureNow") == 0) {
+            log("Manuelle Kamera-Aufnahme ausgelöst...");
+            handleCamera(); // Rufe die Kamera-Funktion sofort auf
+            broadcastState(); // Sende sofort ein Update
+        }
+
+        // --- Alle Bilder löschen ---
+
+        else if (strcmp(type, "deleteAllImages") == 0) {
+            consoleLog("Befehl: Bilder löschen");
+            // Payload extrahieren
+            const JsonObject payload = doc["payload"];
+            const char* password = payload["password"];
+
+            if (password && strcmp(password, OTA_PASSWORD) == 0) {
+                consoleLog("Passwort korrekt. Lösche...");
+                if (sdCard.deleteAllFilesInDir("/")) {
+                    consoleLog("SD-Karte bereinigt.");
+                    webInterface.broadcast("{\"type\":\"imageListCleared\"}");
+                } else {
+                    consoleLog("Fehler beim Löschen.");
+                }
+            } else {
+                consoleLog("Falsches Passwort!");
+            }
+        }
+        else {
             Serial.printf("Unbekannter WebSocket-Nachrichtentyp: %s\n", type);
         }
     };
 
+    // todo 4: onImageListRequest muss raus, statt dessen in onMessage in Form einer REST-Anfrage verarbeitet werden
     // Callback für die Liste der Bilder
     webInterface.onImageListRequest = [](AsyncWebServerRequest* request) {
         // Prüfe, ob die SD-Karte überhaupt bereit ist.
@@ -570,7 +687,7 @@ void loop() {
     // Periodischer Broadcast per WebSocket
     if (currentTime - lastBroadcastTime >= BROADCAST_INTERVAL) {
         lastBroadcastTime = currentTime;
-        handleBroadcast();
+        broadcastState();
     }
 
     // Steuerungslogik in jedem Zyklus ausführen, um schnell reagieren zu können
@@ -896,6 +1013,15 @@ void handleCamera() {
     if (camera.saveToSD(filename)) {
         Serial.printf("Bild erfolgreich gespeichert: %s\n", filename);
         display.showFullscreenAlert("FOTO OK", false);
+
+        // --- NEU: Benachrichtige das Frontend über das neue Bild ---
+        JsonDocument doc;
+        doc["type"] = "newImage";
+        doc["path"] = String(filename);
+        String jsonString;
+        serializeJson(doc, jsonString);
+        webInterface.broadcast(jsonString);
+
     } else {
         Serial.println("Fehler bei der Bildaufnahme.");
         display.showFullscreenAlert("KAMERA FEHLER", true);
@@ -905,9 +1031,9 @@ void handleCamera() {
 }
 
 /**
- * @brief Sende den Status aller Sensoren und Aktoren an alle Clients
+ * @brief Sendet den Status aller Sensoren und Aktoren an alle Clients
  */
-void handleBroadcast() {
+void broadcastState() {
     // Erstelle das vollständige 'state'-Objekt für das Dashboard.
     JsonDocument doc;
     doc["type"] = "state"; // Der Typ, den das JS für das Dashboard erwartet
@@ -928,6 +1054,19 @@ void handleBroadcast() {
     values["pumpOn"] = pumpRelay.isOn(); // Pumpe (A5)
     values["misterOn"] = misterRelay.isOn(); // Vernebler (A6)
 
+    String jsonString;
+    serializeJson(doc, jsonString);
+    webInterface.broadcast(jsonString);
+}
+
+/**
+ * @brief Sendet die Einstellungen an alle Clients.
+ */
+void broadcastSettings() {
+    JsonDocument doc;
+    doc["type"] = "settings";
+    const JsonObject values = doc["values"].to<JsonObject>();
+    settingsManager.serialize(values);
     String jsonString;
     serializeJson(doc, jsonString);
     webInterface.broadcast(jsonString);

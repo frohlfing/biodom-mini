@@ -5,7 +5,14 @@ MicroSDCard::MicroSDCard(const uint8_t csPin) : _csPin(csPin), _isReady(false) {
 bool MicroSDCard::begin() {
     pinMode(_csPin, OUTPUT);
     digitalWrite(_csPin, HIGH);
-    _isReady = SD.begin(_csPin);
+    int retries = 20; // Wir versuchen es max. 20 * 50 ms = 1 Sekunde.  // todo bringt der Schleifendurchlauf was?
+    for (int i = 0; i < retries; i++) {
+        _isReady = SD.begin(_csPin);
+        if (_isReady) {
+            break;
+        }
+        delay(50);
+    }
     return _isReady;
 }
 

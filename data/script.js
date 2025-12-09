@@ -1,162 +1,47 @@
 "use strict";
 
-// Globale Variable für die WebSocket-Verbindung
+// === Globale Variablen ===
+
+/** @type {WebSocket} Die WebSocket-Verbindung zum ESP32 */
 let websocket;
 
-/**
- * @brief Initialisiert die WebSocket-Verbindung und die Event-Handler.
- * Wird nach dem Laden der Seite aufgerufen.
- */
-function initWebSocket() {
-    const gateway = `ws://${window.location.hostname}/ws`;
-    const statusIndicator = document.getElementById('ws-status');
-
-    console.log('Versuche, WebSocket zu öffnen...');
-    websocket = new WebSocket(gateway);
-
-    websocket.onopen = (_event) => {
-        console.log('Verbindung hergestellt.');
-        statusIndicator.className = 'status-indicator connected';
-    };
-
-    websocket.onclose = (_event) => {
-        console.log('Verbindung getrennt.');
-        statusIndicator.className = 'status-indicator disconnected';
-        // Versuche nach 2 Sekunden, die Verbindung erneut aufzubauen
-        setTimeout(initWebSocket, 2000);
-    };
-
-    websocket.onmessage = (event) => {
-        console.log("Nachricht vom Server empfangen: ", event.data);
-        const data = JSON.parse(event.data);
-
-        // Verarbeite die Nachricht basierend auf ihrem Typ
-        switch (data.type) {
-            case 'state': // Live-Daten aktualisieren nur das Dashboard.
-                updateDashboard(data.values);
-                break;
-            case 'settings':  // Einstellungs-Daten aktualisieren nur das Einstellungs-Formular.
-                updateSettingsForm(data.values);
-                break;
-            default:
-                console.log("Unbekannter Nachrichtentyp: ", data.type);
-        }
-    };
-}
-
-/**
- * @brief Wechselt zwischen den Tabs.
- * @param {Event} evt Das Klick-Event.
- * @param {string} tabName Die ID des zu öffnenden Tab-Inhalts.
- */
-function openTab(evt, tabName) {
-    // Verstecke alle Tab-Inhalte
-    const tabContents = document.getElementsByClassName("tab-content");
-    for (let i = 0; i < tabContents.length; i++) {
-        tabContents[i].style.display = "none";
-    }
-
-    // Entferne die "active"-Klasse von allen Tab-Links
-    const tabLinks = document.getElementsByClassName("tab-link");
-    for (let i = 0; i < tabLinks.length; i++) {
-        tabLinks[i].className = tabLinks[i].className.replace(" active", "");
-    }
-
-    // Zeige den aktuellen Tab an und setze den Button auf "active"
-    document.getElementById(tabName).style.display = "block";
-    if (evt && evt.currentTarget) {
-        evt.currentTarget.className += " active";
-    }
-
-    if (tabName === 'Camera') {
-        loadImages();
-    }
-}
-
-// Globale Variable, um die Bildpfade zu speichern
+/** @type {string[]} Liste der Bildpfade (z.B. ["/img_2025...jpg", ...]) */
 let imagePaths = [];
 
+/** @type {number} Der Index des aktuell angezeigten Bildes im imagePaths Array */
+let currentImageIndex = 0;
+
+/** @type {number|null} ID des Zeitraffer-Intervalls (für clearInterval) */
+let timelapseIntervalId = null;
+
+/** @type {boolean} Status, ob der Zeitraffer gerade läuft */
+let isPlaying = false;
+
 /**
- * TODO: Beschreibung hinzufügen
+ * @typedef {object} Settings
+ * @property {number} airTempThresholdHigh - Zielwert für Raumtemperatur in °C (S1)
+ * @property {number} humidityTarget - Zielwert Luftfeuchtigkeit in % (S1)
+ * @property {number} soilTempTarget - Zielwert für Bodentemperatur in °C (S2)
+ * @property {number} soilMoistureTarget - Zielwert für Bodenfeuchte in % (S3)
+ * @property {number} light1OnHour - Tageszeit für Lampe 1 (Stunde, 0-23)
+ * @property {number} light1OffHour - Nachtzeit für Lampe 1 (Stunde, 0-23)
+ * @property {number} light1LuxThresholdDark - in Lux - ist das Tageslicht dunkler, wird die Lampe 1 zur Tageszeit eingeschaltet
+ * @property {number} light1LuxThresholdBright - in Lux - ist das Tageslicht heller, wird die Lampe 1 zur Tageszeit ausgeschaltet * @property {number} light2OnHour - Tageszeit für Lampe 2 (Stunde, 0-23)
+ * @property {number} light2OffHour - Nachtzeit für Lampe 2 (Stunde, 0-23)
+ * @property {number} light2LuxThresholdDark - in Lux - ist das Tageslicht dunkler, wird die Lampe 2 zur Tageszeit eingeschaltet
+ * @property {number} light2LuxThresholdBright - in Lux - ist das Tageslicht heller, wird die Lampe 2 zur Tageszeit ausgeschaltet
+ * @property {number} fanCooldownDurationMs - Laufzeit des Lüfters in ms (A4, Default: 5 Minuten)
+ * @property {number} wateringDurationMs - Dauer der Bewässerung in ms (A5, Default: 5 Sekunden)
+ * @property {string} lamp1Mode - Der Steuermodus ('auto', 'on', 'off') für die Lampe 1 (A1).
+ * @property {string} lamp2Mode - Der Steuermodus ('auto', 'on', 'off') für die Lampe 2 (A2).
+ * @property {string} heaterMode - Der Steuermodus ('auto', 'on', 'off') für die Heizung (A3).
+ * @property {string} fanMode - Der Steuermodus ('auto', 'on', 'off') für den Lüfter (A4).
+ * @property {string} pumpMode - Der Steuermodus ('auto', 'on', 'off') für die Pumpe (A5).
+ * @property {string} misterMode - Der Steuermodus ('auto', 'on', 'off') für den Vernebler (A6).
  */
-function loadImages() {
-    fetch('/api/images')
-        .then(response => response.json())
-        .then(images => {
-            // Leere das UI
-            const select = document.getElementById('image-select');
-            select.innerHTML = '';
-
-            // Prüfe, ob überhaupt Bilder vorhanden sind
-            if (!images || images.length === 0) {
-                document.getElementById('current-image').src = '';
-                document.getElementById('image-timestamp').innerText = 'Keine Bilder auf der SD-Karte gefunden.';
-                imagePaths = []; // Stelle sicher, dass die globale Liste auch leer ist
-                return;
-            }
-
-            // 1. Daten verarbeiten: Sortieren und Pfade extrahieren
-            // noinspection JSUnresolvedReference
-            images.sort((a, b) => b.path.localeCompare(a.path));
-            // noinspection JSUnresolvedReference
-            imagePaths = images.map(img => img.path);
-
-            // 2. UI füllen: Das Dropdown-Menü erstellen
-            imagePaths.forEach(path => {
-                const option = document.createElement('option');
-                // noinspection JSValidateTypes
-                option.value = path;
-                option.innerText = path.replace('/', '');
-                select.appendChild(option);
-            });
-
-            // 3. Initialen Zustand herstellen: Das erste (neueste) Bild anzeigen
-            showImage(imagePaths[0]);
-
-            // 4. Event-Listener für zukünftige Interaktionen setzen
-            select.onchange = () => showImage(select.value);
-        });
-}
 
 /**
- * TODO: Beschreibung hinzufügen
- * @param path
- */
-function showImage(path) {
-    document.getElementById('current-image').src = `/img?path=${path}`;
-    document.getElementById('image-timestamp').innerText = path.replace('/', '');
-}
-
-/**
- * TODO: Beschreibung hinzufügen
- */
-function captureNow() {
-    sendCommand("captureNow", "camera");
-    // Warte kurz, damit das Bild gespeichert werden kann, dann lade die Liste neu
-    setTimeout(loadImages, 2500);
-}
-
-let timelapseInterval;
-function playTimelapse() {
-    if (imagePaths.length === 0) return;
-
-    // Stoppe einen eventuell laufenden Zeitraffer
-    clearInterval(timelapseInterval);
-
-    let currentIndex = 0;
-
-    // Starte den neuen Zeitraffer
-    timelapseInterval = setInterval(() => {
-        // Gehe zum nächsten Bild, beginne von vorn, wenn das Ende erreicht ist
-        currentIndex = (currentIndex + 1) % imagePaths.length;
-        // Lade und zeige das nächste Bild an
-        showImage(imagePaths[currentIndex]);
-    }, 500); // Geschwindigkeit: 2 Bilder pro Sekunde
-}
-
-/**
- * @typedef {object} SystemState
- *
+ * @typedef {object} State
  * @property {number | null} airTemp - Die aktuelle Raumtemperatur in °C (S1).
  * @property {number | null} humidity - Die aktuelle Luftfeuchtigkeit in % (S1).
  * @property {number | null} soilTemp - Die aktuelle Bodentemperatur in °C (S2).
@@ -172,10 +57,160 @@ function playTimelapse() {
  */
 
 /**
- * @brief Aktualisiert die Kacheln im Dashboard-Tab mit neuen Werten.
- * @param {SystemState} values Ein Objekt mit den Sensor- und Aktor-Zuständen vom ESP32.
+ * @typedef {object} ImageFile
+ * @property {string} path - Der Pfad zum Bild auf der SD-Karte
+ * @property {number} size - Die Größe der Datei in Bytes
  */
-function updateDashboard(values) {
+
+/**
+ * @typedef {object} WebSocketMessage
+ * @property {string} type - Der Typ der Nachricht (z.B. 'state', 'newImage')
+ * @property {State} [values] - Nur bei type='state' oder 'settings'
+ * @property {string} [path] - Nur bei type='newImage'
+ */
+
+// === Initialisierung ===
+
+window.addEventListener('load', () => {
+    initWebsocket();
+
+    // Event-Listener für Buttons, Inputs und Tabs registrieren
+
+    // --- Tab Navigation ---
+    document.querySelectorAll('.tab-link').forEach(button => {
+        button.addEventListener('click', (event) => {
+            openTab(event, button.dataset.tabname);
+        });
+    });
+
+    // Einstellungen
+    document.getElementById('saveSettingsButton').addEventListener('click', saveSettings);
+
+    // Radio-Buttons (Modus ändern)
+    document.querySelectorAll('.mode-selector').forEach(selector => {
+        selector.addEventListener('change', (event) => {
+            setMode(event.target.name, event.target.value); // event.target.value == 'auto', 'on', 'off'
+        });
+    });
+
+    // --- Kamera ---
+    document.getElementById('captureNowButton').addEventListener('click', captureNow);
+    document.getElementById('deleteImagesButton').addEventListener('click', deleteAllImages);
+    document.getElementById('btnPlayPause').addEventListener('click', toggleTimelapse);
+    document.getElementById('btnPrev').addEventListener('click', () => stepImage(1)); // 1 Schritt zurück (älter)
+    document.getElementById('btnNext').addEventListener('click', () => stepImage(-1)); // 1 Schritt vor (neuer)
+    document.getElementById('image-select').addEventListener('change', (e) => {
+        handleImageChanged(e.target.value);
+    });
+    document.getElementById('timelapseSpeed').addEventListener('input', (e) => {
+        handleTimelapseSpeedChanged(e.target.value); // todo 1: Konvention überdenken: Parameter spezifisch oder generell immer nur das event an den Handler übergeben?
+    });
+
+    // Standardmäßig den Dashboard-Tab öffnen  todo 2: raus damit, sollte im HTML der initiale Zustand sein
+    openTab(null, 'Dashboard');
+    const firstTab = document.querySelector('.tab-link');
+    firstTab.classList.add('active');
+});
+
+/**
+ * @brief Wechselt den sichtbaren Tab.
+ * @param {Event} evt Das Click-Event (kann null sein beim initialen Aufruf).
+ * @param {string} tabName Die ID des anzuzeigenden Divs.
+ */
+function openTab(evt, tabName) {
+    // Alle Tab-Inhalte ausblenden
+    const tabContents = document.getElementsByClassName("tab-content");
+    for (let i = 0; i < tabContents.length; i++) {
+        tabContents[i].style.display = "none";
+    }
+
+    // "active" Klasse von allen Buttons entfernen
+    const tabLinks = document.getElementsByClassName("tab-link");
+    for (let i = 0; i < tabLinks.length; i++) {
+        tabLinks[i].className = tabLinks[i].className.replace(" active", "");
+    }
+
+    // Gewählten Tab anzeigen
+    const target = document.getElementById(tabName);
+    if (target) target.style.display = "block";
+
+    // Button aktivieren
+    if (evt && evt.currentTarget) {
+        evt.currentTarget.className += " active";
+    }
+
+    // Bilder laden, wenn Kamera-Tab ausgewählt wurde und noch keine Bilder geladen wurden
+    if (tabName === 'Camera' && imagePaths.length === 0) {
+        loadImages();
+    }
+}
+
+// === Websocket Kommunikation ===
+
+/**
+ * @brief Baut die WebSocket-Verbindung auf und definiert Handler.
+ */
+function initWebsocket() {
+    const gateway = `ws://${window.location.hostname}/ws`;
+    const statusIndicator = document.getElementById('ws-status');
+
+    console.log('WS: Versuche Verbindung zu ' + gateway);
+    websocket = new WebSocket(gateway);
+
+    websocket.onopen = (_event) => {
+        console.log('WS: Verbunden.');
+        statusIndicator.className = 'status-indicator connected';
+    };
+
+    websocket.onclose = (_event) => {
+        console.log('WS: Getrennt.');
+        statusIndicator.className = 'status-indicator disconnected';
+        // Auto-Reconnect nach 2 Sekunden
+        setTimeout(initWebsocket, 2000);
+    };
+
+    websocket.onmessage = (event) => {
+        // Nachricht parsen
+        const data = JSON.parse(event.data);
+
+        // Je nach Typ reagieren
+        switch (data.type) {
+            case 'state':
+                // Aktualisiert Sensorwerte
+                handleWSStateMessage(data.values);
+                break;
+
+            case 'settings':
+                // Aktualisiert Input-Felder UND Radio-Buttons (Modi)
+                handleWSSettingsMessage(data.values);
+                break;
+
+            case 'newImage':
+                // Ein neues Bild wurde aufgenommen -> Sofort anzeigen
+                handleWSNewImageMessage(data.path);
+                break;
+
+            case 'imageListCleared':
+                // Alle Bilder wurden gelöscht
+                handleWSImageListClearedMessage();
+                break;
+
+            case 'log':
+                // Ausgabe in der Browser-Konsole mit türkiser Farbe, damit es auffällt
+                console.log(`%c[ESP32] ${data.message}`, 'color: #00d2d3; font-weight: bold;');
+                break;
+
+            default:
+                console.log("Unbekannter Nachrichtentyp: ", data.type);
+        }
+    };
+}
+
+/**
+ * @brief Wird aufgerufen, wenn der Server neue Live-Werte übermittelt hat.
+ * @param {State} values Aktuelle Werte der Sensoren und Aktoren.
+ */
+function handleWSStateMessage(values) {
     let element;
 
     // --- Kachel für Raumklima ---
@@ -231,33 +266,10 @@ function updateDashboard(values) {
 }
 
 /**
- * @typedef {object} Settings
- * @property {number} airTempThresholdHigh - Zielwert für Raumtemperatur in °C (S1)
- * @property {number} humidityTarget - Zielwert Luftfeuchtigkeit in % (S1)
- * @property {number} soilTempTarget - Zielwert für Bodentemperatur in °C (S2)
- * @property {number} soilMoistureTarget - Zielwert für Bodenfeuchte in % (S3)
- * @property {number} light1OnHour - Tageszeit für Lampe 1 (Stunde, 0-23)
- * @property {number} light1OffHour - Nachtzeit für Lampe 1 (Stunde, 0-23)
- * @property {number} light1LuxThresholdDark - in Lux - ist das Tageslicht dunkler, wird die Lampe 1 zur Tageszeit eingeschaltet
- * @property {number} light1LuxThresholdBright - in Lux - ist das Tageslicht heller, wird die Lampe 1 zur Tageszeit ausgeschaltet * @property {number} light2OnHour - Tageszeit für Lampe 2 (Stunde, 0-23)
- * @property {number} light2OffHour - Nachtzeit für Lampe 2 (Stunde, 0-23)
- * @property {number} light2LuxThresholdDark - in Lux - ist das Tageslicht dunkler, wird die Lampe 2 zur Tageszeit eingeschaltet
- * @property {number} light2LuxThresholdBright - in Lux - ist das Tageslicht heller, wird die Lampe 2 zur Tageszeit ausgeschaltet
- * @property {number} fanCooldownDurationMs - Laufzeit des Lüfters in ms (A4, Default: 5 Minuten)
- * @property {number} wateringDurationMs - Dauer der Bewässerung in ms (A5, Default: 5 Sekunden)
- * @property {string} lamp1Mode - Der Steuermodus ('auto', 'on', 'off') für die Lampe 1 (A1).
- * @property {string} lamp2Mode - Der Steuermodus ('auto', 'on', 'off') für die Lampe 2 (A2).
- * @property {string} heaterMode - Der Steuermodus ('auto', 'on', 'off') für die Heizung (A3).
- * @property {string} fanMode - Der Steuermodus ('auto', 'on', 'off') für den Lüfter (A4).
- * @property {string} pumpMode - Der Steuermodus ('auto', 'on', 'off') für die Pumpe (A5).
- * @property {string} misterMode - Der Steuermodus ('auto', 'on', 'off') für den Vernebler (A6).
+ * @brief Wird aufgerufen, wenn Server neue Einstellungen übermittelt hat.
+ * @param {Settings} settings Aktuelle Einstellungen.
  */
-
-/**
- * @brief Füllt das Einstellungs-Formular mit den Werten vom ESP32.
- * @param {Settings} settings - Das Objekt mit allen Einstellungs- und Modus-Werten.
- */
-function updateSettingsForm(settings) {
+function handleWSSettingsMessage(settings) {
     document.getElementById('airTempThresholdHigh').value = settings['airTempThresholdHigh'];
     document.getElementById('humidityTarget').value = settings['humidityTarget'];
     document.getElementById('soilTempTarget').value = settings['soilTempTarget'];
@@ -281,130 +293,338 @@ function updateSettingsForm(settings) {
 }
 
 /**
- * @brief Liest die Werte aus dem Formular, verpackt sie in ein JSON und sendet sie.
+ * @brief Wird aufgerufen, wenn der Server ein neues Bild übermittelt wird.
+ * @param {string} path Pfad zum neuen Bild.
+ */
+function handleWSNewImageMessage(path) {
+    console.log("Neues Bild empfangen:", path);
+
+    // Bild vorne anfügen (da Liste "Neueste zuerst" sortiert ist)
+    imagePaths.unshift(path);
+
+    // Dropdown aktualisieren
+    updateImageUI();
+
+    // Sofort auf das neue Bild springen
+    currentImageIndex = 0;
+    showImageAtIndex(0);
+}
+
+/**
+ * @brief Wird aufgerufen, wenn alle Bilder gelöscht wurden.
+ */
+function handleWSImageListClearedMessage() {
+    imagePaths = [];
+    updateImageUI();
+    showPlaceholder();
+}
+
+// === Bildergalerie Logik ===
+
+/**
+ * @brief Baut das <select> Dropdown neu auf.
+ */
+function updateImageUI() {
+    const select = document.getElementById('image-select');
+    if (!select) return;
+
+    select.innerHTML = '';
+
+    if (imagePaths.length === 0) {
+        return;
+    }
+
+    imagePaths.forEach(path => {
+        const option = document.createElement('option');
+        option.value = path;
+        // Entferne führenden Slash für schönere Anzeige
+        option.innerText = path.replace(/^\//, '');
+        select.appendChild(option);
+    });
+
+    // Aktuelles Bild selektieren
+    if (imagePaths[currentImageIndex]) {
+        select.value = imagePaths[currentImageIndex];
+    }
+}
+
+/**
+ * @brief Zeigt das Bild am angegebenen Index an.
+ * @param {number} index Index im imagePaths Array.
+ */
+function showImageAtIndex(index) {
+    if (index < 0 || index >= imagePaths.length) return;
+
+    const path = imagePaths[index];
+    const imgEl = document.getElementById('current-image');
+    const timeEl = document.getElementById('image-timestamp');
+    const select = document.getElementById('image-select');
+
+    if (imgEl) {
+        // Timestamp anhängen, um Browser-Cache zu umgehen (falls Dateiname gleich bleibt, was hier nicht der Fall ist, aber sicher ist sicher)
+        // imgEl.src = `/img?path=${path}&t=${new Date().getTime()}`;
+        imgEl.src = `/img?path=${path}`;
+    }
+
+    if (timeEl) {
+        timeEl.innerText = path.replace(/^\//, ''); // Dateiname als Zeitstempel anzeigen
+    }
+
+    if (select) {
+        select.value = path;
+    }
+}
+
+/**
+ * @brief Zeigt einen Platzhalter, wenn keine Bilder da sind.
+ */
+function showPlaceholder() {
+    const imgEl = document.getElementById('current-image');
+    const timeEl = document.getElementById('image-timestamp');
+    if (imgEl) imgEl.src = ''; // oder Pfad zu einem Platzhalter-Bild
+    if (timeEl) timeEl.innerText = 'Keine Bilder auf der SD-Karte.';
+}
+
+/**
+ * @brief Lädt die Liste der Bilder vom Server.
+ */
+function loadImages() {
+    fetch('/api/images')
+        .then(response => response.json())
+        .then(images => {
+            images.sort((a, b) => b.path.localeCompare(a.path)); // sortieren (neueste zuerst)
+            imagePaths = images.map(img => img.path); // Pfade speichern
+            updateImageUI();
+            if (imagePaths.length > 0) {
+                currentImageIndex = 0;
+                showImageAtIndex(0); // erstes Bild anzeigen
+            } else {
+                showPlaceholder();
+            }
+        })
+        .catch(err => {
+            console.error("Fehler beim Laden der Bilder:", err);
+            document.getElementById('image-timestamp').innerText = "Fehler beim Laden.";
+        });
+}
+
+
+// === Zeitraffer Player ===
+
+/**
+ * @brief Startet oder pausiert den Zeitraffer.
+ */
+function toggleTimelapse() {
+    if (isPlaying) {
+        stopTimelapse();
+    } else {
+        if (imagePaths.length < 2) {
+            alert("Mindestens 2 Bilder für Zeitraffer benötigt.");
+            return;
+        }
+        startTimelapse();
+    }
+}
+
+/**
+ * @brief Startet das Intervall.
+ */
+function startTimelapse() {
+    isPlaying = true;
+
+    // Button Icon ändern
+    const btn = document.getElementById('btnPlayPause');
+    if (btn) btn.innerText = "⏸"; // Pause Symbol
+
+    // Geschwindigkeit aus Slider lesen
+    const speedInput = document.getElementById('timelapseSpeed');
+    const speed = speedInput ? parseInt(speedInput.value) : 500;
+
+    timelapseIntervalId = setInterval(() => {
+        // Logik: Wir bewegen uns "rückwärts" durch das Array (Index 0 = Neu, Index Ende = Alt).
+        // Für einen chronologischen Ablauf (Alt -> Neu) müssen wir den Index verringern.
+
+        currentImageIndex--;
+
+        // Loop: Wenn wir unter 0 fallen, fangen wir beim ältesten Bild (Ende des Arrays) wieder an.
+        if (currentImageIndex < 0) {
+            currentImageIndex = imagePaths.length - 1;
+        }
+
+        showImageAtIndex(currentImageIndex);
+
+    }, speed);
+}
+
+/**
+ * @brief Stoppt das Intervall.
+ */
+function stopTimelapse() {
+    isPlaying = false;
+    if (timelapseIntervalId) {
+        clearInterval(timelapseIntervalId);
+        timelapseIntervalId = null;
+    }
+
+    // Button Icon zurücksetzen
+    const btn = document.getElementById('btnPlayPause');
+    if (btn) btn.innerText = "▶"; // Play Symbol
+}
+
+/**
+ * @brief Manuelles Blättern (Prev/Next).
+ * @param {number} direction +1 (Richtung älter) oder -1 (Richtung neuer).
+ */
+function stepImage(direction) {
+    stopTimelapse(); // Immer stoppen bei manueller Interaktion
+
+    let newIndex = currentImageIndex + direction;
+
+    // Wrap around Logik
+    if (newIndex < 0) {
+        newIndex = imagePaths.length - 1;
+    } else if (newIndex >= imagePaths.length) {
+        newIndex = 0;
+    }
+
+    currentImageIndex = newIndex;
+    showImageAtIndex(currentImageIndex);
+}
+
+/**
+ * @brief Wird aufgerufen, wenn ein Bild aus der Auswahlliste gewählt wurde.
+ * @param {string} path Pfad des ausgewählten Bildes.
+ */
+function handleImageChanged(path) {
+    const idx = imagePaths.indexOf(path);
+    if (idx === -1) {
+        return;
+    }
+    stopTimelapse();
+    currentImageIndex = idx;
+    showImageAtIndex(currentImageIndex);
+}
+
+// todo 3: im Frontend ist "Geschwindigkeit" und Angabe in ms für speedDisplay verwirrend. Gemeint sit ja die Anzeigedauer pro Bild.
+// todo 4: Wenn die Anzeigedauer zu klein ist, werden nicht mehr alle Bilder angezeigt, sondern einige einfach übersprungen.
+// todo 5: Konvention für den Namen überdenken: ok so oder handleTimelapseSpeedChange oder onTimelapseSpeedChange(d) oder ganz anders?
+/**
+ * @brief Wird aufgerufen, wenn die Geschwindigkeit für den Zeitraffer verändert wurde.
+ * @param {number} ms Neue Geschwindigkeit.
+ */
+function handleTimelapseSpeedChanged(ms) {
+    document.getElementById('speedDisplay').innerText = ms + 'ms';
+    // Wenn der Player läuft, Geschwindigkeit live anpassen (Neustart)
+    if (isPlaying) {
+        stopTimelapse();
+        startTimelapse();
+    }
+}
+
+// todo 6: umwandeln zu sendMessage
+/**
+ * @brief Hilfsfunktion zum Senden von Befehlen via WebSocket.
+ * @param {string} command Der Befehlsname (z.B. "toggle", "setMode").
+ * @param {string} target Das Zielgerät (z.B. "lamp1").
+ * @param {object} payload Zusätzliche Daten.
+ */
+function sendCommand(command, target, payload = {}) {
+    if (websocket && websocket.readyState === WebSocket.OPEN) {
+        const message = {
+            type: "command",
+            command: command,
+            target: target,
+            ...payload,
+        };
+        console.log("Sende:", message);
+        websocket.send(JSON.stringify(message));
+    } else {
+        console.error("WebSocket nicht verbunden.");
+        alert("Keine Verbindung zum Controller.");
+    }
+}
+
+// todo 7: Beschreibung hinzufügen
+function setMode(target, mode) {
+    sendCommand("setMode", target, { mode: mode });
+}
+
+/**
+ * @brief Sammelt Formulardaten und sendet sie an den ESP.
  */
 function saveSettings() {
     const statusDiv = document.getElementById('settings-status');
-    statusDiv.innerText = 'Speichere...';
+    if(statusDiv) statusDiv.innerText = 'Speichere...';
 
     const payload = {};
     const form = document.getElementById('settingsForm');
-    // Iteriere über alle Input-Elemente im Formular
+
+    // Alle Inputs im Formular durchgehen
     Array.from(form.elements).forEach(input => {
-        if (input.id === 'fanCooldownDurationMs' || input.id === 'wateringDurationMs') {
-            // Konvertiere den Wert vom Benutzer (in Sekunden) zurück in Millisekunden
+        if (!input.id) return; // Inputs ohne ID ignorieren
+
+        // Konvertierung Sekunde -> Millisekunde
+        if (input.id.endsWith('DurationMs')) {
             payload[input.id] = parseInt(input.value) * 1000;
-        } else if (input.type === 'number') {
-            // Konvertiere alle anderen Zahlen-Inputs zu Fließkomma- oder Ganzzahlen
+        }
+        // Zahlen
+        else if (input.type === 'number') {
+            // Check auf Float (Step enthält Punkt) oder Int
             payload[input.id] = (input.step && input.step.includes('.')) ? parseFloat(input.value) : parseInt(input.value);
-        } else {
-            // Für andere Typen (z.B. Text) übernehme den Wert direkt
+        }
+        // Text / Sonstiges
+        else {
             payload[input.id] = input.value;
         }
     });
 
+    // Nachricht senden
     const message = {
         type: "saveSettings",
         payload: payload
     };
-
-    console.log("Sende Einstellungen: ", message);
     websocket.send(JSON.stringify(message));
 
-    setTimeout(() => { statusDiv.innerText = 'Gespeichert!'; }, 1500);
-    setTimeout(() => { statusDiv.innerText = ''; }, 4000);
+    // Feedback anzeigen
+    setTimeout(() => { if(statusDiv) statusDiv.innerText = 'Gespeichert!'; }, 1500);
+    setTimeout(() => { if(statusDiv) statusDiv.innerText = ''; }, 4000);
 }
 
-// --- Event Listener ---
-window.addEventListener('load', () => {
-    initWebSocket();
-
-    // Event-Listener für die Tab-Navigation ---
-    // 1. Finde alle Elemente mit der Klasse 'tab-link'
-    document.querySelectorAll('.tab-link').forEach(button => {
-        // 2. Füge jedem einzelnen Button einen 'click'-Event-Listener hinzu
-        button.addEventListener('click', (event) => {
-            // 3. Wenn ein Button geklickt wird, hole den Tab-Namen aus seinem data-Attribut
-            const tabName = button.dataset.tabname;
-            // 4. Rufe die bestehende openTab-Funktion mit den richtigen Parametern auf
-            openTab(event, tabName);
-        });
-    });
-
-    // Ereignishändler für Radio-Button auto/on/off
-    document.querySelectorAll('.mode-selector').forEach(selector => {
-        selector.addEventListener('change', (event) => {
-            // 'event.target' ist der Radio-Button, der geklickt wurde.
-            const target = event.target.name;
-            const mode = event.target.value; // 'on', 'off' oder 'auto'
-            sendCommand("setMode", target, { mode: mode });
-        });
-    });
-
-    // Event-Listener für den "Einstellungen Speichern"-Button ---
-    const saveButton = document.getElementById('saveSettingsButton');
-    if (saveButton) {
-        saveButton.addEventListener('click', () => {
-            // Rufe die bestehende saveSettings-Funktion auf, wenn der Button geklickt wird.
-            saveSettings();
-        });
-    }
-
-    // --- NEU: Event-Listener für Kamera-Buttons ---
-    const captureBtn = document.getElementById('captureNowButton');
-    captureBtn.addEventListener('click', captureNow);
-
-    const timelapseBtn = document.getElementById('playTimelapseButton');
-    timelapseBtn.addEventListener('click', playTimelapse);
-
-    const deleteBtn = document.getElementById('deleteImagesButton');
-    deleteBtn.addEventListener('click', deleteAllImages);
-
-    // Zeige den ersten Tab explizit an
-    openTab(null, 'Dashboard');
-    document.querySelector('.tab-link').classList.add('active');
-});
+/**
+ * @brief Sendet den Befehl "captureNow" an den ESP.
+ */
+function captureNow() {
+    // todo: 8: Es fehlt ein Feedback für die UI, dass nun ein Bild aufgezeichnet wird. Momentan bleibt der Button unverändert, als wenn man nicht draufgeklickt hat)
+    const message = {
+        type: "captureNow",
+    };
+    console.log("captureNow");
+    websocket.send(JSON.stringify(message));
+}
 
 /**
- * Löscht alle Bilder
+ * @brief Sendet den Befehl "deleteAllImages" mit Passwortschutz.
  */
 function deleteAllImages() {
-    // Stoppe den Zeitraffer, falls er läuft
-    clearInterval(timelapseInterval);
+    // Sicherheitsabfrage
+    const pwd = prompt("Admin-Passwort zum Löschen ALLER Bilder eingeben:");
+    if (pwd) {
+        stopTimelapse();
+        // Nachricht als eigenen Typ aufbauen (wie saveSettings)
+        const message = {
+            type: "deleteAllImages",
+            payload: {
+                password: pwd
+            }
+        };
 
-    // Sicherheitsabfrage mit Passwort
-    const password = prompt("Bitte gib das Admin-Passwort ein, um alle Bilder zu löschen:");
-    if (password) {
-        // Sende den Befehl mit dem Passwort an den Server
-        sendCommand("deleteAllImages", "camera", { password: password });
-
-        // UI sofort leeren und dann neu laden
-        document.getElementById('image-select').innerHTML = '';
-        document.getElementById('current-image').src = '';
-
-        const timestampEl = document.getElementById('image-timestamp');
-        timestampEl.innerText = 'Lösche alle Bilder...';
-
-        // Warte, bis der Löschvorgang wahrscheinlich abgeschlossen ist,
-        // und lade dann die (jetzt leere) Liste vom Server,
-        // was dann zu "Keine Bilder..." führt.
-        setTimeout(loadImages, 1500);
+        if (websocket && websocket.readyState === WebSocket.OPEN) {
+            console.log("Sende:", message);
+            websocket.send(JSON.stringify(message));
+        } else {
+            console.error("WS nicht verbunden");
+        }
     }
 }
 
-/**
- * @brief Sendet einen Befehl als JSON-Objekt an den ESP32.
- * @param {string} command Der Name des Befehls.
- * @param {string} target Das Ziel des Befehls (z.B. der Name des Relais 'lamp1').
- * @param {object} [payload={}] - Ein optionales Objekt mit zusätzlichen Daten.
- */
-function sendCommand(command, target, payload = {}) {
-    const message = {
-        type: "command",
-        command: command,
-        target: target,
-        ...payload,
-    };
-    console.log("Sende Befehl: ", message);
-    websocket.send(JSON.stringify(message));
-}
+// todo 9: Funktionen sortieren: Erst init/onload-Funktion, dann die Handler (erst für Websocket, dann UI), dann die Hilfsfunktionen (die von den Händlern aufgerufen werden)
