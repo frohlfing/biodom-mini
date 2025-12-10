@@ -103,9 +103,16 @@ h1, h2 {
 
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 15px;
+    /* Zweispaltiges Layout: 1. Spalte (Label) nimmt so viel Platz wie nötig, 2. Spalte (Input) den Rest */
+    grid-template-columns: auto 1fr;
+    gap: 10px 20px; /* 10px vertikaler Abstand, 20px horizontaler Abstand */
     align-items: center;
+}
+
+/* Sorge dafür, dass die Überschrift über beide Spalten geht */
+.form-grid h3 {
+    grid-column: 1 / -1; /* Überspannt von der ersten bis zur letzten Spalte */
+    margin-top: 20px;
 }
 
 .action-button {
@@ -352,4 +359,29 @@ h1, h2 {
 
 .action-button.danger:hover {
     background-color: #c0392b;
+}
+
+/* --- Stile für Formular-Elemente (Bootstrap-ähnlich) --- */
+
+/* Allgemeiner Stil für alle Text-Inputs und Dropdowns im Einstellungs-Formular */
+.form-grid input[type="number"],
+.form-grid select {
+    width: 100%; /* Volle Breite des Containers */
+    padding: 8px 12px; /* Innenabstand für Text */
+    font-size: 1em;
+    line-height: 1.5;
+    background-color: #2a2d2e; /* Etwas hellerer Hintergrund als der Body */
+    color: #d4d4d4; /* Helle Schriftfarbe */
+    border: 1px solid #3c3c3c; /* Dünner, dunklerer Rand */
+    border-radius: 4px; /* Leicht abgerundete Ecken */
+    box-sizing: border-box; /* Stellt sicher, dass Padding die Breite nicht beeinflusst */
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; /* Sanfter Übergang für den Fokus-Effekt */
+}
+
+/* Stil, wenn ein Feld angeklickt wird (Fokus) */
+.form-grid input[type="number"]:focus,
+.form-grid select:focus {
+    border-color: #4e9ad4; /* Blauer Rand, passend zum Theme */
+    outline: 0; /* Standard-Fokus-Rahmen des Browsers entfernen */
+    box-shadow: 0 0 0 0.2rem rgba(78, 154, 212, 0.25); /* Leichter blauer Schein, typisch für Bootstrap */
 }

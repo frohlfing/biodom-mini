@@ -163,70 +163,119 @@
         <!-- Inhalt für den "Einstellungen"-Tab -->
         <div id="Settings" class="tab-content">
             <h2>Systemeinstellungen</h2>
-            <form id="settingsForm" class="form-grid">
-                <div class="form-group">
-                    <label for="airTempThresholdHigh">Zielwert für Raumtemperatur in °C</label>
-                    <input type="number" step="1" id="airTempThresholdHigh">
-                </div>
-                <div class="form-group">
-                    <label for="humidityTarget">Zielwert Luftfeuchtigkeit in %</label>
-                    <input type="number" step="1" id="humidityTarget">
-                </div>
-                <div class="form-group">
-                    <label for="soilTempTarget">Zielwert für Bodentemperatur in °C</label>
-                    <input type="number" step="1" id="soilTempTarget">
-                </div>
-                <div class="form-group">
-                    <label for="soilMoistureTarget">Zielwert für Bodenfeuchte in %</label>
-                    <input type="number" step="1" id="soilMoistureTarget">
-                </div>
+            <form id="settingsForm" class="form-grid" onsubmit="return false;">
+                <label for="airTempThresholdHigh">Zielwert Raumtemperatur (°C)</label>
+                <input type="number" step="1" id="airTempThresholdHigh">
+
+                <label for="humidityTarget">Zielwert Luftfeuchtigkeit (%)</label>
+                <input type="number" step="1" id="humidityTarget">
+
+                <label for="soilTempTarget">Zielwert Bodentemperatur (°C)</label>
+                <input type="number" step="1" id="soilTempTarget">
+
+                <label for="soilMoistureTarget">Zielwert Bodenfeuchte (%)</label>
+                <input type="number" step="1" id="soilMoistureTarget">
 
                 <!-- Lampe 1 -->
-                <div class="form-group">
-                    <label for="light1OnHour">Lampe 1 an (ab Stunde)</label>
-                    <input type="number" min="0" max="23" id="light1OnHour">
-                </div>
-                <div class="form-group">
-                    <label for="light1OffHour">Lampe 1 aus (ab Stunde)</label>
-                    <input type="number" min="0" max="23" id="light1OffHour">
-                </div>
-                <div class="form-group">
-                    <label for="light1LuxThresholdDark">Lampe 1 EIN-Schwelle in Lux</label>
-                    <input type="number" step="100" id="light1LuxThresholdDark">
-                </div>
-                <div class="form-group">
-                    <label for="light1LuxThresholdBright">Lampe 1 AUS-Schwelle in Lux</label>
-                    <input type="number" step="100" id="light1LuxThresholdBright">
-                </div>
+                <label for="light1OnHour">Lampe 1 an (Stunde)</label>
+                <input type="number" min="0" max="23" id="light1OnHour">
+
+                <label for="light1OffHour">Lampe 1 aus (Stunde)</label>
+                <input type="number" min="0" max="23" id="light1OffHour">
+
+                <label for="light1LuxThresholdDark">Lampe 1 EIN-Schwelle (Lux)</label>
+                <input type="number" step="100" id="light1LuxThresholdDark">
+
+                <label for="light1LuxThresholdBright">Lampe 1 AUS-Schwelle (Lux)</label>
+                <input type="number" step="100" id="light1LuxThresholdBright">
 
                 <!-- Lampe 2 -->
-                <div class="form-group">
-                    <label for="light2OnHour">Lampe 2 an (ab Stunde)</label>
-                    <input type="number" min="0" max="23" id="light2OnHour">
-                </div>
-                <div class="form-group">
-                    <label for="light2OffHour">Lampe 2 aus (ab Stunde)</label>
-                    <input type="number" min="0" max="23" id="light2OffHour">
-                </div>
-                <div class="form-group">
-                    <label for="light2LuxThresholdDark">Lampe 2 EIN-Schwelle in Lux</label>
-                    <input type="number" step="100" id="light2LuxThresholdDark">
-                </div>
-                <div class="form-group">
-                    <label for="light2LuxThresholdBright">Lampe 2 AUS-Schwelle in Lux</label>
-                    <input type="number" step="100" id="light2LuxThresholdBright">
-                </div>
+                <label for="light2OnHour">Lampe 2 an (Stunde)</label>
+                <input type="number" min="0" max="23" id="light2OnHour">
 
-                <div class="form-group">
-                    <label for="fanCooldownDurationMs">Laufzeit des Lüfters in Sekunden</label>
-                    <input type="number" step="1" id="fanCooldownDurationMs">
-                </div>
-                <div class="form-group">
-                    <label for="wateringDurationMs">Dauer der Bewässerung in Sekunden</label>
-                    <input type="number" step="1" id="wateringDurationMs">
-                </div>
+                <label for="light2OffHour">Lampe 2 aus (Stunde)</label>
+                <input type="number" min="0" max="23" id="light2OffHour">
+
+                <label for="light2LuxThresholdDark">Lampe 2 EIN-Schwelle (Lux)</label>
+                <input type="number" step="100" id="light2LuxThresholdDark">
+
+                <label for="light2LuxThresholdBright">Lampe 2 AUS-Schwelle (Lux)</label>
+                <input type="number" step="100" id="light2LuxThresholdBright">
+
+                <label for="fanCooldownDurationMs">Laufzeit Lüfter (Sekunden)</label>
+                <input type="number" step="1" id="fanCooldownDurationMs">
+
+                <label for="wateringDurationMs">Dauer Bewässerung (Sekunden)</label>
+                <input type="number" step="1" id="wateringDurationMs">
+
+                <!-- Kamera -->
+                <h3>Kamera-Einstellungen</h3>
+
+                <label for="cameraCapturesPerDay">Bilder pro Tag (0-24)</label>
+                <input type="number" min="0" max="24" id="cameraCapturesPerDay">
+
+                <label for="cameraResolution">Auflösung</label>
+                <select id="cameraResolution">
+                    <option value="0">160x120</option>
+                    <option value="1">176x144</option>
+                    <option value="2">320x240</option>
+                    <option value="3">352x288</option>
+                    <option value="4">640x480</option>
+                    <option value="5">800x600</option>
+                    <option value="6">1024x768</option>
+                    <option value="7">1280x1024</option>
+                    <option value="8">1600x1200</option>
+                </select>
+
+                <label for="cameraLightMode">Weißabgleich</label>
+                <select id="cameraLightMode">
+                    <option value="0">Automatisch</option>
+                    <option value="1">Sonnig</option>
+                    <option value="2">Wolkig</option>
+                    <option value="3">Leuchtstoffröhren</option>
+                    <option value="4">Glühbirnen</option>
+                </select>
+
+                <label for="cameraSaturation">Farbsättigung</label>
+                <select id="cameraSaturation">
+                    <option value="6">Fast schwarzweiß</option>
+                    <option value="5">Blass</option>
+                    <option value="4">Normal</option>
+                    <option value="3">Kräftig</option>
+                    <option value="2">Hoch</option>
+                </select>
+
+                <label for="cameraBrightness">Helligkeit</label>
+                <select id="cameraBrightness">
+                    <option value="6">Sehr dunkel</option>
+                    <option value="5">Dunkel</option>
+                    <option value="4">Normal</option>
+                    <option value="3">Hell</option>
+                    <option value="2">Sehr hell</option>
+                </select>
+
+                <label for="cameraContrast">Kontrast</label>
+                <select id="cameraContrast">
+                    <option value="6">Sehr schwach</option>
+                    <option value="5">Schwach</option>
+                    <option value="4">Normal</option>
+                    <option value="3">Stark</option>
+                    <option value="2">Sehr stark</option>
+                </select>
+
+                <label for="cameraSpecialEffect">Spezialeffekt</label>
+                <select id="cameraSpecialEffect">
+                    <option value="7">kein Effekt</option>
+                    <option value="0">Altmodisch</option>
+                    <option value="1">Blaustich</option>
+                    <option value="2">Grünstich</option>
+                    <option value="3">Rotstich</option>
+                    <option value="4">Schwarzweiß</option>
+                    <option value="5">Negativ</option>
+                    <option value="6">S/W Negativ</option>
+                </select>
             </form>
-            <button id="saveSettingsButton" class="action-button">Einstellungen Speichern</button>
+            <button id="saveSettingsButton" class="action-button">Speichern</button>
             <div id="settings-status" class="status-message"></div>
         </div>
 

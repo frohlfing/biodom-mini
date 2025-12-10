@@ -1,16 +1,11 @@
 #include "WebUI.h"
+#include <LittleFS.h>
 
 WebUI::WebUI(uint16_t port)
     : _server(port), _ws("/ws") {}
 
-bool WebUI::begin(FS* fs, FS* sd) {
-    _fs = fs;
+bool WebUI::begin(FS* sd) {
     _sd = sd;
-
-    if (!_fs) {
-        Serial.println("WebUI FEHLER: Kein Dateisystem für Web-Dateien übergeben.");
-        return false;
-    }
 
     // WebSocket-Events an unsere interne Handler-Funktion binden
     _ws.onEvent([this](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) {
@@ -46,7 +41,7 @@ void WebUI::registerRoutes() {
 
     // Registriere einen Handler, der ALLE statischen Dateien aus dem LittleFS ausliefert.
     // Dieser eine Befehl kümmert sich um "/", "/style.css", "/script.js" UND alle Anfragen an "/icons/...".
-    _server.serveStatic("/", *_fs, "/").setDefaultFile("index.html");
+    _server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
 
     // Handler zur Anzeige eines einzelnen Bildes von der SD-Karte
     _server.on("/img", HTTP_GET, [this](AsyncWebServerRequest* request) {

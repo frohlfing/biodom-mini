@@ -55,7 +55,7 @@ void ArduCamOV2640::setResolution(const uint8_t resolution) {
     _myCAM.OV2640_set_JPEG_size(resolution);
 
     // Warten, bis der Sensor sich stabilisiert hat
-    delay(100);
+    delay(200);
 }
 
 void ArduCamOV2640::setLightMode(const uint8_t mode) {

@@ -31,14 +31,14 @@ struct Settings {
     unsigned long fanCooldownDurationMs = 300000; // Laufzeit des Lüfters in ms (A4, Default: 5 Minuten)
     unsigned long wateringDurationMs = 5000; // Dauer der Bewässerung in ms (A5, Default: 5 Sekunden)
 
-    // Kamera-Einstellungen todo 2:diese Einstellungen fehlen noch im Webinterface (unter Kartenreiter "Einstellungen")
-    int cameraCapturesPerDay = 1; // Bilder pro Tag (0 = aus, 1-24)
-    uint8_t cameraResolution = 2; // 0=160x120, 1=176x144, 2=320x240, 3=352x288, 4=640x480, 5=800x600, 6=1024x768, 7=1280x1024, 8=1600x1200
-    uint8_t cameraLightMode = 0; // 0 = Auto
-    uint8_t cameraSaturation = 0; // 0 = Normal
-    uint8_t cameraBrightness = 0; // 0 = Normal
-    uint8_t cameraContrast = 0; // 0 = Normal
-    uint8_t cameraSpecialEffect = 0; // 0 = Normal
+    // Kamera-Einstellungen
+    int cameraCapturesPerDay = 1; // Anzahl Bilder pro Tag (0 bis 24)
+    uint8_t cameraResolution = 2; // JPEG-Auflösung (0 = 160x120, 1 = 176x144, 2 = 320x240 (default), 3 = 352x288, 4 = 640x480, 5 = 800x600, 6 = 1024x768, 7 = 1280x1024, 8 = 1600x1200)
+    uint8_t cameraLightMode = 0; // Weißabgleich (0 = automatisch (default), 1 = sonnig, 2 = wolkig, 3 = Leuchtstoffröhren, 4 = Glühbirnen)
+    uint8_t cameraSaturation = 4; // Farbsättigung (6 = fast schwarzweiß, 5 = blass, 4 = normal (default), 3 = kräftig, 2 = hoch)
+    uint8_t cameraBrightness = 4; // Helligkeit (6 = sehr dunkel, 5 = dunkel, 4 = normal (default), 3 = hell, 2 = sehr hell)
+    uint8_t cameraContrast = 4; // Kontrast (6 = sehr schwach, 5 = schwach, 4 = normal (default), 3 = stark, 2 = sehr stark)
+    uint8_t cameraSpecialEffect = 7; // Spezialeffekte (0 = Altmodisch, 1 = Blaustich, 2 = Grünstich, 3 = Rotstich, 4 = Schwarzweiß, 5 = Farben invertiert, 6 = Schwarzweiß Negativ, 7 = kein Effekt (default))
 
     // Modus für die Steuerung der Aktoren (automatisch, immer an, immer aus)
     ControlMode lamp1Mode = MODE_AUTO; // Modus für Lampe 1 (A1)

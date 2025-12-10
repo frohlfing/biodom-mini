@@ -23,11 +23,10 @@ public:
 
     /**
      * @brief Initialisiert den Server und registriert die Routen.
-     * @param fs Ein Pointer auf das Dateisystem für die Webseiten-Dateien (z.B. &LittleFS).
      * @param sd Ein Pointer auf das SD-Karten-Dateisystem (optional, für SD-Funktionen).
      * @return true bei Erfolg.
      */
-    bool begin(FS* fs, FS* sd = nullptr);
+    bool begin(FS* sd = nullptr);
 
     /**
      * @brief Sendet eine Nachricht nur mit Typ (ohne Nutzdaten).
@@ -142,7 +141,6 @@ private:
 
     AsyncWebServer _server; // Die Instanz des Webservers.
     AsyncWebSocket _ws; // Die Instanz des WebSocket-Servers am Endpunkt "/ws".
-    FS* _fs = nullptr; // Pointer auf das Dateisystem (LittleFS) für die Webseiten-Dateien
     FS* _sd = nullptr; // Pointer auf die SD-Karte, wenn vorhanden
     //String _lastStateJson;
 };

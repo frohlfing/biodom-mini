@@ -39,73 +39,72 @@ public:
     /**
      * @brief Ändert die JPEG-Auflösung.
      * @param resolution Auflösung:
-     *  OV2640_160x120 (QVGA)
-     *  OV2640_176x144 (QCIF)
-     *  OV2640_320x240 (QVGA, default)
-     *  OV2640_352x288 (CIF)
-     *  OV2640_640x480 (VGA)
-     *  OV2640_800x600 (SVGA)
-     *  OV2640_1024x768 (XGA)
-     *  OV2640_1280x1024 (SXGA)
-     *  OV2640_1600x1200 (UXGA)
+     *  OV2640_160x120 = 0 = QVGA
+     *  OV2640_176x144 = 1 = QCIF
+     *  OV2640_320x240 = 2 = QVGA (default)
+     *  OV2640_352x288 = 3 = CIF
+     *  OV2640_640x480 = 4 = VGA
+     *  OV2640_800x600 = 5 = SVGA
+     *  OV2640_1024x768 = 6 = XGA
+     *  OV2640_1280x1024 = 7 = SXGA
+     *  OV2640_1600x1200 = 8 = UXGA
      */
     void setResolution(uint8_t resolution);
 
     /**
-     * @brief Setzt den Weißabgleich-Modus.
+     * @brief Setzt den Weißabgleich.
      * @param mode Modus:
-     *  Auto (automatisch, default)
-     *  Sunny (sonnig, Gelb-Stich entfernen)
-     *  Cloudy (wolkig)
-     *  Office (Büro, Leuchtstoffröhren/kalt)
-     *  Home (Zuhause, Glühbirnen/warm)
+     *  Auto = 0 = = automatisch (default)
+     *  Sunny = 1 = sonnig, Gelb-Stich entfernen
+     *  Cloudy = 2 = wolkig
+     *  Office = 3 = Büro, Leuchtstoffröhren/kalt
+     *  Home = 4 = Zuhause, Glühbirnen/warm
      */
     void setLightMode(uint8_t mode);
 
     /**
      * @brief Setzt die Farbsättigung.
      * @param saturation Farbsättigung:
-     *  Saturation_2 (fast schwarzweiß)
-     *  Saturation_1 (blass)
-     *  Saturation0 (normal, default)
-     *  Saturation1 (kräftig)
-     *  Saturation2 (hoch)
+     *  Saturation_2 = 6 = fast schwarzweiß
+     *  Saturation_1 = 5 = blass
+     *  Saturation0 = 4 = normal (default)
+     *  Saturation1 = 3 = kräftig
+     *  Saturation2 = 2 = hoch
      */
     void setColorSaturation(uint8_t saturation);
-
     /**
      * @brief Setzt die Helligkeit.
      * @param brightness Helligkeit:
-     *   Brightness_2 (-2, sehr dunkel)
-     *   Brightness_1 (-1, dunkel)
-     *   Brightness0 (normal, default)
-     *   Brightness1 (+1, hell)
-     *   Brightness2 (+2, sehr hell)
+     *   Brightness_2 = 6 = sehr dunkel
+     *   Brightness_1 = 5 = dunkel
+     *   Brightness0 = 4 = normal (default)
+     *   Brightness1 = 3 = hell
+     *   Brightness2 = 2 = sehr hell
      */
     void setBrightness(uint8_t brightness);
 
     /**
      * @brief Setzt den Kontrast.
-     * @param contrast Helligkeit:
-     *  Contrast_2 (-2, flau, grau in grau)
-     *  Contrast_1 (-1)
-     *  Contrast0 (normal, default)
-     *  Contrast1 (+1)
-     *  Contrast2 (+2, stark, harte Kanten)
+     * @param contrast Kontrast:
+     *  Contrast_2 = 6 = sehr schwach
+     *  Contrast_1 = 5 = schwach
+     *  Contrast0 = 4 = normal (default)
+     *  Contrast1 = 3 = stark
+     *  Contrast2 = 2 = sehr stark
      */
     void setContrast(uint8_t contrast);
 
     /**
      * @brief Aktiviert Spezialeffekte (Filter)
      * @param effect Spezialeffekt:
-     *  Antique (Altmodisch)
-     *  Bluish (Blaustich)
-     *  Greenish (Grünstich)
-     *  Reddish (Rotstich)
-     *  BW (Schwarzweiß)
-     *  Negative (Farben invertiert)
-     *  BWnegative (Schwarzweiß Negativ)
-     *  Normal  (kein Effekte, default)
+     *  Antique = 0 = Altmodisch
+     *  Bluish = 1 = Blaustich
+     *  Greenish = 2 = Grünstich
+     *  Reddish = 3 = Rotstich
+     *  BW = 4 = Schwarzweiß
+     *  Negative = 5 = Farben invertiert
+     *  BWnegative = 6 = Schwarzweiß Negativ
+     *  Normal = 7 = kein Effekte (default)
      */
     void setSpecialEffect(uint8_t effect);
 

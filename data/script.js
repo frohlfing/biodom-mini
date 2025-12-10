@@ -15,6 +15,13 @@
  * @property {number} light2LuxThresholdBright - in Lux - ist das Tageslicht heller, wird die Lampe 2 zur Tageszeit ausgeschaltet
  * @property {number} fanCooldownDurationMs - Laufzeit des Lüfters in ms (A4, Default: 5 Minuten)
  * @property {number} wateringDurationMs - Dauer der Bewässerung in ms (A5, Default: 5 Sekunden)
+ * @property {number} cameraCapturesPerDay - Anzahl Bilder pro Tag (0 bis 24)
+ * @property {number} cameraResolution - JPEG-Auflösung (0 = 160x120, 1 = 176x144, 2 = 320x240 (default), 3 = 352x288, 4 = 640x480, 5 = 800x600, 6 = 1024x768, 7 = 1280x1024, 8 = 1600x1200)
+ * @property {number} cameraLightMode - Weißabgleich (0 = automatisch (default), 1 = sonnig, 2 = wolkig, 3 = Leuchtstoffröhren, 4 = Glühbirnen)
+ * @property {number} cameraSaturation - Farbsättigung (6 = fast schwarzweiß, 5 = blass, 4 = normal (default), 3 = kräftig, 2 = hoch)
+ * @property {number} cameraBrightness - Helligkeit (6 = sehr dunkel, 5 = dunkel, 4 = normal (default), 3 = hell, 2 = sehr hell)
+ * @property {number} cameraContrast - Kontrast (6 = sehr schwach, 5 = schwach, 4 = normal (default), 3 = stark, 2 = sehr stark)
+ * @property {number} cameraSpecialEffect - Spezialeffekte (0 = Altmodisch, 1 = Blaustich, 2 = Grünstich, 3 = Rotstich, 4 = Schwarzweiß, 5 = Farben invertiert, 6 = Schwarzweiß Negativ, 7 = kein Effekt (default))
  * @property {string} lamp1Mode - Der Steuermodus ('auto', 'on', 'off') für die Lampe 1 (A1).
  * @property {string} lamp2Mode - Der Steuermodus ('auto', 'on', 'off') für die Lampe 2 (A2).
  * @property {string} heaterMode - Der Steuermodus ('auto', 'on', 'off') für die Heizung (A3).
@@ -157,7 +164,7 @@ function handleSaveSettingsClick(_event) {
             payload[input.id] = parseInt(input.value, 10) * 1000;
         }
         // Zahlen
-        else if (input.type === 'number') {
+        else if (input.type === 'number' || input.tagName === 'SELECT') {
             // Check auf Float (Step enthält Punkt) oder Int
             payload[input.id] = (input.step && input.step.includes('.')) ? parseFloat(input.value) : parseInt(input.value, 10);
         }
@@ -451,6 +458,13 @@ function handleWSSettingsMessage(payload) {
     document.getElementById('light2LuxThresholdBright').value = settings['light2LuxThresholdBright'];
     document.getElementById('fanCooldownDurationMs').value = settings['fanCooldownDurationMs'] / 1000.0;
     document.getElementById('wateringDurationMs').value = settings['wateringDurationMs'] / 1000.0;
+    document.getElementById('cameraCapturesPerDay').value = settings['cameraCapturesPerDay'];
+    document.getElementById('cameraResolution').value = settings['cameraResolution'];
+    document.getElementById('cameraLightMode').value = settings['cameraLightMode'];
+    document.getElementById('cameraSaturation').value = settings['cameraSaturation'];
+    document.getElementById('cameraBrightness').value = settings['cameraBrightness'];
+    document.getElementById('cameraContrast').value = settings['cameraContrast'];
+    document.getElementById('cameraSpecialEffect').value = settings['cameraSpecialEffect'];
     document.querySelector(`input[name="lamp1"][value="${settings.lamp1Mode}"]`).checked = true;
     document.querySelector(`input[name="lamp2"][value="${settings.lamp2Mode}"]`).checked = true;
     document.querySelector(`input[name="heater"][value="${settings.heaterMode}"]`).checked = true;
