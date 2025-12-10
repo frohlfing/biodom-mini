@@ -18,12 +18,12 @@
         <!-- Tab-Navigationsleiste -->
         <div class="tab-bar">
             <button class="tab-link active" data-tabname="Dashboard">Dashboard</button>
-            <button class="tab-link" data-tabname="Settings">Einstellungen</button>
             <button class="tab-link" data-tabname="Camera">Kamera</button>
+            <button class="tab-link" data-tabname="Settings">Einstellungen</button>
         </div>
 
         <!-- Inhalt für den "Dashboard"-Tab -->
-        <div id="Dashboard" class="tab-content">
+        <div id="Dashboard" class="tab-content show">
             <h2>Live-Status</h2>
             <div id="dashboard-grid" class="grid-container">
 
@@ -124,6 +124,42 @@
             </div>
         </div>
 
+        <!-- Inhalt für den "Kamera"-Tab -->
+        <div id="Camera" class="tab-content">
+            <h2>Kameragalerie</h2>
+            <div class="camera-controls">
+                <button id="captureNowButton" class="action-button">Bild jetzt aufnehmen</button>
+            </div>
+            <!-- Haupt-Bildanzeige -->
+            <div id="image-viewer">
+                <div class="image-wrapper"> <!-- Wrapper hilft beim Zentrieren und der Größe -->
+                    <img id="current-image" src="" alt="Kamerabild">
+                </div>
+                <p id="image-timestamp"></p>
+                <!-- Player Controls -->
+                <div class="player-controls">
+                    <button id="btnPrev" class="player-btn" title="Vorheriges Bild">⏮</button>
+                    <button id="btnPlayPause" class="player-btn play-btn" title="Zeitraffer Start/Pause">▶</button>
+                    <button id="btnNext" class="player-btn" title="Nächstes Bild">⏭</button>
+                </div>
+                <!-- Slider für Geschwindigkeit -->
+                <div class="player-settings">
+                     <label for="timelapseSpeed">Anzeigedauer pro Bild:</label>
+                     <input type="range" id="timelapseSpeed" min="50" max="1000" value="500" step="50">
+                     <span id="speedDisplay">500ms</span>
+                </div>
+            </div>
+            <hr style="border-color: #3c3c3c; margin: 20px 0;">
+            <!-- Dropdown und Löschen -->
+            <div class="image-management">
+                <div class="image-selector">
+                    <label for="image-select">Bild auswählen:</label>
+                    <select id="image-select"></select>
+                </div>
+                <button id="deleteImagesButton" class="action-button danger">Alle Bilder löschen</button>
+            </div>
+        </div>
+
         <!-- Inhalt für den "Einstellungen"-Tab -->
         <div id="Settings" class="tab-content">
             <h2>Systemeinstellungen</h2>
@@ -192,42 +228,6 @@
             </form>
             <button id="saveSettingsButton" class="action-button">Einstellungen Speichern</button>
             <div id="settings-status" class="status-message"></div>
-        </div>
-
-        <!-- Inhalt für den "Kamera"-Tab -->
-        <div id="Camera" class="tab-content">
-            <h2>Kameragalerie</h2>
-            <div class="camera-controls">
-                <button id="captureNowButton" class="action-button">Bild jetzt aufnehmen</button>
-            </div>
-            <!-- Haupt-Bildanzeige -->
-            <div id="image-viewer">
-                <div class="image-wrapper"> <!-- Wrapper hilft beim Zentrieren und der Größe -->
-                    <img id="current-image" src="" alt="Kamerabild">
-                </div>
-                <p id="image-timestamp"></p>
-                <!-- Player Controls -->
-                <div class="player-controls">
-                    <button id="btnPrev" class="player-btn" title="Vorheriges Bild">⏮</button>
-                    <button id="btnPlayPause" class="player-btn play-btn" title="Zeitraffer Start/Pause">▶</button>
-                    <button id="btnNext" class="player-btn" title="Nächstes Bild">⏭</button>
-                </div>
-                <!-- Slider für Geschwindigkeit -->
-                <div class="player-settings">
-                     <label for="timelapseSpeed">Geschwindigkeit:</label>
-                     <input type="range" id="timelapseSpeed" min="50" max="1000" value="500" step="50">
-                     <span id="speedDisplay">500ms</span>
-                </div>
-            </div>
-            <hr style="border-color: #3c3c3c; margin: 20px 0;">
-            <!-- Dropdown und Löschen -->
-            <div class="image-management">
-                <div class="image-selector">
-                    <label for="image-select">Bild auswählen:</label>
-                    <select id="image-select"></select>
-                </div>
-                <button id="deleteImagesButton" class="action-button danger">Alle Bilder löschen</button>
-            </div>
         </div>
 
     </div>

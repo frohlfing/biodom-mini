@@ -106,10 +106,11 @@ unsigned long lastBroadcastTime = 0;  // Zeitpunkt der letzten Broadcast-Nachric
 
 // === Funktionsprototypen ===
 
-void handleSensors();
+bool handleSensors();
 void handleControlLogic();
 void handleDisplay();
-void handleCamera();
+bool handleCamera();
+JsonObject getStateAsJson(JsonDocument& doc);
 void broadcastState();
 void broadcastSettings();
 void recoverI2C();
@@ -151,39 +152,6 @@ void log(const char* message) {
     Serial.println(message);
     display.addLogLine(message);
     delay(LOG_DELAY);
-}
-
-// todo 1: aus consoleLog und consolePrint eine Funktion machen und nach WebUI verlagern
-/**
- * @brief Sendet eine Nachricht direkt an die Browser-Konsole aller verbundenen Clients.
- * @param msg Die Nachricht als String.
- */
-void consoleLog(const String& msg) {
-    // 1. JSON erstellen
-    JsonDocument doc;
-    doc["type"] = "log";
-    doc["message"] = msg;
-
-    // 2. Serialisieren
-    String jsonString;
-    serializeJson(doc, jsonString);
-
-    // 3. Senden (nur wenn Clients verbunden sind, um Ressourcen zu sparen)
-    // Die WebUI-Klasse kümmert sich um die Verteilung
-    webInterface.broadcast(jsonString);
-}
-
-/**
- * Überladung für printf-ähnliche Formatierung (optional, aber sehr praktisch!)
- * Beispiel: consolePrint("Temperatur: %.2f", currentAirTemp);
- */
-void consolePrint(const char *format, ...) {
-    char buffer[256];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-    consoleLog(String(buffer));
 }
 
 /**
@@ -467,18 +435,16 @@ void setup() {
     }
 
     // Callback für neue Client-Verbindungen
-    webInterface.onClientConnect = [](AsyncWebSocketClient* client) {
-        // 1. Sende dem neuen Client sofort den letzten bekannten Live-Status
-        broadcastState();
+    webInterface.onClientConnect = [](const AsyncWebSocketClient* client) {
+        // Sende dem neuen Client sofort den letzten bekannten Live-Status (nur an diesen Client)
+        JsonDocument stateDoc;
+        webInterface.sendTo(client, "state", getStateAsJson(stateDoc));
 
-        // 2. Sende dem neuen Client danach die aktuellen Einstellungen
+        // Sende dem neuen Client die aktuellen Einstellungen
         JsonDocument doc;
-        doc["type"] = "settings";
-        const JsonObject values = doc["values"].to<JsonObject>();
+        const JsonObject values = doc.to<JsonObject>();
         settingsManager.serialize(values);
-        String jsonString;
-        serializeJson(doc, jsonString);
-        client->text(jsonString); // Sende nur an den neuen Client
+        webInterface.sendTo(client, "settings", values);
     };
 
     // Callback für eingehende Nachrichten
@@ -486,93 +452,57 @@ void setup() {
         // Parse die empfangene Nachricht als JSON-Dokument.
         JsonDocument doc;
         const DeserializationError error = deserializeJson(doc, msg);
-
-        // Prüfe auf Parsing-Fehler.
         if (error) {
-            Serial.print("WebSocket JSON-Fehler: ");
-            Serial.println(error.c_str());
+            webInterface.consoleLog(client, "WebSocket JSON-Fehler: %s", error.c_str());
             return;
         }
 
         // Extrahiere den Nachrichtentyp.
         const char* type = doc["type"];
         if (!type) {
-            Serial.println("WebSocket-Fehler: Nachricht ohne 'type'-Feld.");
+            webInterface.consoleLog(client, "WebSocket-Fehler: Nachricht ohne 'type'-Feld.");
             return;
         }
 
         // --- Aktor schalten ---
 
-        if (strcmp(type, "command") == 0) { // todo 2: "command" umbenennen
-            // Ein Befehl zur Steuerung von Aktoren wurde empfangen.
-            const char* command = doc["command"];
-            if (!command) {
-                Serial.println("WebSocket-Fehler: 'command' fehlt.");
-                return;
-            }
-            //Serial.printf("Befehl empfangen: %s\n", command);
-            consolePrint("Command: %s", command);
-
-            // Das zugehörige Relais ermitteln
-            Relay* targetRelay = nullptr;
-            const char* targetStr = doc["target"];
-            if (strcmp(targetStr, "lamp1") == 0) targetRelay = &lamp1Relay;
-            else if (strcmp(targetStr, "lamp2") == 0) targetRelay = &lamp2Relay;
-            else if (strcmp(targetStr, "heater") == 0) targetRelay = &heaterRelay;
-            else if (strcmp(targetStr, "fan") == 0) targetRelay = &fanRelay;
-            else if (strcmp(targetStr, "pump") == 0) targetRelay = &pumpRelay;
-            else if (strcmp(targetStr, "mister") == 0) targetRelay = &misterRelay;
+        if (strcmp(type, "setMode") == 0) {
+            const JsonObject payload = doc["payload"];
+            const char* modeStr = payload["mode"];
+            ControlMode mode;
+            if (strcmp(modeStr, "auto") == 0) mode = MODE_AUTO;
+            else if (strcmp(modeStr, "on") == 0) mode = MODE_ON;
+            else if (strcmp(modeStr, "off") == 0) mode = MODE_OFF;
             else {
-                Serial.printf("WebSocket-Fehler: Unbekanntes 'target': %s\n", targetStr);
+                webInterface.consoleLog(client, "WebSocket-Fehler: 'mode' fehlerhaft.");
                 return;
             }
-
-            if (strcmp(command, "toggle") == 0) { // todo 3: wann wird dieser Befehl verwendet?
-                targetRelay->toggle();
-                broadcastState(); // nach der manuellen Änderung sofort den neuen Systemstatus an alle Browser senden
-
-            } else if (strcmp(command, "setMode") == 0) {
-                // Wandle den String in den Enum-Wert um
-                const char* modeStr = doc["mode"];
-                ControlMode mode;
-                if (strcmp(modeStr, "auto") == 0) mode = MODE_AUTO;
-                else if (strcmp(modeStr, "on") == 0) mode = MODE_ON;
-                else if (strcmp(modeStr, "off") == 0) mode = MODE_OFF;
-                else {
-                    Serial.println("WebSocket-Fehler: 'mode' fehlerhaft.");
-                    return;
-                }
-
-                // Setze den Modus für das richtige Relais
-                Settings& settings = settingsManager.getMutable();
-                if (strcmp(targetStr, "lamp1") == 0) { settings.lamp1Mode = mode; }
-                else if (strcmp(targetStr, "lamp2") == 0) { settings.lamp2Mode = mode; }
-                else if (strcmp(targetStr, "heater") == 0) { settings.heaterMode = mode; }
-                else if (strcmp(targetStr, "fan") == 0) { settings.fanMode = mode; }
-                else if (strcmp(targetStr, "pump") == 0) { settings.pumpMode = mode; }
-                else if (strcmp(targetStr, "mister") == 0) { settings.misterMode = mode; }
-                settingsManager.save(); // Speichere die neuen Modi persistent
-                handleControlLogic(); // Wende den neuen Zustand sofort an (Relais schalten)
-
-                broadcastSettings();
-                broadcastState();
-            }
+            Settings& settings = settingsManager.getMutable();
+            const char* targetStr = payload["target"];
+            if (strcmp(targetStr, "lamp1") == 0) { settings.lamp1Mode = mode; }
+            else if (strcmp(targetStr, "lamp2") == 0) { settings.lamp2Mode = mode; }
+            else if (strcmp(targetStr, "heater") == 0) { settings.heaterMode = mode; }
+            else if (strcmp(targetStr, "fan") == 0) { settings.fanMode = mode; }
+            else if (strcmp(targetStr, "pump") == 0) { settings.pumpMode = mode; }
+            else if (strcmp(targetStr, "mister") == 0) { settings.misterMode = mode; }
+            settingsManager.save(); // Speichere die neuen Modi persistent
+            handleControlLogic(); // Wende den neuen Zustand sofort an (Relais schalten)
+            broadcastSettings();
+            broadcastState();
         }
 
         // --- Einstellungen speichern ---
 
         else if (strcmp(type, "saveSettings") == 0) {
             // Die Einstellungen sollen gespeichert werden.
-            Serial.println("Befehl 'saveSettings' vom Webinterface empfangen.");
+            webInterface.consoleLog(client, "Befehl 'saveSettings' empfangen.");
             const JsonObject payload = doc["payload"].as<JsonObject>(); // 'doc["payload"]' ist ein JsonVariant. Wir brauchen das darin enthaltene Objekt.
             if (payload) {
                 settingsManager.deserialize(payload);
                 if (settingsManager.save()) {
-                    log("Einstellungen gespeichert!");
-                    // Sende die neuen Einstellungen als Bestätigung an ALLE Clients.
                     broadcastSettings();
                 } else {
-                    log("FEHLER: Einstellungen konnten nicht gespeichert werden.");
+                    webInterface.consoleLog(client, "FEHLER: Konnte nicht speichern.");
                 }
             }
         }
@@ -580,78 +510,74 @@ void setup() {
         // --- Bild aufnehmen ---
 
         else if (strcmp(type, "captureNow") == 0) {
-            log("Manuelle Kamera-Aufnahme ausgelöst...");
-            handleCamera(); // Rufe die Kamera-Funktion sofort auf
-            broadcastState(); // Sende sofort ein Update
+            webInterface.consoleLog(client, "Manuelle Aufnahme...");
+            if (!handleCamera()) {
+                // Wenn die Aufnahme fehlschlägt, sende eine Fehlermeldung an den Client.
+                webInterface.broadcast("captureFailed");
+            }
+        }
+
+        // --- Bildliste anfordern ---
+ 
+        else if (strcmp(type, "getImageList") == 0) {
+            webInterface.consoleLog(client, "Befehl: Bildliste anfordern");
+ 
+            if (!sdCard.isReady()) {
+                webInterface.consoleLog(client, "Fehler: SD-Karte nicht bereit für Bildliste.");
+                // Optional: Eine Fehlermeldung an den Client senden
+                return;
+            }
+ 
+            JsonDocument doc2;
+            JsonArray images = doc2.to<JsonArray>();
+ 
+            sdCard.listDir("/", [&images](const String& filename, const size_t size) {
+                if (filename.endsWith(".jpg")) {
+                    const JsonObject img = images.add<JsonObject>();
+                    img["path"] = "/" + filename;
+                    img["size"] = size;
+                }
+            });
+ 
+            // Sende die Liste als 'imageList'-Nachricht an den anfragenden Client
+            JsonDocument responseDoc;
+            responseDoc["type"] = "imageList";
+            responseDoc["payload"]["images"] = images;
+            String response;
+            serializeJson(responseDoc, response);
+            client->text(response);
         }
 
         // --- Alle Bilder löschen ---
 
         else if (strcmp(type, "deleteAllImages") == 0) {
-            consoleLog("Befehl: Bilder löschen");
+            webInterface.consoleLog(client, "Befehl: Bilder löschen");
             // Payload extrahieren
             const JsonObject payload = doc["payload"];
             const char* password = payload["password"];
 
             if (password && strcmp(password, OTA_PASSWORD) == 0) {
-                consoleLog("Passwort korrekt. Lösche...");
                 if (sdCard.deleteAllFilesInDir("/")) {
-                    consoleLog("SD-Karte bereinigt.");
-                    webInterface.broadcast("{\"type\":\"imageListCleared\"}");
+                    webInterface.consoleLog(client, "SD-Karte bereinigt.");
+                    webInterface.broadcast("imageListCleared");
                 } else {
-                    consoleLog("Fehler beim Löschen.");
+                    webInterface.consoleLog(client, "Fehler beim Löschen.");
                 }
             } else {
-                consoleLog("Falsches Passwort!");
+                webInterface.consoleLog(client, "Falsches Passwort!");
             }
         }
+
         else {
             Serial.printf("Unbekannter WebSocket-Nachrichtentyp: %s\n", type);
         }
-    };
-
-    // todo 4: onImageListRequest muss raus, statt dessen in onMessage in Form einer REST-Anfrage verarbeitet werden
-    // Callback für die Liste der Bilder
-    webInterface.onImageListRequest = [](AsyncWebServerRequest* request) {
-        // Prüfe, ob die SD-Karte überhaupt bereit ist.
-        // Annahme: Wir fügen eine isReady()-Methode zu MicroSDCard hinzu.
-        if (!sdCard.isReady()) {
-            request->send(500, "application/json", R"({"error":"SD-Karte nicht bereit"})");
-            return;
-        }
-
-        // Erstelle ein JSON-Dokument, das ein Array sein wird.
-        JsonDocument doc;
-        JsonArray files = doc.to<JsonArray>();
-
-        // Der Ordner, in dem wir nach Bildern suchen
-        const char* imageDir = "/";
-
-        // Rufe die listDir-Methode der sdCard auf und fülle das JSON-Array.
-        // Annahme: Wir erweitern listDir, damit es einen Lambda-Callback akzeptiert.
-        sdCard.listDir("/", [&files, imageDir](const String& filename, size_t size) {
-            // Füge nur .jpg Dateien hinzu, um andere Dateien auszuschließen.
-            if (filename.endsWith(".jpg")) {
-                const String fullPath = String(imageDir) + filename;
-                const JsonObject _file = files.add<JsonObject>();
-                _file["path"] = fullPath; // z.B. "/img_20251205_103000.jpg"
-                _file["size"] = size;
-            }
-        });
-
-        // Serialisiere das JSON-Array in einen String.
-        String response;
-        serializeJson(doc, response);
-
-        // Sende den JSON-String als Antwort.
-        request->send(200, "application/json", response);
     };
 
     // --- Initialisierung erfolgreich ---
 
     Serial.println("System gestartet.");
 
-    // Splash-Screen kurz anzeigen (signalisiert, dass alles ok ist)
+    // Splash-Screen kurz anzeigen (signalisiert, dass alles ok ist
     display.showFullscreenXBM(128, 64, frank_128x64_xbm);
     delay(1000);
 
@@ -725,14 +651,14 @@ void loop() {
 /**
  * @brief Liest alle Sensoren aus und speichert die Werte in globalen Variablen.
  */
-void handleSensors() {
+bool handleSensors() {
     debugLed.on(); // LED an während des Lesens
 
     if (airSensor.read()) {
         currentAirTemp = airSensor.getTemperature();
         currentHumidity = airSensor.getHumidity();
     }
-    
+
     if (soilTempSensor.read()) { 
         currentSoilTemp = soilTempSensor.getTemperature(); 
     }
@@ -740,13 +666,13 @@ void handleSensors() {
     if (soilMoistureSensor.read()) { 
         currentSoilMoisture = soilMoistureSensor.getPercent(); 
     }
-    
+
     if (lightSensor.read()) { 
         currentLightLux = lightSensor.getLux(); 
     }
-    
+
     if (waterLevelSensor.read()) { 
-        isWaterLevelOk = waterLevelSensor.isWaterDetected(); 
+        isWaterLevelOk = waterLevelSensor.isWaterDetected();
     }
 
     debugLed.off(); // LED aus nach dem Lesen
@@ -759,6 +685,7 @@ void handleSensors() {
         currentLightLux, 
         isWaterLevelOk
     );
+    return true;
 }
 
 /**
@@ -991,14 +918,13 @@ void handleControlLogic() {
 
 /**
  * @brief Nimmt ein Bild auf und speichert es auf der SD-Karte.
+ * @return true bei Erfolg, false bei Fehler.
  */
-void handleCamera() {
+bool handleCamera() {
     Serial.println("Führe Kameraaufnahme aus...");
     display.showFullscreenAlert("FOTO...", false);
-
+    
     char filename[30];
-    sprintf(filename, "/img_%lu.jpg", millis());
-
     tm timeInfo{};
     if (getLocalTime(&timeInfo)) {
         // Erzeuge einen Namen mit Zeitstempel (z.B. "/img_20251205_103000.jpg")
@@ -1006,39 +932,32 @@ void handleCamera() {
             timeInfo.tm_year + 1900, timeInfo.tm_mon + 1, timeInfo.tm_mday,
             timeInfo.tm_hour, timeInfo.tm_min, timeInfo.tm_sec);
     } else {
-        // Fallback, wenn Zeit nicht verfügbar
+        // Fallback, wenn Zeit nicht verfügbar ist
         sprintf(filename, "/img_%lu.jpg", millis());
     }
 
-    if (camera.saveToSD(filename)) {
-        Serial.printf("Bild erfolgreich gespeichert: %s\n", filename);
-        display.showFullscreenAlert("FOTO OK", false);
-
-        // --- NEU: Benachrichtige das Frontend über das neue Bild ---
-        JsonDocument doc;
-        doc["type"] = "newImage";
-        doc["path"] = String(filename);
-        String jsonString;
-        serializeJson(doc, jsonString);
-        webInterface.broadcast(jsonString);
-
-    } else {
+    if (!camera.saveToSD(filename)) { // saveToSD verwendet intern camera.capture()
         Serial.println("Fehler bei der Bildaufnahme.");
         display.showFullscreenAlert("KAMERA FEHLER", true);
+        delay(2000); // Fehlermeldung kurz anzeigen
+        return false;
     }
 
-    delay(2000);
+    Serial.printf("Bild erfolgreich gespeichert: %s\n", filename);
+    display.showFullscreenAlert("FOTO OK", false);
+    webInterface.broadcast("newImage", "path", filename);
+    delay(2000); // Erfolgsmeldung kurz anzeigen
+    return true;
 }
 
 /**
- * @brief Sendet den Status aller Sensoren und Aktoren an alle Clients
+ * @brief Erstellt ein JSON-Objekt mit dem aktuellen Status aller Sensoren und Aktoren.
+ * @param doc Das JsonDocument, in dem das Objekt erstellt werden soll.
+ * @return Ein JsonObject, das den aktuellen Systemstatus enthält.
  */
-void broadcastState() {
-    // Erstelle das vollständige 'state'-Objekt für das Dashboard.
-    JsonDocument doc;
-    doc["type"] = "state"; // Der Typ, den das JS für das Dashboard erwartet
+JsonObject getStateAsJson(JsonDocument& doc) {
+    const JsonObject values = doc.to<JsonObject>();
 
-    const JsonObject values = doc["values"].to<JsonObject>();
     values["airTemp"] = currentAirTemp; // Raumtemperatur in °C (S1)
     values["humidity"] = currentHumidity; // Luftfeuchtigkeit in % (S1)
     values["soilTemp"] = currentSoilTemp; // Bodentemperatur in °C (S2)
@@ -1053,10 +972,15 @@ void broadcastState() {
     values["fanOn"] = fanRelay.isOn(); // Lüfter (A4)
     values["pumpOn"] = pumpRelay.isOn(); // Pumpe (A5)
     values["misterOn"] = misterRelay.isOn(); // Vernebler (A6)
+    return values;
+}
 
-    String jsonString;
-    serializeJson(doc, jsonString);
-    webInterface.broadcast(jsonString);
+/**
+ * @brief Sendet den Status aller Sensoren und Aktoren an alle Clients
+ */
+void broadcastState() {
+    JsonDocument doc;
+    webInterface.broadcast("state", getStateAsJson(doc));
 }
 
 /**
@@ -1064,10 +988,7 @@ void broadcastState() {
  */
 void broadcastSettings() {
     JsonDocument doc;
-    doc["type"] = "settings";
-    const JsonObject values = doc["values"].to<JsonObject>();
-    settingsManager.serialize(values);
-    String jsonString;
-    serializeJson(doc, jsonString);
-    webInterface.broadcast(jsonString);
+    const JsonObject values = doc.to<JsonObject>(); // JsonDocument in ein JsonObject umwandeln
+    settingsManager.serialize(values); // settingsManager füllt dieses Objekt
+    webInterface.broadcast("settings", values);
 }

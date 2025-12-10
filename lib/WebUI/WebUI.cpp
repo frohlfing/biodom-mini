@@ -48,20 +48,6 @@ void WebUI::registerRoutes() {
     // Dieser eine Befehl kümmert sich um "/", "/style.css", "/script.js" UND alle Anfragen an "/icons/...".
     _server.serveStatic("/", *_fs, "/").setDefaultFile("index.html");
 
-    // todo 1: Handler registrieren, der alle Dateien aus SD-Karte im Verzeichnis /pub ausliefert (/pub/images/foo.bar ist gemappt als images/foo.bar)
-    // Explizite Handler für /api/imaages oder /img werden nicht mehr benötigt
-
-    // todo 2: REST-Routen verwenden!
-    // Handler zum Auflisten der Bilder auf der SD-Karte
-    _server.on("/api/images", HTTP_GET, [this](AsyncWebServerRequest* request) {
-        if (onImageListRequest) {
-            onImageListRequest(request);
-        } else {
-            request->send(500, "text/plain", "Image list handler nicht registriert.");
-        }
-    });
-
-    // todo 3: REST-Routen verwenden!
     // Handler zur Anzeige eines einzelnen Bildes von der SD-Karte
     _server.on("/img", HTTP_GET, [this](AsyncWebServerRequest* request) {
         if (request->hasParam("path") && _sd) {
@@ -82,16 +68,83 @@ void WebUI::registerRoutes() {
     });
 }
 
-void WebUI::broadcast(const String& message) {
-    _ws.textAll(message);
-}
-
 void WebUI::cleanupClients() {
     _ws.cleanupClients();
 }
 
-//void WebUI::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) const {
-void WebUI::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, size_t len) {
+// --- Broadcast Methoden ---
+
+void WebUI::broadcast(const JsonDocument& doc) {
+    String jsonString;
+    serializeJson(doc, jsonString);
+    _ws.textAll(jsonString);
+}
+
+void WebUI::broadcast(const char* type) {
+    JsonDocument doc;
+    doc["type"] = type;
+    broadcast(doc);
+}
+
+void WebUI::broadcast(const char* type, const JsonObject& payload) {
+    JsonDocument doc;
+    doc["type"] = type;
+    doc["payload"] = payload;
+    broadcast(doc);
+}
+
+void WebUI::broadcast(const char* type, const char* key, const String& value) {
+    JsonDocument doc;
+    doc["type"] = type;
+    doc["payload"][key] = value;
+    broadcast(doc);
+}
+
+// --- SendTo Methoden (Unicast) ---
+
+void WebUI::sendTo(const AsyncWebSocketClient* client, const JsonDocument& doc) {
+    if (!client || client->status() != WS_CONNECTED) return;
+    String jsonString;
+    serializeJson(doc, jsonString);
+    _ws.text(client->id(), jsonString);
+}
+
+void WebUI::sendTo(const AsyncWebSocketClient* client, const char* type) {
+    JsonDocument doc;
+    doc["type"] = type;
+    sendTo(client, doc);
+}
+
+void WebUI::sendTo(const AsyncWebSocketClient* client, const char* type, const JsonObject& payload) {
+    JsonDocument doc;
+    doc["type"] = type;
+    doc["payload"] = payload;
+    sendTo(client, doc);
+}
+
+void WebUI::sendTo(const AsyncWebSocketClient* client, const char* type, const char* key, const String& value) {
+    JsonDocument doc;
+    doc["type"] = type;
+    doc["payload"][key] = value;
+    sendTo(client, doc);
+}
+
+// --- Console Log Methode ---
+
+void WebUI::consoleLog(const AsyncWebSocketClient* client, const char *format, ...) {
+    if (!client) return;
+    char buffer[256];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    sendTo(client, "log", "message", String(buffer));
+}
+
+// --- WebSocket Handler ---
+
+//void WebUI::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, const size_t len) const {
+void WebUI::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, const uint8_t *data, const size_t len) {
     if (type == WS_EVT_CONNECT) {
         // Client hat sich verbunden
         Serial.printf("WebSocket Client #%u verbunden von %s\n", client->id(), client->remoteIP().toString().c_str());

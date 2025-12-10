@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <ESPAsyncWebServer.h>
 #include <functional> // Notwendig für Callbacks
 #include <FS.h> // Notwendig für den FS-Pointer
@@ -29,13 +30,55 @@ public:
     bool begin(FS* fs, FS* sd = nullptr);
 
     /**
-     * @brief Sendet eine Nachricht an alle verbundenen WebSocket-Clients (Broadcast).
-     * @param message Der zu sendende String.
+     * @brief Sendet eine Nachricht nur mit Typ (ohne Nutzdaten).
+     * Beispiel: webInterface.broadcast("imageListCleared");
      */
-    void broadcast(const String& message); // todo 1: ersetzen mit broadcast(const JsonDocument& data); (string als Parameter sollte nicht erlaubt sein)
+    void broadcast(const char* type);
 
-    // todo 2: broadcast(type, payload) hinzufügen oder überall nutzen, wo es sich anbietet
-    //  (ist statt payload eher data oder message oder ein anderer Begriff besser?)
+    /**
+     * @brief Sendet eine standardisierte Nachricht mit Typ und Payload an alle Clients.
+     * Wrapper, der das JSON-Erstellen übernimmt.
+     * @param type Der Nachrichtentyp (z.B. "state", "settings").
+     * @param payload Das Daten-Objekt (z.B. Sensorwerte).
+     */
+    void broadcast(const char* type, const JsonObject& payload);
+
+    /**
+     * @brief Sendet Schlüssel-Wert-Paare als Payload ("payload": {key: value})
+     */
+    void broadcast(const char* type, const char* key, const String& value);
+
+    /**
+     * @brief Sendet eine Nachricht an einen bestimmten Client.
+     * @param client Der Ziel-Client.
+     * @param type Der Nachrichtentyp.
+     */
+    void sendTo(const AsyncWebSocketClient* client, const char* type);
+
+    /**
+     * @brief Sendet eine Nachricht mit Payload an einen bestimmten Client.
+     * @param client Der Ziel-Client.
+     * @param type Der Nachrichtentyp.
+     * @param payload Das Daten-Objekt.
+     */
+    void sendTo(const AsyncWebSocketClient* client, const char* type, const JsonObject& payload);
+
+    /**
+     * @brief Sendet ein Schlüssel-Wert-Paar an einen bestimmten Client.
+     * @param client Der Ziel-Client.
+     * @param type Der Nachrichtentyp.
+     * @param key Der Schlüssel im Payload.
+     * @param value Der Wert im Payload.
+     */
+    void sendTo(const AsyncWebSocketClient* client, const char* type, const char* key, const String& value);
+
+    /**
+     * @brief Sendet eine formatierte Log-Nachricht an die Browser-Konsole eines bestimmten Clients.
+     * @param client Der Ziel-Client.
+     * @param format Der Format-String (wie bei printf).
+     * @param ... Die Argumente für den Format-String.
+     */
+    void consoleLog(const AsyncWebSocketClient* client, const char *format, ...);
 
     /**
      * @brief Diese Funktion entfernt "tote" Clients aus der internen Liste des Servers.
@@ -66,12 +109,6 @@ public:
      */
     std::function<void(uint32_t clientId)> onClientDisconnect;
 
-    // todo 3: onImageListRequest muss raus, statt dessen in onMessage in Form einer REST-Anfrage verarbeitet werden
-    /**
-     * @brief Callback, der aufgerufen wird, wenn die Bildliste von der SD-Karte angefordert wird.
-     */
-    std::function<void(AsyncWebServerRequest* request)> onImageListRequest;
-
 private:
     /**
      * @brief Interner Handler, der WebSocket-Events verarbeitet.
@@ -89,6 +126,19 @@ private:
      * @brief Registriert alle Routen
      */
     void registerRoutes();
+
+    /**
+     * @brief Sendet ein JSON-Objekt an alle Clients.
+     * Ersetzt die alte broadcast(String) Methode für mehr Typsicherheit.
+     */
+    void broadcast(const JsonDocument& doc);
+
+    /**
+     * @brief Sendet ein JSON-Objekt an einen bestimmten Client.
+     * @param client Der Ziel-Client.
+     * @param doc Das zu sendende JSON-Dokument.
+     */
+    void sendTo(const AsyncWebSocketClient* client, const JsonDocument& doc);
 
     AsyncWebServer _server; // Die Instanz des Webservers.
     AsyncWebSocket _ws; // Die Instanz des WebSocket-Servers am Endpunkt "/ws".

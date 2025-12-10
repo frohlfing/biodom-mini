@@ -1,22 +1,5 @@
 "use strict";
 
-// === Globale Variablen ===
-
-/** @type {WebSocket} Die WebSocket-Verbindung zum ESP32 */
-let websocket;
-
-/** @type {string[]} Liste der Bildpfade (z.B. ["/img_2025...jpg", ...]) */
-let imagePaths = [];
-
-/** @type {number} Der Index des aktuell angezeigten Bildes im imagePaths Array */
-let currentImageIndex = 0;
-
-/** @type {number|null} ID des Zeitraffer-Intervalls (für clearInterval) */
-let timelapseIntervalId = null;
-
-/** @type {boolean} Status, ob der Zeitraffer gerade läuft */
-let isPlaying = false;
-
 /**
  * @typedef {object} Settings
  * @property {number} airTempThresholdHigh - Zielwert für Raumtemperatur in °C (S1)
@@ -69,8 +52,31 @@ let isPlaying = false;
  * @property {string} [path] - Nur bei type='newImage'
  */
 
+// === Globale Variablen ===
+
+/** @type {WebSocket} Die WebSocket-Verbindung zum ESP32 */
+let websocket = null;
+
+/** @type {string[]} Liste der Bildpfade (z.B. ["/img_2025...jpg", ...]) */
+let imagePaths = [];
+
+/** @type {number} Der Index des aktuell angezeigten Bildes im imagePaths Array */
+let currentImageIndex = -1; // -1 == keine Bilder geladen
+
+/** @type {number|null} ID des Zeitraffer-Timers (für clearTimeout) */
+let timelapseTimerId = null;
+
+/** @type {boolean} Status, ob der Zeitraffer gerade läuft */
+let isPlaying = false;
+
+/** @type {number|null} Timer-ID für das Warten auf eine Kamera-Antwort. */
+let captureTimeoutId = null;
+
 // === Initialisierung ===
 
+/**
+ * Wird beim Laden der Seite ausgeführt.
+ */
 window.addEventListener('load', () => {
     initWebsocket();
 
@@ -78,77 +84,216 @@ window.addEventListener('load', () => {
 
     // --- Tab Navigation ---
     document.querySelectorAll('.tab-link').forEach(button => {
-        button.addEventListener('click', (event) => {
-            openTab(event, button.dataset.tabname);
-        });
+        button.addEventListener('click', handleTabLinkClick);
     });
 
-    // Einstellungen
-    document.getElementById('saveSettingsButton').addEventListener('click', saveSettings);
+    // --- Einstellungen ---
+    document.getElementById('saveSettingsButton').addEventListener('click', handleSaveSettingsClick);
 
     // Radio-Buttons (Modus ändern)
     document.querySelectorAll('.mode-selector').forEach(selector => {
-        selector.addEventListener('change', (event) => {
-            setMode(event.target.name, event.target.value); // event.target.value == 'auto', 'on', 'off'
-        });
+        selector.addEventListener('change', handleModeSelectorChange);
     });
 
     // --- Kamera ---
-    document.getElementById('captureNowButton').addEventListener('click', captureNow);
-    document.getElementById('deleteImagesButton').addEventListener('click', deleteAllImages);
-    document.getElementById('btnPlayPause').addEventListener('click', toggleTimelapse);
-    document.getElementById('btnPrev').addEventListener('click', () => stepImage(1)); // 1 Schritt zurück (älter)
-    document.getElementById('btnNext').addEventListener('click', () => stepImage(-1)); // 1 Schritt vor (neuer)
-    document.getElementById('image-select').addEventListener('change', (e) => {
-        handleImageChanged(e.target.value);
-    });
-    document.getElementById('timelapseSpeed').addEventListener('input', (e) => {
-        handleTimelapseSpeedChanged(e.target.value); // todo 1: Konvention überdenken: Parameter spezifisch oder generell immer nur das event an den Handler übergeben?
-    });
-
-    // Standardmäßig den Dashboard-Tab öffnen  todo 2: raus damit, sollte im HTML der initiale Zustand sein
-    openTab(null, 'Dashboard');
-    const firstTab = document.querySelector('.tab-link');
-    firstTab.classList.add('active');
+    document.getElementById('captureNowButton').addEventListener('click', handleCaptureNowButtonClick);
+    document.getElementById('deleteImagesButton').addEventListener('click', handleDeleteImagesButtonClick);
+    document.getElementById('btnPlayPause').addEventListener('click', handlePlayPauseButtonClick);
+    document.getElementById('btnPrev').addEventListener('click', handlePrevButtonClick); // 1 Schritt zurück (älter)
+    document.getElementById('btnNext').addEventListener('click', handleNextButtonClick); // 1 Schritt vor (neuer)
+    document.getElementById('image-select').addEventListener('change', handleImageSelectChange);
+    document.getElementById('timelapseSpeed').addEventListener('input', handleTimelapseSpeedInput);
 });
 
+// === Ereignishändler ===
+
 /**
- * @brief Wechselt den sichtbaren Tab.
- * @param {Event} evt Das Click-Event (kann null sein beim initialen Aufruf).
- * @param {string} tabName Die ID des anzuzeigenden Divs.
+ * Wird aufgerufen, wenn ein Kartenreiter angeklickt wird.
+ * @param {Event} event Das Event-Objekt.
  */
-function openTab(evt, tabName) {
+function handleTabLinkClick(event) {
+    const tabName = event.currentTarget.dataset.tabname; // z.B. "Dashboard"
+
     // Alle Tab-Inhalte ausblenden
-    const tabContents = document.getElementsByClassName("tab-content");
-    for (let i = 0; i < tabContents.length; i++) {
-        tabContents[i].style.display = "none";
-    }
+    document.querySelectorAll('.tab-content')
+        .forEach(div => div.classList.remove('show'));
 
     // "active" Klasse von allen Buttons entfernen
-    const tabLinks = document.getElementsByClassName("tab-link");
-    for (let i = 0; i < tabLinks.length; i++) {
-        tabLinks[i].className = tabLinks[i].className.replace(" active", "");
-    }
+    document.querySelectorAll('.tab-link')
+        .forEach(button => button.classList.remove('active'));
 
     // Gewählten Tab anzeigen
-    const target = document.getElementById(tabName);
-    if (target) target.style.display = "block";
+    document.getElementById(tabName).classList.add('show');
 
     // Button aktivieren
-    if (evt && evt.currentTarget) {
-        evt.currentTarget.className += " active";
-    }
+    event.currentTarget.className += " active";
 
-    // Bilder laden, wenn Kamera-Tab ausgewählt wurde und noch keine Bilder geladen wurden
+    // Bilder anfordern, wenn Kamera-Tab ausgewählt wurde und noch keine Bilder geladen wurden
     if (tabName === 'Camera' && imagePaths.length === 0) {
-        loadImages();
+        console.log("Fordere Bildliste vom Server an...");
+        sendMessage("getImageList");
+    }
+}
+
+// === Hilfsfunktionen ===
+
+/**
+ * Wird aufgerufen, wenn auf den Speichern-Button geklickt wurde.
+ * @param {Event} _event Das Event-Objekt.
+ */
+function handleSaveSettingsClick(_event) {
+    const statusDiv = document.getElementById('settings-status');
+    statusDiv.innerText = 'Speichere...';
+
+    const payload = {};
+    const form = document.getElementById('settingsForm');
+
+    // Alle Inputs im Formular durchgehen
+    Array.from(form.elements).forEach(input => {
+        if (!input.id) return; // Inputs ohne ID ignorieren
+
+        // Konvertierung Sekunde -> Millisekunde
+        if (input.id.endsWith('DurationMs')) {
+            payload[input.id] = parseInt(input.value, 10) * 1000;
+        }
+        // Zahlen
+        else if (input.type === 'number') {
+            // Check auf Float (Step enthält Punkt) oder Int
+            payload[input.id] = (input.step && input.step.includes('.')) ? parseFloat(input.value) : parseInt(input.value, 10);
+        }
+        // Text / Sonstiges
+        else {
+            payload[input.id] = input.value;
+        }
+    });
+
+    // Nachricht senden
+    sendMessage("saveSettings", payload);
+
+    // Feedback anzeigen
+    setTimeout(() => { statusDiv.innerText = 'Gespeichert!'; }, 1500);
+    setTimeout(() => { statusDiv.innerText = ''; }, 4000);
+}
+
+/**
+ * Wird aufgerufen, wenn der Steuermodus eines Aktors (an/aus/auto) geändert wird.
+ * @param {Event} event Das Event-Objekt.
+ */
+function handleModeSelectorChange(event) {
+    sendMessage("setMode", {
+        target: event.target.name,
+        mode: event.target.value,
+    });
+}
+
+/**
+ * Wird aufgerufen, wenn der Button 'Bild jetzt aufnehmen' geklickt wird.
+ * @param {Event} _event Das Event-Objekt.
+ */
+function handleCaptureNowButtonClick(_event) {
+    const button = document.getElementById('captureNowButton');
+    button.disabled = true;
+    button.innerText = 'Aufnahme...'; // todo 1: Wie beim Speichern-button den Text in grüner Schrift daneben schreiben
+
+    // Setze einen Timeout für den Fall, dass der Server nicht antwortet
+    captureTimeoutId = setTimeout(() => {
+        console.error("Kamera-Aufnahme: Timeout. Keine Antwort vom Server.");
+        alert("Fehler: Keine Antwort von der Kamera. Bitte erneut versuchen.");
+        resetCaptureButton();
+        captureTimeoutId = null;
+    }, 15000); // 15 Sekunden warten
+
+    sendMessage("captureNow");
+}
+
+/**
+ * Wird aufgerufen, wenn der Button 'Alle Bilder löschen' geklickt wird. Fordert ein Passwort an und sendet den Löschbefehl.
+ * @param {Event} _event Das Event-Objekt.
+ */
+function handleDeleteImagesButtonClick(_event) {
+    const pwd = prompt("Admin-Passwort zum Löschen ALLER Bilder eingeben:");
+    if (!pwd) {
+        return;
+    }
+    stopTimelapse();
+    console.log("Sende deleteAllImages");
+    sendMessage("deleteAllImages", {password: pwd});
+}
+
+/**
+ * Startet oder stoppt den Zeitraffer-Player.
+ * @param {Event} _event Das Event-Objekt.
+ */
+function handlePlayPauseButtonClick(_event) {
+    // Zeitraffervideo pausieren bzw. fortsetzen
+    if (isPlaying) {
+        stopTimelapse();
+    } else {
+        if (imagePaths.length < 2) {
+            alert("Mindestens 2 Bilder für Zeitraffer benötigt.");
+            return;
+        }
+        startTimelapse();
+    }
+}
+
+/**
+ * Zeigt das vorherige (ältere) Bild in der Galerie an.
+ * @param {Event} _event Das Event-Objekt.
+ */
+// 1 Schritt zurück (älter)
+function handlePrevButtonClick(_event) {
+    stopTimelapse();
+    showImageAtIndex(currentImageIndex >= imagePaths.length - 1 ? 0 : currentImageIndex + 1);
+}
+
+/**
+ * Zeigt das nächste (neuere) Bild in der Galerie an.
+ * @param {Event} _event Das Event-Objekt.
+ */
+// 1 Schritt vor (neuer)
+function handleNextButtonClick(_event) {
+    stopTimelapse();
+    showImageAtIndex(currentImageIndex <= 0 ? imagePaths.length - 1 : currentImageIndex - 1);
+}
+
+/**
+ * Wird aufgerufen, wenn ein Bild aus der Auswahlliste gewählt wurde.
+ * @param {Event} event Das Event-Objekt.
+ */
+function handleImageSelectChange(event) {
+    const path = event.target.value // Pfad des ausgewählten Bildes.
+    const idx = imagePaths.indexOf(path);
+    if (idx === -1) {
+        return;
+    }
+    stopTimelapse();
+    showImageAtIndex(idx);
+}
+
+/**
+ * Wird aufgerufen, wenn die Geschwindigkeit für den Zeitraffer verändert wurde.
+ * @param {Event} event Das Event-Objekt.
+ */
+function handleTimelapseSpeedInput(event) {
+    const ms = parseInt(event.target.value, 10);
+    const display = document.getElementById('speedDisplay');
+    if (ms >= 1000) {
+        display.innerText = (ms / 1000).toFixed(1) + ' s';
+    } else {
+        display.innerText = ms + ' ms';
+    }
+    // Wenn der Player läuft, Geschwindigkeit live anpassen (Neustart)
+    if (isPlaying) {
+        stopTimelapse();
+        startTimelapse();
     }
 }
 
 // === Websocket Kommunikation ===
 
 /**
- * @brief Baut die WebSocket-Verbindung auf und definiert Handler.
+ * Baut die WebSocket-Verbindung auf und definiert Handler.
  */
 function initWebsocket() {
     const gateway = `ws://${window.location.hostname}/ws`;
@@ -177,17 +322,35 @@ function initWebsocket() {
         switch (data.type) {
             case 'state':
                 // Aktualisiert Sensorwerte
-                handleWSStateMessage(data.values);
+                if (data.payload) {
+                    handleWSStateMessage(data.payload);
+                }
                 break;
 
             case 'settings':
                 // Aktualisiert Input-Felder UND Radio-Buttons (Modi)
-                handleWSSettingsMessage(data.values);
+                if (data.payload) {
+                    handleWSSettingsMessage(data.payload);
+                }
                 break;
 
             case 'newImage':
                 // Ein neues Bild wurde aufgenommen -> Sofort anzeigen
-                handleWSNewImageMessage(data.path);
+                if (data.payload && data.payload.path) {
+                    handleWSNewImageMessage(data.payload.path);
+                }
+                break;
+
+            case 'captureFailed':
+                // Die Aufnahme ist auf dem ESP32 fehlgeschlagen
+                handleWSCaptureFailedMessage();
+                break;
+
+            case 'imageList':
+                // Server sendet die Liste der Bilder
+                if (data.payload && data.payload.images) {
+                    handleWSImageListMessage(data.payload.images);
+                }
                 break;
 
             case 'imageListCleared':
@@ -196,8 +359,10 @@ function initWebsocket() {
                 break;
 
             case 'log':
-                // Ausgabe in der Browser-Konsole mit türkiser Farbe, damit es auffällt
-                console.log(`%c[ESP32] ${data.message}`, 'color: #00d2d3; font-weight: bold;');
+                if (data.payload && data.payload.message) {
+                    // Ausgabe in der Browser-Konsole mit türkiser Farbe, damit es auffällt
+                    console.log(`%c[ESP32] ${data.payload.message}`, 'color: #00d2d3; font-weight: bold;');
+                }
                 break;
 
             default:
@@ -207,10 +372,11 @@ function initWebsocket() {
 }
 
 /**
- * @brief Wird aufgerufen, wenn der Server neue Live-Werte übermittelt hat.
- * @param {State} values Aktuelle Werte der Sensoren und Aktoren.
+ * Wird aufgerufen, wenn der Server neue Live-Werte übermittelt hat.
+ * @param {object} payload Aktuelle Werte der Sensoren und Aktoren.
  */
-function handleWSStateMessage(values) {
+function handleWSStateMessage(payload) {
+    const values = /** @type {State} */ payload;
     let element;
 
     // --- Kachel für Raumklima ---
@@ -266,10 +432,11 @@ function handleWSStateMessage(values) {
 }
 
 /**
- * @brief Wird aufgerufen, wenn Server neue Einstellungen übermittelt hat.
- * @param {Settings} settings Aktuelle Einstellungen.
+ * Wird aufgerufen, wenn Server neue Einstellungen übermittelt hat.
+ * @param {object} payload Aktuelle Einstellungen.
  */
-function handleWSSettingsMessage(settings) {
+function handleWSSettingsMessage(payload) {
+    const settings = /** @type {Settings} */ payload;
     document.getElementById('airTempThresholdHigh').value = settings['airTempThresholdHigh'];
     document.getElementById('humidityTarget').value = settings['humidityTarget'];
     document.getElementById('soilTempTarget').value = settings['soilTempTarget'];
@@ -293,338 +460,190 @@ function handleWSSettingsMessage(settings) {
 }
 
 /**
- * @brief Wird aufgerufen, wenn der Server ein neues Bild übermittelt wird.
+ * Wird aufgerufen, wenn der Server ein neues Bild übermittelt wird.
  * @param {string} path Pfad zum neuen Bild.
  */
 function handleWSNewImageMessage(path) {
     console.log("Neues Bild empfangen:", path);
 
-    // Bild vorne anfügen (da Liste "Neueste zuerst" sortiert ist)
+    resetCaptureButton(); // Button zurücksetzen
+
+    // Das Bild im internen Array an die erste Stelle setzen
     imagePaths.unshift(path);
 
-    // Dropdown aktualisieren
-    updateImageUI();
+    // Das neue Element oben einfügen
+    const select = document.getElementById('image-select');
+    if (select) {
+        const option = document.createElement('option');
+        option.value = path;
+        option.innerText = path.replace(/^\//, ''); // Führenden Slash entfernen
 
-    // Sofort auf das neue Bild springen
+        // prepend fügt das Element als erstes Kind ein (Index 0)
+        // Das ist viel performanter als innerHTML = '' und alles neu zu bauen.
+        select.prepend(option);
+
+        // Das Dropdown visuell auf das neue Element setzen
+        select.selectedIndex = 0;
+    }
+
+    // Das neue Bild anzeigen
     currentImageIndex = 0;
     showImageAtIndex(0);
 }
 
 /**
- * @brief Wird aufgerufen, wenn alle Bilder gelöscht wurden.
+ * Wird aufgerufen, wenn die Kameraaufnahme fehlgeschlagen ist.
+ */
+function handleWSCaptureFailedMessage() {
+    console.error("Server meldet: Kamera-Aufnahme fehlgeschlagen.");
+    alert("Die Kameraaufnahme ist fehlgeschlagen. Bitte überprüfen Sie das System.");
+    resetCaptureButton();
+}
+
+/**
+ * Wird aufgerufen, wenn der Server die Liste der Bilder sendet.
+ * @param {ImageFile[]} images Eine Liste von Bild-Objekten.
+ */
+function handleWSImageListMessage(images) {
+    // Neueste zuerst sortieren, falls nicht schon vom Server erledigt
+    images.sort((a, b) => b.path.localeCompare(a.path));
+    imagePaths = images.map(img => img.path); // Nur die Pfade speichern
+
+    const select = document.getElementById('image-select');
+    select.innerHTML = ''; // Alte Einträge löschen
+
+    if (imagePaths.length) {
+        imagePaths.forEach(path => {
+            const option = document.createElement('option');
+            option.value = path;
+            option.innerText = path.replace(/^\//, ''); // Führenden Slash entfernen
+            select.appendChild(option);
+        });
+    }
+    showImageAtIndex(imagePaths.length > 0 ? 0 : -1); // Erstes Bild anzeigen
+}
+
+/**
+ * Wird aufgerufen, wenn alle Bilder gelöscht wurden.
  */
 function handleWSImageListClearedMessage() {
     imagePaths = [];
-    updateImageUI();
-    showPlaceholder();
+    document.getElementById('image-select').innerHTML = '';
+    document.getElementById('current-image').src = '';
+    document.getElementById('image-timestamp').innerText = '';
 }
 
-// === Bildergalerie Logik ===
+// === Hilfsfunktionen ===
 
 /**
- * @brief Baut das <select> Dropdown neu auf.
+ * Sendet eine formatierte Nachricht an den WebSocket.
+ * @param {string} type Der Nachrichtentyp.
+ * @param {object} payload Das Datenobjekt (optional).
  */
-function updateImageUI() {
+function sendMessage(type, payload = {}) {
+    if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+        console.error("WS nicht verbunden");
+        return;
+    }
+    const message = {
+        type: type,
+        payload: payload
+    };
+    console.log("Sende:", message);
+    websocket.send(JSON.stringify(message));
+}
+
+/**
+ * Zeigt das Bild am angegebenen Index an.
+ * @param {number} index Index im imagePaths Array.
+ * @param {function(Error|null): void} [onDone] Callback, der nach dem Laden aufgerufen wird.
+ */
+function showImageAtIndex(index, onDone) {
+    currentImageIndex = index;
+    const currentImage = document.getElementById('current-image');
+    const imageTimestamp = document.getElementById('image-timestamp');
     const select = document.getElementById('image-select');
-    if (!select) return;
 
-    select.innerHTML = '';
+    currentImage.onload = () => {
+        if (onDone) {
+            onDone(null);
+        }
+    };
+    currentImage.onerror = () => {
+        const err = new Error(`Bild konnte nicht geladen werden: ${path}`);
+        console.error(err);
+        if (onDone) {
+            onDone(err);
+        }
+    };
 
-    if (imagePaths.length === 0) {
+    if (index < 0 || index >= imagePaths.length) {
+        select.value = null;
+        currentImage.src = '';
+        imageTimestamp.innerText = '';
+        if (onDone) onDone(null); // auch hier den Callback ausführen, um die Kette nicht zu unterbrechen
         return;
     }
 
-    imagePaths.forEach(path => {
-        const option = document.createElement('option');
-        option.value = path;
-        // Entferne führenden Slash für schönere Anzeige
-        option.innerText = path.replace(/^\//, '');
-        select.appendChild(option);
-    });
-
-    // Aktuelles Bild selektieren
-    if (imagePaths[currentImageIndex]) {
-        select.value = imagePaths[currentImageIndex];
-    }
-}
-
-/**
- * @brief Zeigt das Bild am angegebenen Index an.
- * @param {number} index Index im imagePaths Array.
- */
-function showImageAtIndex(index) {
-    if (index < 0 || index >= imagePaths.length) return;
-
     const path = imagePaths[index];
-    const imgEl = document.getElementById('current-image');
-    const timeEl = document.getElementById('image-timestamp');
-    const select = document.getElementById('image-select');
-
-    if (imgEl) {
-        // Timestamp anhängen, um Browser-Cache zu umgehen (falls Dateiname gleich bleibt, was hier nicht der Fall ist, aber sicher ist sicher)
-        // imgEl.src = `/img?path=${path}&t=${new Date().getTime()}`;
-        imgEl.src = `/img?path=${path}`;
-    }
-
-    if (timeEl) {
-        timeEl.innerText = path.replace(/^\//, ''); // Dateiname als Zeitstempel anzeigen
-    }
-
-    if (select) {
-        select.value = path;
-    }
+    currentImage.src = `/img?path=${path}`;
+    //currentImage.src = `/img?path=${path}&t=${new Date().getTime()}`; // Timestamp anhängen, um Browser-Cache zu umgehen.
+    imageTimestamp.innerText = path.replace(/^\//, ''); // Dateiname als Zeitstempel anzeigen
+    select.value = path;
 }
 
 /**
- * @brief Zeigt einen Platzhalter, wenn keine Bilder da sind.
+ * Setzt den "Bild aufnehmen"-Button in seinen Ausgangszustand zurück.
  */
-function showPlaceholder() {
-    const imgEl = document.getElementById('current-image');
-    const timeEl = document.getElementById('image-timestamp');
-    if (imgEl) imgEl.src = ''; // oder Pfad zu einem Platzhalter-Bild
-    if (timeEl) timeEl.innerText = 'Keine Bilder auf der SD-Karte.';
-}
-
-/**
- * @brief Lädt die Liste der Bilder vom Server.
- */
-function loadImages() {
-    fetch('/api/images')
-        .then(response => response.json())
-        .then(images => {
-            images.sort((a, b) => b.path.localeCompare(a.path)); // sortieren (neueste zuerst)
-            imagePaths = images.map(img => img.path); // Pfade speichern
-            updateImageUI();
-            if (imagePaths.length > 0) {
-                currentImageIndex = 0;
-                showImageAtIndex(0); // erstes Bild anzeigen
-            } else {
-                showPlaceholder();
-            }
-        })
-        .catch(err => {
-            console.error("Fehler beim Laden der Bilder:", err);
-            document.getElementById('image-timestamp').innerText = "Fehler beim Laden.";
-        });
-}
-
-
-// === Zeitraffer Player ===
-
-/**
- * @brief Startet oder pausiert den Zeitraffer.
- */
-function toggleTimelapse() {
-    if (isPlaying) {
-        stopTimelapse();
-    } else {
-        if (imagePaths.length < 2) {
-            alert("Mindestens 2 Bilder für Zeitraffer benötigt.");
-            return;
-        }
-        startTimelapse();
+function resetCaptureButton() {
+    // Timeout abbrechen, falls er noch läuft
+    if (captureTimeoutId) {
+        clearTimeout(captureTimeoutId);
+        captureTimeoutId = null;
     }
+    const button = document.getElementById('captureNowButton');
+    button.disabled = false;
+    button.innerText = 'Bild jetzt aufnehmen';
 }
 
 /**
- * @brief Startet das Intervall.
+ * Startet das Intervall.
  */
 function startTimelapse() {
     isPlaying = true;
-
-    // Button Icon ändern
-    const btn = document.getElementById('btnPlayPause');
-    if (btn) btn.innerText = "⏸"; // Pause Symbol
-
-    // Geschwindigkeit aus Slider lesen
-    const speedInput = document.getElementById('timelapseSpeed');
-    const speed = speedInput ? parseInt(speedInput.value) : 500;
-
-    timelapseIntervalId = setInterval(() => {
-        // Logik: Wir bewegen uns "rückwärts" durch das Array (Index 0 = Neu, Index Ende = Alt).
-        // Für einen chronologischen Ablauf (Alt -> Neu) müssen wir den Index verringern.
-
-        currentImageIndex--;
-
-        // Loop: Wenn wir unter 0 fallen, fangen wir beim ältesten Bild (Ende des Arrays) wieder an.
-        if (currentImageIndex < 0) {
-            currentImageIndex = imagePaths.length - 1;
-        }
-
-        showImageAtIndex(currentImageIndex);
-
-    }, speed);
+    document.getElementById('btnPlayPause').innerText = "⏸"; // Pause Symbol
+    playNextFrame(); // Starte die Schleife
 }
 
 /**
- * @brief Stoppt das Intervall.
+ * Stoppt das Intervall.
  */
 function stopTimelapse() {
     isPlaying = false;
-    if (timelapseIntervalId) {
-        clearInterval(timelapseIntervalId);
-        timelapseIntervalId = null;
+    if (timelapseTimerId) {
+        clearTimeout(timelapseTimerId);
+        timelapseTimerId = null;
     }
-
-    // Button Icon zurücksetzen
-    const btn = document.getElementById('btnPlayPause');
-    if (btn) btn.innerText = "▶"; // Play Symbol
+    document.getElementById('btnPlayPause').innerText = "▶"; // Play Symbol
 }
 
 /**
- * @brief Manuelles Blättern (Prev/Next).
- * @param {number} direction +1 (Richtung älter) oder -1 (Richtung neuer).
+ * Spielt das nächste Bild im Zeitraffer ab und plant den nächsten Aufruf.
  */
-function stepImage(direction) {
-    stopTimelapse(); // Immer stoppen bei manueller Interaktion
+function playNextFrame() {
+    if (!isPlaying) return; // Stopp, wenn der Player pausiert wurde
 
-    let newIndex = currentImageIndex + direction;
+    // Nächstes Bild anzeigen (Schleife von neu nach alt)
+    const nextIndex = currentImageIndex <= 0 ? imagePaths.length - 1 : currentImageIndex - 1;
 
-    // Wrap around Logik
-    if (newIndex < 0) {
-        newIndex = imagePaths.length - 1;
-    } else if (newIndex >= imagePaths.length) {
-        newIndex = 0;
-    }
-
-    currentImageIndex = newIndex;
-    showImageAtIndex(currentImageIndex);
-}
-
-/**
- * @brief Wird aufgerufen, wenn ein Bild aus der Auswahlliste gewählt wurde.
- * @param {string} path Pfad des ausgewählten Bildes.
- */
-function handleImageChanged(path) {
-    const idx = imagePaths.indexOf(path);
-    if (idx === -1) {
-        return;
-    }
-    stopTimelapse();
-    currentImageIndex = idx;
-    showImageAtIndex(currentImageIndex);
-}
-
-// todo 3: im Frontend ist "Geschwindigkeit" und Angabe in ms für speedDisplay verwirrend. Gemeint sit ja die Anzeigedauer pro Bild.
-// todo 4: Wenn die Anzeigedauer zu klein ist, werden nicht mehr alle Bilder angezeigt, sondern einige einfach übersprungen.
-// todo 5: Konvention für den Namen überdenken: ok so oder handleTimelapseSpeedChange oder onTimelapseSpeedChange(d) oder ganz anders?
-/**
- * @brief Wird aufgerufen, wenn die Geschwindigkeit für den Zeitraffer verändert wurde.
- * @param {number} ms Neue Geschwindigkeit.
- */
-function handleTimelapseSpeedChanged(ms) {
-    document.getElementById('speedDisplay').innerText = ms + 'ms';
-    // Wenn der Player läuft, Geschwindigkeit live anpassen (Neustart)
-    if (isPlaying) {
-        stopTimelapse();
-        startTimelapse();
-    }
-}
-
-// todo 6: umwandeln zu sendMessage
-/**
- * @brief Hilfsfunktion zum Senden von Befehlen via WebSocket.
- * @param {string} command Der Befehlsname (z.B. "toggle", "setMode").
- * @param {string} target Das Zielgerät (z.B. "lamp1").
- * @param {object} payload Zusätzliche Daten.
- */
-function sendCommand(command, target, payload = {}) {
-    if (websocket && websocket.readyState === WebSocket.OPEN) {
-        const message = {
-            type: "command",
-            command: command,
-            target: target,
-            ...payload,
-        };
-        console.log("Sende:", message);
-        websocket.send(JSON.stringify(message));
-    } else {
-        console.error("WebSocket nicht verbunden.");
-        alert("Keine Verbindung zum Controller.");
-    }
-}
-
-// todo 7: Beschreibung hinzufügen
-function setMode(target, mode) {
-    sendCommand("setMode", target, { mode: mode });
-}
-
-/**
- * @brief Sammelt Formulardaten und sendet sie an den ESP.
- */
-function saveSettings() {
-    const statusDiv = document.getElementById('settings-status');
-    if(statusDiv) statusDiv.innerText = 'Speichere...';
-
-    const payload = {};
-    const form = document.getElementById('settingsForm');
-
-    // Alle Inputs im Formular durchgehen
-    Array.from(form.elements).forEach(input => {
-        if (!input.id) return; // Inputs ohne ID ignorieren
-
-        // Konvertierung Sekunde -> Millisekunde
-        if (input.id.endsWith('DurationMs')) {
-            payload[input.id] = parseInt(input.value) * 1000;
+    // Zeige das nächste Bild an. Der Code im Callback wird ausgeführt, SOBALD das Bild geladen ist.
+    showImageAtIndex(nextIndex, (error) => {
+        if (error) { // Wenn ein Bild nicht geladen werden kann...
+            console.warn("Bild übersprungen:", error.message);
+            playNextFrame(); // ...einfach sofort das nächste versuchen.
         }
-        // Zahlen
-        else if (input.type === 'number') {
-            // Check auf Float (Step enthält Punkt) oder Int
-            payload[input.id] = (input.step && input.step.includes('.')) ? parseFloat(input.value) : parseInt(input.value);
-        }
-        // Text / Sonstiges
-        else {
-            payload[input.id] = input.value;
-        }
+        // Plane den nächsten Frame, NACHDEM das aktuelle Bild geladen wurde
+        const speed = parseInt(document.getElementById('timelapseSpeed').value, 10);
+        timelapseTimerId = setTimeout(playNextFrame, speed);
     });
-
-    // Nachricht senden
-    const message = {
-        type: "saveSettings",
-        payload: payload
-    };
-    websocket.send(JSON.stringify(message));
-
-    // Feedback anzeigen
-    setTimeout(() => { if(statusDiv) statusDiv.innerText = 'Gespeichert!'; }, 1500);
-    setTimeout(() => { if(statusDiv) statusDiv.innerText = ''; }, 4000);
 }
-
-/**
- * @brief Sendet den Befehl "captureNow" an den ESP.
- */
-function captureNow() {
-    // todo: 8: Es fehlt ein Feedback für die UI, dass nun ein Bild aufgezeichnet wird. Momentan bleibt der Button unverändert, als wenn man nicht draufgeklickt hat)
-    const message = {
-        type: "captureNow",
-    };
-    console.log("captureNow");
-    websocket.send(JSON.stringify(message));
-}
-
-/**
- * @brief Sendet den Befehl "deleteAllImages" mit Passwortschutz.
- */
-function deleteAllImages() {
-    // Sicherheitsabfrage
-    const pwd = prompt("Admin-Passwort zum Löschen ALLER Bilder eingeben:");
-    if (pwd) {
-        stopTimelapse();
-        // Nachricht als eigenen Typ aufbauen (wie saveSettings)
-        const message = {
-            type: "deleteAllImages",
-            payload: {
-                password: pwd
-            }
-        };
-
-        if (websocket && websocket.readyState === WebSocket.OPEN) {
-            console.log("Sende:", message);
-            websocket.send(JSON.stringify(message));
-        } else {
-            console.error("WS nicht verbunden");
-        }
-    }
-}
-
-// todo 9: Funktionen sortieren: Erst init/onload-Funktion, dann die Handler (erst für Websocket, dann UI), dann die Hilfsfunktionen (die von den Händlern aufgerufen werden)

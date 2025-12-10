@@ -79,6 +79,11 @@ h1, h2 {
     animation: fadeEffect 0.5s;
 }
 
+/* Klasse, um den initial sichtbaren Tab-Inhalt zu steuern */
+.tab-content.show {
+    display: block;
+}
+
 @keyframes fadeEffect {
     from {
         opacity: 0;
