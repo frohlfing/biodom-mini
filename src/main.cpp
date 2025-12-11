@@ -6,7 +6,7 @@
  * Sie initialisiert alle Sensoren und Aktoren, liest periodisch Messwerte aus,
  * wendet die Steuerungslogik an und aktualisiert die Anzeige.
  *
- * @version 1.3.0
+ * @version 1.0.9
  * @date 11.12.2025
  * @author Frank Rohlfing
  *
