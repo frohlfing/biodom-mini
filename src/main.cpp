@@ -9,6 +9,8 @@
  * @version 1.3.0
  * @date 11.12.2025
  * @author Frank Rohlfing
+ *
+ * Derzeit können die Kameraeinstellungen noch nicht gespeichert werden.
  */
 
 #include <Arduino.h>
