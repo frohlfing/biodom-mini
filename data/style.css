@@ -115,6 +115,13 @@ h1, h2 {
     margin-top: 20px;
 }
 
+.save-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
 .action-button {
     margin-top: 20px;
     padding: 10px 20px;
@@ -127,6 +134,7 @@ h1, h2 {
 }
 
 .status-message {
+    margin-top: 0; /* Reset, da Flexbox die Ausrichtung übernimmt */
     margin-top: 10px;
     color: #98c379;
 }
@@ -325,6 +333,13 @@ h1, h2 {
     margin-top: 10px;
     font-size: 0.9em;
     color: #888;
+}
+
+/* --- Statusmeldung für Bild Capture-Button --- */
+.camera-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 /* --- Bildverwaltung (Dropdown und Löschen) --- */

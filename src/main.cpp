@@ -1,19 +1,19 @@
 /**
  * @file main.cpp
  * @brief Hauptprogramm für das "Biodom Mini" Projekt.
- * 
+ *
  * Diese Datei enthält die Hauptlogik zur Steuerung des Gewächshauses.
  * Sie initialisiert alle Sensoren und Aktoren, liest periodisch Messwerte aus,
  * wendet die Steuerungslogik an und aktualisiert die Anzeige.
- * 
- * @version 1.2.0
- * @date 10.12.2025
+ *
+ * @version 1.3.0
+ * @date 11.12.2025
  * @author Frank Rohlfing
  */
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <ArduinoOTA.h>
+// #include <ArduinoOTA.h>
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include <SD.h>
@@ -29,7 +29,7 @@
 #include "LED.h"
 #include "MicroSDCard.h"
 #include "OLEDDisplaySH1106.h"
-//#include "OTA.h" // todo (dieses TODO erstmal ignorieren, machen wir später)
+#include "OTA.h"
 #include "Relay.h"
 #include "SensorAM2302.h"
 #include "SensorBH1750.h"
@@ -60,7 +60,7 @@ SettingsManager settingsManager;
 // --- Webinterface ---
 WebUI webInterface;
 
-//OTA ota(HOSTNAME, OTA_PASSWORD); // todo (dieses TODO erstmal ignorieren, machen wir später)
+OTA ota(HOSTNAME, OTA_PASSWORD);
 
 // --- Sensoren ---
 SensorAM2302 airSensor(PIN_AIR_SENSOR); // Raumtemperatur- und Luftfeuchtigkeitssensormodul AM2302 (S1)
@@ -120,7 +120,7 @@ void handleWSClientConnect(AsyncWebSocketClient* client);
 void handleWSMessage(AsyncWebSocketClient* client, const String& msg);
 /**
  * Hält das Programm an.
- * 
+ *
  * Gibt vor dem Halt eine Meldung und optional weitere Details aus.
  * Zusätzlich wird die Debug-LED eingeschaltet.
  * @param message Die Fehlermeldung, die auf dem Display und seriell ausgegeben wird.
@@ -137,9 +137,12 @@ void halt(const char* message, const char* detail = "") {
     display.addLogLine(F("System angehalten"));
 
     // LED dauerhaft einschalten, um den Halt zu signalisieren.
-    debugLed.on(); 
+    debugLed.on();
 
-    // Endlosschleife, um das Programm anzuhalten
+    delay(1000);
+    ESP.restart();
+
+    // // Endlosschleife, um das Programm anzuhalten
     // while (true) {
     //     delay(100); // Prozessor entlasten
     // }
@@ -147,8 +150,8 @@ void halt(const char* message, const char* detail = "") {
 
 /**
  * Gibt den Logeintrag aus.
- * 
- * Es wird etwas gewartet, damit der Eintrag auch auf dem Display gelesen werden kann, 
+ *
+ * Es wird etwas gewartet, damit der Eintrag auch auf dem Display gelesen werden kann,
  * bevor eventuell der nächste Eintrag angezeigt wird.
  */
 void log(const char* message) {
@@ -156,6 +159,32 @@ void log(const char* message) {
     display.addLogLine(message);
     delay(LOG_DELAY);
 }
+
+/*
+Symptom:
+Nach einem "Soft Reset" (Software-Upload, OTA oder Reset-Knopf) bleibt die Bootsequenz bei "SD-Karte ok" hängen.
+Wenn die Stromversorgung kurz aus und wieder eingeschaltet wird, startet der ESP ohne Probleme.
+
+Die Ursache:
+Wenn du einen "Soft Reset" machst (Software-Upload, OTA oder Reset-Knopf), wird die Stromversorgung nicht unterbrochen.
+
+- I2C-Problem:
+Ein I2C-Slave (z.B. der Kamerasensor oder das Display) könnte gerade ein Bit gesendet haben (SDA auf LOW ziehen), als
+der Reset kam. Der ESP32 startet neu, sieht, dass die Datenleitung (SDA) blockiert ist ("Low"), und die Wire-Bibliothek
+bleibt in einer Endlosschleife hängen, weil sie darauf wartet, dass der Bus frei wird.
+
+- SPI-Konflikt:
+Die SD-Bibliothek initialisiert den SPI-Bus oft mit sehr hohen Geschwindigkeiten. Wenn danach die camera.begin()
+aufgerufen wird, ist der SPI-Bus vielleicht noch in einem Zustand oder Modus, den die ArduCAM-Bibliothek nicht erwartet
+(oder die SD-Karte "hält" noch die MISO-Leitung).
+
+Die Lösung:
+Wir müssen in der setup() zwei Dinge tun:
+1) I2C-Bus "freischaufeln": Bevor wir Wire.begin() aufrufen, wackeln wir manuell am Takt-Pin (SCL), bis alle Slaves die
+Datenleitung (SDA) loslassen.
+2) SPI-Bus beruhigen: Zwischen der Initialisierung der SD-Karte und der Kamera fügen wir eine Zwangspause ein und
+stellen sicher, dass der Chip-Select (CS) der SD-Karte deaktiviert ist.
+*/
 
 /**
  * @brief Initialisierungsroutine
@@ -169,7 +198,7 @@ void setup() {
 
     // Debug-LED (Z4) initialisieren
     // Die LED ist standardmäßig aus. Sie signalisiert, dass da System nicht gestartet werden konnte.
-    debugLed.begin(); 
+    debugLed.begin();
 
     // Serielle Schnittstelle initialisieren
     Serial.begin(115200);
@@ -196,10 +225,10 @@ void setup() {
     SPI.begin();
 
     // Display (Z1) initialisieren
-    if (!display.begin()) {  
+    if (!display.begin()) {
         Serial.println("Kein Display! System angehalten.");
         // halt() wird hier noch nicht aufgerufen werden, da die Funktion das Display voraussetzt
-        debugLed.on(); 
+        debugLed.on();
         while (true) { delay(100); } // Endlosschleife, um das Programm anzuhalten
     }
 
@@ -239,16 +268,11 @@ void setup() {
     log(hostMessage.c_str());
 
     // OTA-Dienst starten
-    // if (!ota.begin()) { // todo (dieses TODO erstmal ignorieren, machen wir später)
-    //     halt("OTA FEHLER");
-    // }
-    ArduinoOTA.setHostname(HOSTNAME);
-    ArduinoOTA.setPassword(OTA_PASSWORD);
-    ArduinoOTA.begin();
+    ota.begin();
     log("OTA-Dienst bereit");
 
     // NTP-Client initialisieren
-    configTime(GMT_OFFSET, DAYLIGHT_OFFSET, NTP_SERVER); // started Hintergrund-Task für Zeitsynchronisation 
+    configTime(GMT_OFFSET, DAYLIGHT_OFFSET, NTP_SERVER); // started Hintergrund-Task für Zeitsynchronisation
     log("Synchronisiere Zeit...");
     attempts = 0;
     tm timeInfo{};
@@ -270,41 +294,41 @@ void setup() {
     log("Systemstart...");
 
     // S1
-    if (!airSensor.begin()) { 
+    if (!airSensor.begin()) {
         halt("Luftsensor FEHLER", airSensor.getErrorMessage());
-    } 
+    }
     log("Luftsensor OK");
 
     // S2
-    if (!soilTempSensor.begin()) { 
-        halt("Bodentemp. FEHLER"); 
-    } 
-    log("Bodentemperatur OK"); 
+    if (!soilTempSensor.begin()) {
+        halt("Bodentemp. FEHLER");
+    }
+    log("Bodentemperatur OK");
 
-    // S3  
-    if (!soilMoistureSensor.begin()) { 
-        halt("Bodenfeuchte FEHLER"); 
-    } 
-    log("Bodenfeuchtesensor OK"); 
+    // S3
+    if (!soilMoistureSensor.begin()) {
+        halt("Bodenfeuchte FEHLER");
+    }
+    log("Bodenfeuchtesensor OK");
 
     // S4
     if (!waterLevelSensor.begin()) {
-        halt("Wasserstand FEHLER"); 
-    } 
+        halt("Wasserstand FEHLER");
+    }
     log("Wasserstandsensor OK");
 
     // S5 (I2C-Gerät)
-    if (!lightSensor.begin()) { 
-        halt("Lichtsensor FEHLER"); 
-    } 
-    log("Lichtsensor OK"); 
+    if (!lightSensor.begin()) {
+        halt("Lichtsensor FEHLER");
+    }
+    log("Lichtsensor OK");
 
     // Sonstige Peripheriegeräte
 
     // Z2
-    if (!sdCard.begin()) { 
-        halt("SD-Karte FEHLER"); 
-    } 
+    if (!sdCard.begin()) {
+        halt("SD-Karte FEHLER");
+    }
     log("SD-Karte OK");
 
     // Z3 (I2C-Gerät)
@@ -313,7 +337,7 @@ void setup() {
     }
     log("Kamera OK");
 
-    // todo friert der Bootvorgang scheinbar ein!
+    // todo friert den Bootvorgang scheinbar ein!
     //applyCameraSettings();
     //log("Kamera konfiguriert");
 
@@ -354,7 +378,7 @@ void setup() {
  * @brief Hauptschleife, wird kontinuierlich ausgeführt.
  */
 void loop() {
-    ArduinoOTA.handle();
+    ota.handle();
     webInterface.cleanupClients();
     const unsigned long currentTime = millis();
 
@@ -579,19 +603,19 @@ bool readSensors() {
         currentHumidity = airSensor.getHumidity();
     }
 
-    if (soilTempSensor.read()) { 
-        currentSoilTemp = soilTempSensor.getTemperature(); 
-    }
-    
-    if (soilMoistureSensor.read()) { 
-        currentSoilMoisture = soilMoistureSensor.getPercent(); 
+    if (soilTempSensor.read()) {
+        currentSoilTemp = soilTempSensor.getTemperature();
     }
 
-    if (lightSensor.read()) { 
-        currentLightLux = lightSensor.getLux(); 
+    if (soilMoistureSensor.read()) {
+        currentSoilMoisture = soilMoistureSensor.getPercent();
     }
 
-    if (waterLevelSensor.read()) { 
+    if (lightSensor.read()) {
+        currentLightLux = lightSensor.getLux();
+    }
+
+    if (waterLevelSensor.read()) {
         isWaterLevelOk = waterLevelSensor.isWaterDetected();
     }
 
@@ -655,7 +679,7 @@ void updateDisplay() {
         // Sonst zeige das Icon für die Bodentemperatur.
         display.setDashboardIcon(OLEDDisplaySH1106::BOTTOM_LEFT, 16, 16, engine_coolant_16x16_xbm);
     }
-    
+
     // Messwert anzeigen
     if (!isnan(currentSoilTemp)) {
         display.setDashboardText(OLEDDisplaySH1106::BOTTOM_LEFT, String(currentSoilTemp, 1) + "C");
@@ -664,7 +688,7 @@ void updateDisplay() {
     }
 
     // Quadrant Unten Rechts: Bodenfeuchte (S3)
-    
+
     if (pumpRelay.isOn()) {
         // Wenn die Pumpe läuft (Bewässerung aktiv), zeige das Icon für die Pumpe.
         display.setDashboardIcon(OLEDDisplaySH1106::BOTTOM_RIGHT, 16, 16, rainy_weather_16x16_xbm);
@@ -681,7 +705,7 @@ void updateDisplay() {
     }
 
     // Nachdem alle Quadranten konfiguriert sind, das gesamte Dashboard auf dem Display zeichnen.
-    display.showDashboard();  
+    display.showDashboard();
 }
 
 /**
@@ -887,13 +911,15 @@ bool capture() {
  * @brief Wendet die in den Settings gespeicherten Kamera-Parameter auf die Hardware an.
  */
 void applyCameraSettings() {
-    const Settings& settings = settingsManager.get();
-    camera.setResolution(settings.cameraResolution);
-    camera.setLightMode(settings.cameraLightMode);
-    camera.setColorSaturation(settings.cameraSaturation);
-    camera.setBrightness(settings.cameraBrightness);
-    camera.setContrast(settings.cameraContrast);
-    camera.setSpecialEffect(settings.cameraSpecialEffect);
+    // todo friert den Bootvorgang scheinbar ein!
+
+    // const Settings& settings = settingsManager.get();
+    // camera.setResolution(settings.cameraResolution);
+    // camera.setLightMode(settings.cameraLightMode);
+    // camera.setColorSaturation(settings.cameraSaturation);
+    // camera.setBrightness(settings.cameraBrightness);
+    // camera.setContrast(settings.cameraContrast);
+    // camera.setSpecialEffect(settings.cameraSpecialEffect);
 }
 
 /**

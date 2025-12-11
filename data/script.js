@@ -199,8 +199,9 @@ function handleModeSelectorChange(event) {
  */
 function handleCaptureNowButtonClick(_event) {
     const button = document.getElementById('captureNowButton');
+    const statusDiv = document.getElementById('capture-status');
     button.disabled = true;
-    button.innerText = 'Aufnahme...'; // todo 1: Wie beim Speichern-button den Text in grüner Schrift daneben schreiben
+    statusDiv.innerText = 'Aufnahme...';
 
     // Setze einen Timeout für den Fall, dass der Server nicht antwortet
     captureTimeoutId = setTimeout(() => {
@@ -616,8 +617,9 @@ function resetCaptureButton() {
         captureTimeoutId = null;
     }
     const button = document.getElementById('captureNowButton');
+    const statusDiv = document.getElementById('capture-status');
     button.disabled = false;
-    button.innerText = 'Bild jetzt aufnehmen';
+    statusDiv.innerText = '';
 }
 
 /**

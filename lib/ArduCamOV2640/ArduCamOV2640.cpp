@@ -43,6 +43,8 @@ bool ArduCamOV2640::begin() {
     //  Sensor Zeit geben, die neuen Einstellungen zu verarbeiten (Weißabgleich etc.)
     delay(200);
 
+    // CS-Pin freigeben, um SPI-Bus-Konflikte zu vermeiden
+    //digitalWrite(_csPin, HIGH);
     return true;
 }
 
@@ -56,26 +58,44 @@ void ArduCamOV2640::setResolution(const uint8_t resolution) {
 
     // Warten, bis der Sensor sich stabilisiert hat
     delay(200);
+
+    // CS-Pin freigeben, um SPI-Bus-Konflikte zu vermeiden
+    //digitalWrite(_csPin, HIGH);
 }
 
 void ArduCamOV2640::setLightMode(const uint8_t mode) {
     _myCAM.OV2640_set_Light_Mode(mode);
+
+    // CS-Pin freigeben, um SPI-Bus-Konflikte zu vermeiden
+    //digitalWrite(_csPin, HIGH);
 }
 
 void ArduCamOV2640::setColorSaturation(const uint8_t saturation) {
     _myCAM.OV2640_set_Color_Saturation(saturation);
+
+    // CS-Pin freigeben, um SPI-Bus-Konflikte zu vermeiden
+    //digitalWrite(_csPin, HIGH);
 }
 
 void ArduCamOV2640::setBrightness(const uint8_t brightness) {
     _myCAM.OV2640_set_Brightness(brightness);
+
+    // CS-Pin freigeben, um SPI-Bus-Konflikte zu vermeiden
+    //digitalWrite(_csPin, HIGH);
 }
 
 void ArduCamOV2640::setContrast(const uint8_t contrast) {
     _myCAM.OV2640_set_Contrast(contrast);
+
+    // CS-Pin freigeben, um SPI-Bus-Konflikte zu vermeiden
+    //digitalWrite(_csPin, HIGH);
 }
 
 void ArduCamOV2640::setSpecialEffect(const uint8_t effect) {
     _myCAM.OV2640_set_Special_effects(effect);
+
+    // CS-Pin freigeben, um SPI-Bus-Konflikte zu vermeiden
+    //digitalWrite(_csPin, HIGH);
 }
 
 bool ArduCamOV2640::saveToSD(const char *filename) {
